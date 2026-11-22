@@ -5856,6 +5856,10 @@
           "is_owner": {
             "type": "boolean"
           },
+          "role": {
+            "type": "string",
+            "description": "member or supervisor"
+          },
           "email": {
             "type": "string",
             "description": "Only with ?include=email, for board staff"

@@ -302,3 +302,28 @@ def test_patch_with_no_change_writes_no_activity_row_and_subtask_logs(client):
     actions = [a.action for a in ActivityLog.query.filter_by(target_id=uuid.UUID(card["id"])).all()]
     assert "card.subtask_added" in actions and "card.subtask_removed" in actions
     assert User.query.count() > 0
+
+
+def test_property_60_members_rows_carry_role_and_query_count_is_constant(client):
+    from sqlalchemy import event
+
+    env = Env(client)
+    base = f"/api/boards/{env.bid}/members"
+
+    def fetch():
+        n = []
+        listener = lambda *a, **k: n.append(1)
+        event.listen(db.engine, "before_cursor_execute", listener)
+        try:
+            rows = client.get(base, headers=env.h["member"]).get_json()["data"]
+        finally:
+            event.remove(db.engine, "before_cursor_execute", listener)
+        return rows, len(n)
+
+    rows, small = fetch()
+    for who in ("sup_other", "member_other"):
+        assert client.post(base, headers=env.h["manager"], json={"user_id": env.uid(who)}).status_code == 201
+    rows, large = fetch()
+    assert all(r["role"] in ("member", "supervisor") for r in rows)
+    assert {r["id"]: r["role"] for r in rows}[env.uid("sup_other")] == "supervisor"
+    assert large == small

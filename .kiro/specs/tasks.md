@@ -351,7 +351,7 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     - **Property 15: Drop order and rebalance (cards and subtasks)**
     - **Validates: Requirements 4.13, 5.1, 5.10, 5.11**
 
-- [ ] 18. Card modal, subtasks, attachments, comments
+- [x] 18. Card modal, subtasks, attachments, comments
   - [x] 18.1 Build the two-pane card modal
     - `CardModal` (Client) using `BaseModal`: left pane has title, description (`CardDescription` Server Component), priority, dates, attachments, subtask checklist, and `ActivityList` (Server Component); right pane has the comment thread and composer.
     - "Save changes" commits the left pane without closing the modal or affecting the composer; omit the activity section and comment thread when the response omits `activity` or `comments`.
@@ -364,7 +364,7 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     - `CommentThread` (Client): priority comments first with a priority indicator, remaining top-level comments under a Latest/Popular toggle with a reply-count badge, replies nested, Reply action only where `parentId === null`, no like button, "Create card" button only where `comment.canCreateCard`, a Manager-only "Mark as priority" action.
     - `CommentComposer` posts independently without closing the modal.
     - _Requirements: 7.17, 7.18, 7.19, 7.20_
-  - [ ]* 18.4 Write component tests for card modal pieces
+  - [x]* 18.4 Write component tests for card modal pieces
     - Reply only on top-level comments; create-card button only when `canCreateCard`; thread, activity, and inbox omitted when the data is absent; `AttachmentList` renders `target="_blank" rel="noopener noreferrer"` and requests a fresh URL when expired.
     - _Requirements: 4.19, 7.18, 7.19, 7.20, 8.7, 9.7_
 
@@ -649,7 +649,7 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     - `common/rate_limiter.py` (pure `blocked_until`, store with advisory lock and separate-commit failure record, `check_login`, `record_login_failure`, `reset_pair`, `hit` for availability only), `RateLimited` (429, `RATE_LIMITED`, `details.retry_after`), `Retry-After` header in `EnvelopeApi`, CORS `expose_headers`, `ProxyFix` from `TRUSTED_PROXY_COUNT`, the five settings in config (`RATE_LIMIT_WINDOW_SECONDS`, `RATE_LIMIT_LOGIN_PAIR_MAX`, `RATE_LIMIT_LOGIN_IP_MAX`, `RATE_LIMIT_AVAILABILITY_MAX`, `TRUSTED_PROXY_COUNT`; no `RATE_LIMIT_REGISTER_MAX`), `create_app(config_overrides)`, and `backend/.env.example` placeholders. `auth_service.register` makes no limiter call (Req 20.18).
     - Routes pass `client_ip` to the service; services stay free of Flask imports.
     - _Requirements: 20.1 to 20.14, 20.17, 13.3, 13.11_
-  - [ ]* 33.6 Write the Rate_Limiter tests
+  - [x]* 33.6 Write the Rate_Limiter tests
     - **Property 44: Rate limit window** (fake clock, small thresholds through `create_app`, PostgreSQL, two app instances on one table); example tests for the 429 body and header, a blocked correct password, success reset, independent pairs, and that register is never answered with 429 (Req 20.18).
     - **Validates: Requirements 20.1 to 20.14, 15.16**
   - [x] 33.7 Implement the profile endpoints
@@ -668,7 +668,7 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
   - [x] 33.11 Implement the `shared` blueprint and token-scoped file URLs
     - `blueprints/shared/` with `routes.py`, `service.py`, `repository.py`, `schema.py` (board, cards, categories, card detail, attachment URL; GET only; shared schemas without comments, activity, owner, members, token; `has_board_access` from an optional Bearer; `Cache-Control: private, no-store`); extend `common/signing.py` with the `scope` and `st` parameter and the file route check against the Board's current token.
     - _Requirements: 18.9 to 18.19, 12.6, 6.6, 4.26_
-  - [ ]* 33.12 Write the share and guest tests
+  - [x]* 33.12 Write the share and guest tests
     - **Property 40: Share_Token lifecycle**, **Property 41: Shared routes stay inside the token's board**, **Property 28: Guest responses never include comments or activity** (revised), **Property 34: Board list visibility** (revised), **Property 4** and **Property 5** (revised); a static test that `/api/shared` has no non-GET route and no comment or activity route.
     - **Validates: Requirements 18.1 to 18.17, 7.16, 8.5, 11.4 to 11.7, 11.13, 15.17**
   - [x] 33.13 Update the generated OpenAPI document and `backend/API.md`
@@ -715,14 +715,14 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     - _Requirements: 14.10, 13.3, 11.4_
   - [ ] 33.27 Checkpoint - Run backend and frontend tests, the build, and the suite
     - Ensure `pytest`, `tsc --noEmit`, `vitest run`, and `next build` pass, run the reset migration on the local development database, run `npm run test:e2e` against the deployed URL with the three variables set (the suite then has no SO-11 and SO-12 yet; they arrive in 33.38 and run in 33.48, the final checkpoint, round 3 ordering fix), and check the risk recorded for SI-11: set `RATE_LIMIT_LOGIN_IP_MAX` above 20 on the test environment or run the suite once per window. Ask the user if questions arise.
-- [ ] 33.28 Extract the file store, add `detect_image_type`, and write migration part 4 (avatar) (Decision R)
+- [x] 33.28 Extract the file store, add `detect_image_type`, and write migration part 4 (avatar) (Decision R)
   - `common/file_store.py` (`FileStore(upload_dir)`: `save`, `delete`, `path`, bare-name check) extracted from the inline code in `cards/service.py` (write, `os.remove`, file route path); attachments call it with `subdir=""`, behaviour unchanged. `common/images.py` with `MAX_AVATAR_BYTES` and `detect_image_type`. `common/signing.py` takes `scope` and a route name (shared with 33.11) so the avatar scope reuses the one signing and verification code. `User.avatar_path` (String(64), nullable) replaces `avatar_url`; part 4 of revision `b7d2e4f6a801` adds `avatar_path` and drops `avatar_url` (round 3: no values are printed or preserved, there is no data; `downgrade()` re-adds `avatar_url` empty). Create `UPLOAD_DIR/avatars/` on first write.
   - Accepted risks to record in the PR (Decision W): Werkzeug buffers the multipart body (cap the body at the reverse proxy, about 3 MB); the file keeps EXIF data and no image library re-encodes it. Both are accepted for V10.
   - _Requirements: 19.21, 19.24, 13.14, 1.6_
 - [x] 33.29 Implement the avatar endpoints (Decision R)
   - `user_service.set_avatar`, `clear_avatar`, `open_avatar` in `blueprints/users/` (round 3, Decision U); routes `POST` and `DELETE /users/me/avatar` and `GET /users/{user_id}/avatar/file` (the two mutating routes for any signed-in user, the file route signature-only); nothing at `/auth/me/avatar`; `user_repository.get_for_update`; write-commit-delete order with cleanup on failure; `UserSchema.avatar_url` as a signed-URL method that is null without a file; one `user.profile_updated` row with `{ "fields": ["avatar"] }`; remove `avatar_url` from the `PATCH /auth/me` and admin `POST|PATCH /users` schemas (400); response headers `nosniff`, `inline`, `Cache-Control: private, max-age=300`; update the OpenAPI document and `backend/API.md`.
   - _Requirements: 19.18, 19.19, 19.20, 19.21, 19.22, 19.23, 19.24, 19.25, 19.26, 19.27, 19.32, 19.33, 13.10, 17.11_
-- [ ]* 33.30 Write the avatar tests
+- [x]* 33.30 Write the avatar tests
   - **Property 47: Avatar image type and size**
   - API tests of Req 15.20 against `/api/users/me/avatar` (happy: PNG, JPEG, WebP, renamed extension, replace, delete, idempotent delete; negative: no Token, text renamed `.png`, SVG, GIF, empty, 2,097,153 bytes, missing part, traversal name, bad or expired or cross-user signature, no avatar 404, `avatar_url` in PATCH, no `avatar_url` in shared payloads); a test that two parallel uploads leave one file.
   - **Validates: Requirements 19.19, 19.20, 19.21, 19.22, 19.25, 19.26, 19.27, 19.33, 15.20**
@@ -909,7 +909,7 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     - Follow "Manual verification checklist (V12 invite flow)" in `design.md` with two browser profiles on a local or scratch database after `flask seed-data`; write down each result. Data-writing, so it is never part of the Playwright suite.
     - Deferred (explicit): automated invite-flow end-to-end test. Do not add a Playwright project for it in V12.
     - _Requirements: 15.38, 15.39, 24.8, 24.13, 24.14, 24.15, 24.19, 22.19_
-  - [ ]* 35.32 Write the round 2 Backend tests (owner row and pending-list Email)
+  - [x]* 35.32 Write the round 2 Backend tests (owner row and pending-list Email)
     - `pytest` per Requirement 15 criterion 36: members endpoint (owner first, once, `is_owner`, Email only with `include=email` for staff, 403 for a Member), candidates exclude the owner, `DELETE` of the owner row is 404, `GET /boards/{id}/join-requests` has `email` for owner, Manager, and Admin and 403 or 401 otherwise, and no Email in the create and decision responses, Notification bodies, Activity_Log `metadata`, Comment bodies, or any `/api/shared` payload.
     - _Requirements: 22.13, 22.20, 24.13, 24.28, 15.36_
   - [ ]* 35.33 Write the round 2 Frontend component tests (owner row and pending-list Email)
@@ -921,23 +921,23 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
   - [ ] 35.30 Checkpoint - Run the V12 checks
     - Ensure `pytest`, `tsc --noEmit`, `vitest run`, and `next build` pass; run the migration on a scratch database; run `flask seed-data`; check Home as `member` (only Alpha Board), the invite flow by the manual checklist of task 35.31, a card edit with the network throttled, and the Profile page at 360 and 1280 pixels. Ask the user if questions arise.
     - _Requirements: 15.29, 15.30, 15.31, 15.32, 15.33, 15.34, 15.35_
-- [ ] 36. Role tag, control sizes, and document titles (Decisions AG to AI, V13)
-  - [ ] 36.1 Return `role` from the members endpoint and add the Frontend `RoleTag`
+- [x] 36. Role tag, control sizes, and document titles (Decisions AG to AI, V13)
+  - [x] 36.1 Return `role` from the members endpoint and add the Frontend `RoleTag`
     - Rework of ticked 35.3 (members list), 35.19 (assignee picker, Sidebar), and 16.x: `role` on `BoardMemberSchema`; `Member.role`; `RoleTag`; assignee option text, keywords, and Sidebar rows; no role in `/api/shared`.
     - _Requirements: 30.1, 30.2, 30.3, 30.4, 30.5_
-  - [ ]* 36.2 Write the role tests
+  - [x]* 36.2 Write the role tests
     - **Property 60: Role tag follows the list** (`vitest`, fast-check) and a `pytest` check that the members rows carry `role` and never `manager` or `admin`, and that the query count is unchanged.
     - **Validates: Requirements 30.1, 30.2**
-  - [ ] 36.3 Bring the Invite and Public link controls to the control scale
+  - [x] 36.3 Bring the Invite and Public link controls to the control scale
     - Rework of ticked 35.20 and 35.21: header buttons at `md`, modal buttons at `md`, link field and Copy in one row at 40 pixels, titled sections, compact Approve and Reject with a 44 pixel target below 960 pixels, icon-only header labels when narrow; run `styling.test.ts`.
     - _Requirements: 31.1, 31.2, 31.3, 31.4, 31.5, 31.6_
-  - [ ] 36.4 Build `lib/titles.ts` and set every document title
+  - [x] 36.4 Build `lib/titles.ts` and set every document title
     - Root `title.template`, page `metadata`, `generateMetadata` for the Board, Categories, and Shared pages, `AppShell` and Card modal title effects, the 60 character cut.
     - _Requirements: 32.1, 32.2, 32.3, 32.4, 32.5, 32.6, 32.7_
-  - [ ]* 36.5 Write the title tests
+  - [x]* 36.5 Write the title tests
     - **Property 59: Title builder**, one render test per route title, and `document.title` of `/login` and `/register` in the auth e2e suite.
     - **Validates: Requirements 32.1, 32.4, 32.6, 32.8**
-  - [ ] 36.6 Sync steering and guidelines to V13, then checkpoint
+  - [x] 36.6 Sync steering and guidelines to V13, then checkpoint
     - `.kiro/steering/frontend.md` and `guidelines/frontend.md` (titles, role tag, header control size); ensure `pytest`, `tsc --noEmit`, `vitest run`, and `next build` pass and check the three changes in Chrome at 360 and 1280 pixels.
     - _Requirements: 30.2, 31.1, 32.1_
 ## Notes

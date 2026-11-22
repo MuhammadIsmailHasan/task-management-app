@@ -333,3 +333,22 @@ describe("Property 58: auto-save sends only what changed", () => {
     expect(toDraft(baseCard({ description: null, start_date: "2026-01-01" }))).toMatchObject({ description: "", start_date: "2026-01-01" });
   });
 });
+
+describe("Role tag follows the list (Property 60)", () => {
+  it("shows each member's role in the Team members rows, never manager or admin", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.array(fc.constantFrom("member", "supervisor"), { minLength: 1, maxLength: 4 }), async (roles) => {
+        const list = roles.map((role, i) => ({ id: `r${i}`, full_name: `Person ${i}`, username: `p${i}`, avatar_url: null, role })) as Member[];
+        mocks.api.boards.members.mockResolvedValue(list);
+        const { unmount } = renderSidebar(shell("manager"));
+        for (const [i, role] of roles.entries()) {
+          const row = (await screen.findByText(`Person ${i}`)).closest("div.flex.min-h-control") as HTMLElement;
+          expect(within(row).getByText(role)).toBeInTheDocument();
+        }
+        expect(screen.queryByText(/^(manager|admin)$/)).not.toBeInTheDocument();
+        unmount();
+      }),
+      { numRuns: 10 },
+    );
+  });
+});
