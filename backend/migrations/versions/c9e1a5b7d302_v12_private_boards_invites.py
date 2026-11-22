@@ -1,7 +1,7 @@
 """V12: private boards, invite token, join requests, notification types
 
-Local-development reset (Decision Y): upgrade() empties every user-linked table, so it refuses to run
-unless APP_ENV is development or testing. After it, run `flask seed-data`.
+Local-development reset (Decision Y): upgrade() empties every user-linked table when APP_ENV is development
+or testing. Anywhere else it never deletes: it runs only on an empty `users` table (Decision AN). After it, run `flask seed-data`.
 
 Revision ID: c9e1a5b7d302
 Revises: b7d2e4f6a801
@@ -34,10 +34,11 @@ def _retype(values):
 
 
 def upgrade():
-    if (os.environ.get("APP_ENV") or "production").strip().lower() not in ("development", "testing"):
-        raise RuntimeError("This migration resets local data; set APP_ENV=development to run it")
-    op.execute("TRUNCATE TABLE users CASCADE")
-    print("Local data was reset. Run `flask seed-data`.")
+    if (os.environ.get("APP_ENV") or "production").strip().lower() in ("development", "testing"):
+        op.execute("TRUNCATE TABLE users CASCADE")
+        print("Local data was reset. Run `flask seed-data`.")
+    elif op.get_bind().execute(sa.text("SELECT 1 FROM users LIMIT 1")).first():
+        raise RuntimeError("This migration cannot keep existing users and the users table is not empty; nothing was changed")
 
     op.drop_column("boards", "visibility")
     sa.Enum(name="board_visibility").drop(op.get_bind(), checkfirst=True)

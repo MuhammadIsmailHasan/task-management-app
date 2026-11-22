@@ -10,6 +10,8 @@ Out of scope: Google OAuth login (post-MVP, added only after username-or-email a
 
 This feature requires these data-model additions beyond the original `data-model.md` steering: a nullable `Board.owner_id` (Decision 1), a `BoardMember` entity (Decision A), a nullable unique `Board.share_token` (Decision K), a unique case-insensitive `username` and `email` on User in place of the single `login_identifier` column that Decision C introduced and Decision M removes, a `rate_limit_attempts` table (Decision O), and an `avatar_path` column on User in place of the free-text `avatar_url` column (Decision R). V12 removes `Board.visibility` and adds a nullable unique `Board.invite_token`, a `BoardJoinRequest` entity, and on Notification a nullable `board_id`, `actor_id`, and `join_request_id`, a nullable `card_id`, three new types, and partial unique indexes (Decisions Y, AA, and AE); `Card.progress` becomes a computed field and is never stored (Decision AD).
 
+V14 (draft, not implemented) adds production deployment: Decisions AJ to AN and Requirements 33 to 37. Decision AN is approved; the server type (Open Question 31) is open.
+
 ## Glossary
 
 - **System**: The Kanban Task Management application, consisting of the Backend and the Frontend.
@@ -138,6 +140,11 @@ Clarification to Decision A (V2): Req 3.4 and 11.2 grant Supervisor writes only 
 | AG | **Role tag in the assignee picker (V13; amends Requirement 4 criterion 33).** Each row of the assignee popover, and each Team members row, shows a role tag ("Supervisor" or "Member"). The members list returns `role`. | The picker listed names only, and two people with similar names could not be told apart by role. | Requirement 30. |
 | AH | **Control sizes in the Invite and Public link controls (V13; applies Decision H and Requirement 14 criterion 20).** Header buttons and the modal buttons use the 40 pixel control size; compact (32 pixel) only in a dense row; the link field and Copy share one height. | The V12 build used compact buttons beside 40 pixel inputs, which broke the one-scale rule. | Requirement 31. |
 | AI | **Document titles (V13; amends BRAND-11).** Every title is `RevoTask | <name>` of the open page or panel, built with Next.js `metadata` and `generateMetadata`. | The owner wants the tab to say the brand and where the user is. | Requirement 32. |
+| AJ | **Production topology (V14).** One Ubuntu 24 server, Docker Compose for the apps, host PostgreSQL and host Nginx, one origin, `network_mode: host`. | The owner's deployment brief. One origin replaces the two-domain assumption. | Requirement 33 |
+| AK | **Build on the server, test first in CI (V14).** GitHub Actions tests and smoke-tests a separate environment; only then does a push to `master` deploy over SSH, with rollback. | The owner has no registry account and wants a tested build before production. | Requirement 34 |
+| AL | **Health endpoint (V14).** A public `GET /api/health` reports whether the database answers. | Container, smoke, and deploy checks need one signal. | Requirement 35 |
+| AM | **Manual demo seed (V14).** `seed-data` runs once by hand in a one-off container with `APP_ENV=development`; the running app stays `production`. | The owner wants demo data and keeps the seed guard (option A). | Requirement 36 |
+| AN | **Migrations on an empty production database (V14, approved in round 2; amends Decisions V and Y).** The V10 and V12 reset migrations may run outside development only when `users` is empty, and then truncate nothing. | Both migrations abort in production today, so upgrade on start cannot create the database. | Requirement 37; amends USR-13 and ACC-17 |
 
 Notes on status codes: V2 standardizes "no Token returns 401; valid Token with insufficient role or access returns 403". This changes Req 11.5 (a Guest requesting a private Board) from 403 in V1 to 401 in V2. From V10 a request without a Token returns 401 on every Board route, public Boards included; the only Token-free Board reads are the shared routes of Requirement 18. V10 adds 429 for a blocked rate-limited request (Decision O). V12 (Decision Y): a signed-in user without Board_Access gets 403 on every Board route, because no Board is public; `/api/invite` needs a Token (401) and `/api/shared` needs none.
 
@@ -171,6 +178,13 @@ Notes on status codes: V2 standardizes "no Token returns 401; valid Token with i
 26. **Role change cleanup (V12, RESOLVED BY DEFAULT in round 2 within V12; the owner did not answer, so the recommendation written here applies):** Requirement 22 criterion 6 deletes memberships and pending requests when an Admin makes a user a Manager or an Admin. Demoting a Manager to Member leaves them with no Board access until a Manager or an Admin adds them or a Join_Request is approved; this is accepted as a rare case. No requirement changes.
 27. **Rejected requester destination (V12, RESOLVED BY DEFAULT in round 2 within V12; the owner did not answer, so the decision already written applies):** the brief said board notifications open `/boards/{id}`; for `board_join_rejected` the requester has no access, so the row opens `/boards` instead (Requirement 28, criterion 5). The owner can reverse this.
 28. **Old Share_Link links (V12, resolved by Decision Z; unchanged in round 2 within V12):** the owner of a Board who enabled a link in V10 loses the right to manage it (Decision Z); the data was reset, so no existing link is affected.
+31. **Server type (V14, RESOLVED by the owner in round 3):** the current server is an unprivileged container that cannot run containers, so it runs in bare mode (Gunicorn, Next.js, and the scheduler under `supervisord`, no Docker). Docker mode stays the target for a VM or AWS EC2. Requirement 33 criteria 1, 3, and 8 apply to Docker mode; for bare mode criterion 8 is met by supervisord, which the server container starts at boot.
+32. **Reset migrations (V14, RESOLVED by the owner in round 2):** Decision AN is approved and implemented.
+33. **Nginx port (V14, RESOLVED by inspection in round 2):** Nginx listens on port 80 inside the server and public port 8082 is forwarded to it (inferred: nothing inside listens on 8082). Port 8000 on loopback is already used by another process and must not be reused.
+34. **Uploads and backups (V14, RESOLVED by the owner in round 2):** `/var/lib/revoboard/uploads`, and a `pg_dump` before each deploy with the last 7 kept. Off-server backup is not specified.
+35. **Request body limit (V14, RESOLVED by the owner in round 2):** 3 MB, which also caps attachments at about 3 MB.
+36. **Landing page (V14, open; not in V14 scope):** proposed a public route group in the same Next.js app at `/`, with signed-in visitors sent to `/boards`. It gets its own version when its content is known.
+37. **Directory layout (V14, open):** proposed the whole monorepo at `/srv/revoboard/app`, configuration at `/srv/revoboard/.env`, and only mutable data under `/var`.
 
 ## Requirements
 
@@ -268,7 +282,7 @@ The criteria below specify the Playwright tests of the E2E_Auth_Suite (V9, updat
 60. [TOK-04] WHILE the visitor is on `/login`, `/register`, or `/shared/{token}`, THE Frontend SHALL ignore a stale Session_Cookie: no redirect and no cookie removal on arrival (Requirement 18, criterion 24).
 61. [TOK-05] THE route handler `/session-expired` SHALL redirect only to `/login`, and `/login` SHALL NOT redirect to a Protected_Route without a user action, so that an invalid Token cannot cause a redirect loop.
 62. [TOK-06] WHERE criteria 31, 33, 34, 55, and 56 say the visitor ends on `/login`, THE E2E_Auth_Suite SHALL compare the URL path only, so that a `next` query parameter does not fail the test.
-63. [USR-13] WHEN the V10 migration runs and `APP_ENV` is `development` or `testing`, THE Backend SHALL delete every row of `users` and of each table that references it (Boards, BoardMembers, Cards with their Subtasks and Attachments, Comments, Notifications, Activity_Log rows, and rate-limit rows), add `username` and `email` as NOT NULL columns with the unique lower-case indexes of criterion 43, add `boards.share_token` and `rate_limit_attempts`, replace `avatar_url` with `avatar_path`, drop `login_identifier`, and print one line saying that local data was reset and that `flask seed-users` or `flask seed-data` recreates it, without backfilling any legacy value (Decision V); IF `APP_ENV` has any other value or is unset, THEN THE migration SHALL abort before it changes anything, with a message that names `APP_ENV`. Uploaded files under `UPLOAD_DIR` are not touched.
+63. [USR-13] WHEN the V10 migration runs and `APP_ENV` is `development` or `testing`, THE Backend SHALL delete every row of `users` and of each table that references it (Boards, BoardMembers, Cards with their Subtasks and Attachments, Comments, Notifications, Activity_Log rows, and rate-limit rows), add `username` and `email` as NOT NULL columns with the unique lower-case indexes of criterion 43, add `boards.share_token` and `rate_limit_attempts`, replace `avatar_url` with `avatar_path`, drop `login_identifier`, and print one line saying that local data was reset and that `flask seed-users` or `flask seed-data` recreates it, without backfilling any legacy value (Decision V); IF `APP_ENV` has any other value or is unset, THEN THE migration SHALL abort before it changes anything, with a message that names `APP_ENV`. Uploaded files under `UPLOAD_DIR` are not touched. (V14, amended by Decision AN: outside development and testing the migration may run on an empty `users` table and never truncates; Requirement 37.)
 64. [USR-14] WHEN the seed commands `flask seed-users` and `flask seed-data` create a user, THE Backend SHALL set `username`, `email`, and `full_name` on it for every seeded user: the Member, Supervisor, Manager, and Admin of `seed-users`, and `member2` and `supervisor2` of `seed-data`, using the Username `<key>`, the Email `<key>@example.com`, and a two-word full name such as "Member One"; the Member `member` is the Test_Account of the E2E_Auth_Suite (`E2E_USER_IDENTIFIER=member`). Running a seed command twice SHALL create no duplicate (Decision V). (V12: `flask seed-data` also seeds the Boards, Board_Members, and Card of Requirement 22, criterion 18.)
 
 **V12 additions to the suite**
@@ -859,7 +873,7 @@ Note (V12, Decision Y): this requirement reverses Decision A (public Boards read
 14. [ACC-14] THE Frontend SHALL render no visibility icon, no lock icon, no visibility toggle, and no visibility filter in the Sidebar Boards list, the Board header, the Home tiles, the new-board modal, or any Board edit form (Decision Y; amends Requirement 3, criteria 20, 22, 23, and 29).
 15. [ACC-15] WHEN a signed-in Member or Supervisor has no Board, THE Frontend SHALL show on Home the message "You are not on any board yet. Ask a manager or a board owner for an invite link." and no list of other Boards (Decision Y).
 16. [ACC-16] WHERE the viewer is a Manager or an Admin, THE Frontend SHALL show the add button in the Sidebar Team members heading, which opens the member search of Requirement 3, criteria 24 and 32, and SHALL show no add button to the Board_Owner or any other viewer (Decision Y; amends Requirement 3, criterion 24).
-17. [ACC-17] WHEN the V12 migration runs and `APP_ENV` is `development` or `testing`, THE Backend SHALL drop `boards.visibility`, add `boards.invite_token`, create `board_join_requests`, alter `notifications` as Requirement 28 criterion 1 states, delete the rows of every user-referencing table as the V10 migration did, and print one line saying that local data was reset and that `flask seed-data` recreates it; IF `APP_ENV` has any other value, THEN THE migration SHALL abort before changing anything (Decision Y).
+17. [ACC-17] WHEN the V12 migration runs and `APP_ENV` is `development` or `testing`, THE Backend SHALL drop `boards.visibility`, add `boards.invite_token`, create `board_join_requests`, alter `notifications` as Requirement 28 criterion 1 states, delete the rows of every user-referencing table as the V10 migration did, and print one line saying that local data was reset and that `flask seed-data` recreates it; IF `APP_ENV` has any other value, THEN THE migration SHALL abort before changing anything (Decision Y). (V14, amended by Decision AN: outside development and testing the migration may run on an empty `users` table and never truncates; Requirement 37.)
 18. [ACC-18] WHEN `flask seed-data` runs, THE Backend SHALL create a Manager, an Admin, a Supervisor who owns a seeded Board, a second Supervisor, the Members `member` and `member2`, two seeded Boards (one with `member` and `member2` as BoardMembers, one without any Member), one seeded Card assigned to `member` with Subtasks, and no BoardMember row for the Manager or the Admin; running it twice SHALL create no duplicate (Decision Y; extends Requirement 1, criterion 64).
 19. [ACC-19] THE Frontend SHALL list the Board_Owner first in the Sidebar Team members section, tagged "Owner", with the Avatar_Image or Initials_Avatar, the full name, and the Username and no Email, and SHALL show no remove button on that row to any viewer; WHERE the Board has no owner, THE Frontend SHALL show no owner row (Open Question 23; amends Requirement 3, criterion 24).
 20. [ACC-20] IF `DELETE /api/boards/{id}/members/{user_id}` names the Board_Owner and the Board_Owner is not a BoardMember, THEN THE Backend SHALL return HTTP 404 with the code `NOT_FOUND` and change nothing (Open Question 22; the owner row of ACC-19 has no remove action, so the Frontend never sends this request for it).
@@ -1063,3 +1077,68 @@ Note (V13, Decision AI): amends Requirement 21 criterion BRAND-11 (the suffix "Â
 6. [TITLE-06] THE Frontend SHALL escape no title by hand (React and Next.js do) and SHALL cut a title longer than 60 characters with "â€¦" so that the tab stays readable.
 7. [TITLE-07] THE Frontend SHALL keep `robots` `noindex` on the invitation and Shared_View pages, and the other `metadata` fields (description, icons by file convention) SHALL not change.
 8. [TITLE-08] THE System SHALL include `vitest` tests for the title builder (a pure function: name in, title out, 60 character cut, panel and unread count) and one test per route that renders its title; the e2e suite SHALL assert `document.title` of `/login` and `/register` only (read-only, Requirement 1 criteria 65 to 72 unchanged).
+
+### Requirement 33: Production Topology
+
+**User Story:** As the product owner, I want RevoTask to run on my server behind Nginx and return after a reboot, so that people can use it from the internet.
+
+#### Acceptance Criteria
+
+1. [DEP-01] THE System SHALL run the Backend, the Frontend, and a deadline scheduler as Docker Compose services built from the monorepo, each as a non-root user.
+2. [DEP-02] THE System SHALL use the PostgreSQL installed on the server at `localhost:5432`, database `revoboard_db`, owned by the non-superuser role `revou`, and SHALL provide idempotent setup SQL that takes the password at run time.
+3. [DEP-03] THE System SHALL run every service with `network_mode: host`, binding the Backend to `127.0.0.1:5001` and the Frontend to `127.0.0.1:3000`.
+4. [DEP-04] THE Backend SHALL be served by Gunicorn with 3 workers.
+5. [DEP-05] THE System SHALL provide a new Nginx site file that serves one origin, sends `/api/` to the Backend and every other path to the Frontend, preserves the public host and port, overwrites `X-Forwarded-For` with the client address, and limits the request body (Open Question 35). THE Backend SHALL run with `TRUSTED_PROXY_COUNT=1`.
+6. [DEP-06] THE Frontend SHALL call `/api` on the current origin from the browser and SHALL read an absolute loopback Backend URL from `INTERNAL_API_URL` on the server, so that one build works on the IP address and on the domain.
+7. [DEP-07] THE Frontend SHALL send every redirect, `/session-expired` included, to the public origin or as a relative path, and never to `localhost` or a container address.
+8. [DEP-08] WHEN the server boots, THE System SHALL start PostgreSQL, Nginx, and Docker through their enabled system services, and every Compose service through `restart: unless-stopped`.
+9. [DEP-09] THE System SHALL run `flask notify-deadlines` at least hourly from the scheduler service; a repeated run SHALL create no duplicate Notification.
+10. [DEP-10] THE System SHALL keep uploads outside the checkout and the images, so that they survive a deploy and a reboot.
+11. [DEP-11] THE System SHALL keep every secret and password out of the repository, the images, and the CI logs; application secrets SHALL live only in a server file with mode 600.
+12. [DEP-12] THE System SHALL rotate container logs with the `json-file` driver, `max-size` 10 MB and `max-file` 3.
+13. [DEP-13] UNTIL the domain and TLS are configured, THE System SHALL accept plain HTTP on the server IP and port 8082. The later TLS change SHALL add `Secure` to the Session_Cookie and update `ALLOWED_ORIGINS`. The planned domain is `revoboard.belajardeploy.web.id`.
+
+### Requirement 34: Continuous Integration and Deployment
+
+**User Story:** As the product owner, I want a push to master to be tested in a separate environment and then deployed, so that a broken build does not reach production.
+
+#### Acceptance Criteria
+
+1. [CICD-01] WHEN a pull request targets `master` or a commit is pushed to `master`, THE System SHALL run `pytest`, `tsc --noEmit`, `vitest run`, and `next build` in GitHub Actions.
+2. [CICD-02] WHEN those checks pass, THE System SHALL build both images and start the production Compose stack in the CI runner against a throwaway PostgreSQL with throwaway secrets, starting from an empty database.
+3. [CICD-03] THE smoke test SHALL verify the migrations, a second start, `/api/health`, login with a seeded test user, a server-rendered Board page, and the redirect target of `/session-expired`, all through Nginx.
+4. [CICD-04] WHEN both jobs pass on a push to `master`, and only then, THE System SHALL deploy that exact commit over SSH with a pinned host key and build the images on the server, tagged with the commit SHA.
+5. [CICD-05] THE System SHALL run one deployment at a time and SHALL NOT cancel a running deployment.
+6. [CICD-06] BEFORE it replaces the running services, THE System SHALL back up the database (Open Question 34).
+7. [CICD-07] IF the health check fails after a deploy, THEN THE System SHALL restart the previous images without running migrations, SHALL leave the schema as it is, and SHALL report the job as failed.
+8. [CICD-08] THE System SHALL require each later migration to stay compatible with the previous release, because a rollback does not downgrade the schema.
+
+### Requirement 35: Health Endpoint
+
+**User Story:** As the operator, I want one endpoint that says whether the Backend works, so that deploys and health checks can decide automatically.
+
+#### Acceptance Criteria
+
+1. [HLT-01] WHEN `GET /api/health` is called without a Token and the database answers `SELECT 1`, THE Backend SHALL return 200 in the standard Envelope.
+2. [HLT-02] IF the database does not answer, THEN THE Backend SHALL return 503 in the standard error Envelope within 5 seconds, without exception text, host, user, or connection string.
+3. [HLT-03] THE Backend SHALL apply no rate limit to this endpoint, SHALL follow the routes, service, and repository layers, and SHALL list it in `openapi.json` and `API.md`.
+
+### Requirement 36: Demo Seed
+
+**User Story:** As the product owner, I want demo data in the deployed app, so that I can show it working.
+
+#### Acceptance Criteria
+
+1. [SEED-01] THE System SHALL document a manual, one-time `flask seed-data` command in a one-off container that alone receives `APP_ENV=development`, after the first migration.
+2. [SEED-02] THE System SHALL take the seed password at run time and SHALL NOT write it to the repository, the server environment file, or the shell history.
+3. [SEED-03] THE running Backend SHALL keep `APP_ENV=production`, the API documentation SHALL stay hidden, and no start or deploy step SHALL run a seed.
+
+### Requirement 37: Migrations on Start
+
+**User Story:** As the operator, I want the Backend to migrate on start without risk to data, so that a deploy needs no manual step.
+
+#### Acceptance Criteria
+
+1. [MIG-01] WHEN the Backend container starts normally, THE System SHALL run `flask db upgrade` once before Gunicorn starts and SHALL NOT start Gunicorn if it fails; a rollback start SHALL skip this step.
+2. [MIG-02] WHEN the V10 or V12 migration runs outside development and testing and `users` is empty, THE migration SHALL apply its schema changes without `TRUNCATE`.
+3. [MIG-03] IF either migration runs outside development and testing and `users` has rows, THEN THE migration SHALL abort with no change. Behaviour in development and testing SHALL NOT change.

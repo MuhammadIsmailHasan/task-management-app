@@ -1889,3 +1889,70 @@ The findings below were not resolved silently. Each states what was kept in V12 
 ### Properties (V13)
 - **Property 59: Title builder.** For any name, `pageTitle(name)` starts with `RevoTask | `, is at most 60 characters after the prefix, and contains no newline; `panelTitle` adds `(n)` only when `n > 0`. **Validates: Requirements 32.1, 32.4, 32.6**
 - **Property 60: Role tag follows the list.** For any members list, every assignee option shows exactly the role the list returned, never `manager` or `admin`. **Validates: Requirements 30.1, 30.2**
+
+## V14 design: production deployment (Decisions AJ to AN, draft)
+
+### Topology
+
+```
+internet :8082 -> Nginx (server)
+                    /api/  -> 127.0.0.1:5001  backend   (Gunicorn, 3 workers)
+                    /      -> 127.0.0.1:3000  frontend  (Next.js standalone)
+frontend (server render)   -> 127.0.0.1:5001/api
+backend, scheduler         -> localhost:5432  PostgreSQL (server), revoboard_db
+```
+
+This assumes that the shell, Nginx, PostgreSQL, and the Docker daemon share one network and one filesystem. The current server does not qualify: it is a container without Docker (Open Question 31). This topology applies to option A only. Inside the current server Nginx listens on 80, which is published as 8082.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `backend/Dockerfile`, `.dockerignore`, `entrypoint.sh` | Python image; upgrade, then `exec gunicorn`; `SKIP_MIGRATIONS=1` for rollback |
+| `frontend/Dockerfile`, `.dockerignore` | Node LTS multi-stage build with `output: "standalone"` |
+| `compose.yaml` | `backend`, `frontend`, `scheduler` |
+| `deploy/nginx/revoboard.conf` | New site file |
+| `deploy/setup.sql` | Role and database; password as a `psql` variable |
+| `deploy/deploy.sh` | Backup, build, start, health check, rollback |
+| `deploy/README.md` | First install, secrets, seed, rollback, reboot check |
+| `.github/workflows/deploy.yml` | `test`, `smoke`, `deploy` |
+
+### Server layout (Open Question 37)
+
+| Path | Content |
+|------|---------|
+| `/srv/revoboard/app` | Checkout of the monorepo |
+| `/srv/revoboard/.env` | Secrets, mode 600, outside the checkout |
+| `/var/lib/revoboard/uploads` | Uploads, owned by the container user |
+| `/var/backups/revoboard` | Database dumps |
+
+### Code changes required before deployment
+
+Each defect was reproduced on commit `fb254d1` and fixed in round 2. The fixes do not depend on Open Question 31.
+
+1. **Migrations.** With `APP_ENV=production`, `flask db upgrade` on an empty database aborts at `b7d2e4f6a801`; `c9e1a5b7d302` has the same guard. Fix: outside development and testing, check that `users` is empty, skip `TRUNCATE`, and abort otherwise.
+2. **API URL.** `lib/http.ts` and `lib/attachments.ts` pass `API_URL` to `new URL()`, which rejects `/api`; a standalone build made with that value answers 500 on `/shared/{token}`. Fix: one resolver that returns a same-origin URL in the browser and `INTERNAL_API_URL` on the server, while asset paths stay relative.
+3. **Redirect.** `app/session-expired/route.ts` builds its target from `request.url`; behind a proxy it answers `Location: http://localhost:<port>/login`, even with forwarded headers. Fix: a relative `Location`. The `proxy.ts` redirect is already emitted as relative.
+4. **Scheduler.** Nothing ran `notify-deadlines`. Fix: `flask run-scheduler` runs it at start and hourly, retries after a failure, and exits on SIGTERM, so any supervisor can host it.
+
+### Rollback
+
+An older image does not contain a newer Alembic revision, so `flask db upgrade` fails in it. A rollback therefore starts the previous SHA with `SKIP_MIGRATIONS=1`. The schema is never downgraded automatically.
+
+### CI
+
+- `test`: the existing `pytest` suite uses in-memory SQLite, so it needs no database service.
+- `smoke`: PostgreSQL, the production images, and Nginx in the runner. This is the only automated check of the real migrations.
+- `deploy`: secrets `SSH_HOST`, `SSH_PORT`, `SSH_USER`, `SSH_KEY`, `SSH_KNOWN_HOSTS`.
+
+### Known limits
+
+- Over plain HTTP, passwords and Tokens are unencrypted and `navigator.clipboard` is unavailable, so the two Copy buttons show their copy-failed message.
+- Membership of the `docker` group is equivalent to root, so the CI SSH key is a root-equivalent credential.
+- A container that becomes unhealthy is not restarted by `restart: unless-stopped`; only one that exits is.
+- Demo accounts have public, predictable usernames, the Admin included.
+
+### Properties (V14)
+
+- **Property 61: No destructive production migration.** For any non-empty `users` table and any `APP_ENV` other than development or testing, the V10 and V12 migrations change no row and no schema. **Validates: Requirements 37.2, 37.3**
+- **Property 62: Origin independence.** For any public host and port, browser API calls and redirects stay on that origin. **Validates: Requirements 33.6, 33.7**

@@ -8,6 +8,7 @@ _ERR = {
     404: "Resource not found",
     409: "Conflict",
     429: "Rate limited; see Retry-After and error.details.retry_after",
+    503: "Database unavailable",
 }
 
 

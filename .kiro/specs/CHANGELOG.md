@@ -393,3 +393,41 @@ Contradictions and gaps found; none was resolved silently.
 ### Impact
 - One additive API field (`role` on members); no data change. Consistency check: V12 criterion ACC-13 lists the member fields without `role` (amended by ROLE-01, not rewritten); V12 steering says the picker shows "full name, Username, Email" (extended by the tag); PRO-02 and the V12 build use the `lg` class for the 960 pixel breakpoint, which matches.
 - Finding: the Activity_Log `metadata` is implemented in the Frontend (`describeActivity`); the Next.js page `metadata` is only a static title with the suffix "· RevoTask" on six pages and has nothing for a Board or a panel (the gap Requirement 32 closes).
+
+## V14 - 2026-11-22 (draft, awaiting owner review)
+### Changes
+- **Specification:** Decisions AJ to AN, Requirements 33 to 37, Open Questions 31 to 37: production deployment, CI/CD, health endpoint, manual demo seed, migrations on start.
+- **Design:** "V14 design: production deployment", Properties 61 and 62.
+- **Tasks:** group 37 (37.1 to 37.13), waves 104 to 111.
+- **Bugs found, not fixed:** the migrations abort on an empty production database; a relative API URL breaks the Frontend; `/session-expired` redirects to localhost behind a proxy; nothing schedules `notify-deadlines`.
+- **Proposed amendment, not in force:** USR-13 and ACC-17 (Decision AN).
+- **Implementation:** none.
+### Reason
+- The owner asked to deploy to an Ubuntu server with Docker Compose, host PostgreSQL, Nginx, Gunicorn, GitHub Actions, and start on boot.
+### Impact
+- Requirements: 33 to 37; proposed labels on USR-13 and ACC-17.
+- Design: deployment, API URL resolution, two migrations, `/session-expired`, health endpoint.
+- Steering: the two-domain rationale in `backend.md` and `tech.md` is outdated; task 37.12 syncs it.
+- Blocking: Open Questions 31 to 33.
+
+### Round 2 within V14 - 2026-11-22
+#### Changes
+- **Specification:** Decision AN approved (USR-13 and ACC-17 amended); Open Questions 32 to 35 resolved; Open Question 31 records that the server is a container without Docker and stays open.
+- **Bug fixes:** safe migrations on an empty production database; origin-independent API and asset URLs; relative `/session-expired` redirect; `flask run-scheduler`.
+- **Implementation:** `GET /api/health`. Tasks 37.2, 37.3, 37.4, and 37.14 are done.
+- **Breaking:** none. Absolute `NEXT_PUBLIC_API_URL` values keep working; development migrations still reset.
+#### Reason
+- The owner asked for the blockers to be fixed as recommended and accepted the backup, uploads, and body-limit defaults.
+#### Impact
+- Requirements 33, 35, 37; Properties 61 and 62. No deployment file is written until Open Question 31 is decided.
+
+### Round 3 within V14 - 2026-11-23
+#### Changes
+- **Specification:** Open Question 31 resolved: the current server cannot run containers, so it runs in bare mode; Docker mode is kept for a VM or AWS EC2.
+- **Implementation:** `deploy/bare/` (setup, deploy with releases and rollback, seed, supervisor config), `compose.yaml`, both Dockerfiles, `deploy/*.sh`, `.github/workflows/deploy.yml` (`DEPLOY_SCRIPT` selects the mode; CI tests on Python 3.12, the server version), repaired `package-lock.json`.
+- **Bug fixes:** `package-lock.json` lacked two Linux-only packages, so `npm ci` failed outside macOS; `test_committed_openapi_json_is_current` failed on Python 3.12 because Python 3.13 renamed the HTTP 422 phrase.
+- **Not changed:** requirements 33 to 37 still describe Docker mode; bare mode is a recorded variant.
+#### Reason
+- The owner's server cannot run Docker, and the owner plans to move to AWS EC2 later.
+#### Impact
+- Task 37.13 (first deployment) and 37.12 (steering) remain open.

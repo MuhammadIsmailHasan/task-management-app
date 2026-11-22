@@ -5337,6 +5337,41 @@
           }
         }
       ]
+    },
+    "/api/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "503 when the database does not answer within 5 seconds.",
+        "security": []
+      }
     }
   },
   "info": {
@@ -5387,6 +5422,10 @@
     {
       "name": "invites",
       "description": "Invite link and join requests"
+    },
+    {
+      "name": "health",
+      "description": "Liveness for containers and deploys. No Token needed."
     }
   ],
   "openapi": "3.0.3",
@@ -7584,6 +7623,41 @@
         "required": [
           "status"
         ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "database": {
+            "type": "string",
+            "description": "ok"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HealthEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Health"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       }
     },
     "responses": {

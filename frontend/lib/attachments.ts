@@ -1,4 +1,4 @@
-import { API_URL } from "./http";
+import { apiAsset } from "./http";
 import type { Attachment } from "./types";
 
 /** Seconds-since-epoch `exp` of a signed file URL, or null for a plain link. */
@@ -13,9 +13,9 @@ export function isExpired(fileUrl: string | null, nowMs: number = Date.now()): b
   return exp !== null && nowMs / 1000 > exp;
 }
 
-/** The API returns `/api/attachments/{id}/file?...`; make it absolute against the API origin. */
+/** The API returns `/api/attachments/{id}/file?...`; make it openable from the browser (absolute only when the API URL is). */
 export function absoluteFileUrl(path: string): string {
-  return /^https?:\/\//.test(path) ? path : new URL(API_URL).origin + path;
+  return apiAsset(path);
 }
 
 export function hrefFor(a: Pick<Attachment, "url" | "file_url">): string {

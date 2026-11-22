@@ -48,6 +48,7 @@ The message text appears once, at the top level; `error` holds only the machine-
 | 409 | `CONFLICT` | Duplicate username or email (`error.details` names each field), board member or category name |
 | 429 | `RATE_LIMITED` | Too many failed logins, wrong current passwords or availability checks. Body `error.details.retry_after` and header `Retry-After` hold the seconds to wait |
 | 500 | `INTERNAL_ERROR` | Unhandled error; generic message, details only in server logs |
+| 503 | `SERVICE_UNAVAILABLE` | `GET /api/health` only: the database does not answer |
 
 ## Authentication
 
@@ -250,6 +251,14 @@ User administration (Admin only).
 | POST | `/api/users/me/avatar` | Token | 200 | 400, 401 | Upload my avatar |
 | DELETE | `/api/users/me/avatar` | Token | 200 | 401 | Remove my avatar |
 | GET | `/api/users/{user_id}/avatar/file` | Public | 200 | 403, 404 | Avatar image (signed URL) |
+
+### health
+
+For containers and deploys. No Token, no rate limit.
+
+| Method | Path | Auth | Success | Errors | Summary |
+|---|---|---|---|---|---|
+| GET | `/api/health` | Public | 200 | 503 | Whether the database answers |
 
 ## Examples
 

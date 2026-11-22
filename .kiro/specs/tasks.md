@@ -14,6 +14,8 @@ V5 adds group 25, which adds the five SQLAlchemy relationships with `lazy="raise
 
 V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13, plain `flask.Blueprint`, `{ "data": ... }` bodies) to flask-smorest with marshmallow schemas and the `status`/`message` envelope (Decision E). Group 24 runs before the envelope property test 14.4, before the frontend (group 15 onward), and before the API documentation group 23. Group 23 is rewritten to document the generated OpenAPI instead of a hand-written `openapi.yaml`. Existing checkbox states are unchanged.
 
+V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tasks 37.5 to 37.13; the code fixes do not depend on it.
+
 ## Tasks
 
 - [x] 1. Backend scaffold, app factory, config, envelope, error handling, CORS, auth decorators
@@ -940,7 +942,52 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
   - [x] 36.6 Sync steering and guidelines to V13, then checkpoint
     - `.kiro/steering/frontend.md` and `guidelines/frontend.md` (titles, role tag, header control size); ensure `pytest`, `tsc --noEmit`, `vitest run`, and `next build` pass and check the three changes in Chrome at 360 and 1280 pixels.
     - _Requirements: 30.2, 31.1, 32.1_
+- [ ] 37. Production deployment (Decisions AJ to AN, V14)
+  - [x] 37.1 Resolve the blocking questions
+    - Open Questions 31 to 33: server type, reset-migration amendment, Nginx port.
+    - _Requirements: 33.3, 33.5, 33.8, 37.2, 37.3_
+  - [x] 37.2 Make the reset migrations safe on an empty production database
+    - Test on PostgreSQL: empty production, non-empty production, unchanged development (Property 61).
+    - _Requirements: 37.2, 37.3_
+  - [x] 37.3 Add `GET /api/health`
+    - Layers, bounded database wait, 200 and 503 tests, regenerate `openapi.json`, update `API.md`.
+    - _Requirements: 35.1, 35.2, 35.3_
+  - [x] 37.4 Make the Frontend origin-independent
+    - URL resolver, relative asset paths, relative `/session-expired` redirect, tests (Property 62).
+    - _Requirements: 33.6, 33.7_
+  - [x] 37.5 Build the Backend image
+    - Add Gunicorn, non-root Dockerfile, entrypoint with upgrade and rollback switch.
+    - _Requirements: 33.1, 33.4, 37.1_
+  - [x] 37.6 Build the Frontend image
+    - Standalone output, non-root multi-stage Dockerfile.
+    - _Requirements: 33.1_
+  - [x] 37.7 Write the Compose file
+    - Host network, loopback binds, scheduler, uploads, restart policy, log rotation, health checks.
+    - _Requirements: 33.1, 33.3, 33.8, 33.9, 33.10, 33.12_
+  - [x] 37.8 Write the Nginx site and the setup SQL
+    - New site file, forwarded headers, body limit; idempotent SQL with the password given at run time.
+    - _Requirements: 33.2, 33.5, 33.11_
+  - [x] 37.9 Write the deploy and rollback script
+    - Backup, build by SHA, health check, rollback without migration.
+    - _Requirements: 34.4, 34.6, 34.7_
+  - [x] 37.10 Write the GitHub Actions workflow
+    - `test`, `smoke` in an isolated environment, then `deploy` on `master`.
+    - _Requirements: 34.1, 34.2, 34.3, 34.4, 34.5_
+  - [x] 37.11 Write the runbook
+    - Install, secrets, GitHub setup, one-time seed, rollback, later domain and TLS, migration compatibility rule.
+    - _Requirements: 33.11, 33.13, 34.8, 36.1, 36.2, 36.3_
+  - [ ] 37.12 Sync steering and guidelines to V14
+    - Replace the two-domain rationale; record topology, health endpoint, and the migration rule.
+    - _Requirements: 33.1, 34.8, 35.3_
+  - [x] 37.14 Add the `flask run-scheduler` command
+    - Runs at start and hourly, survives a failed run, stops on SIGTERM. The service that hosts it is 37.7.
+    - _Requirements: 33.9_
+  - [ ] 37.13 Checkpoint: first deployment
+    - Green CI, first deploy, seed, forced rollback, server reboot, then a check from the internet. Ask the owner before any action on the server.
+    - _Requirements: 33.8, 34.7, 36.1_
+
 ## Notes
+- Group 37 (V14): the code fixes and the deployment files (Docker mode and bare mode) are done and tested on a laptop and in a simulated server; the first real deployment (37.13) and the steering sync (37.12) are open. 37.1 is resolved (bare mode on the current server); 37.13 comes last and touches production.
 - Group 36 (V13) is Frontend work plus one field (`role`) on the members endpoint; 36.1 and 36.3 and 36.4 are independent, and 36.6 comes last. It reworks ticked 35.x tasks; their checkboxes stay ticked.
 - Round 2 within V12 (no new version) adds 35.31 to 35.33 (placed before 35.29 so that the checkpoint 35.30 stays last) and rewords 35.3, 35.9, 35.10, 35.19, 35.21, 35.28, and 35.30. Explicitly deferred: automated invite-flow end-to-end test; the invite flow is a manual checklist (35.31).
 - Group 35 (V12) is the only group that changes behaviour built by ticked groups 2 to 5, 8 to 10, 13, 16 to 18, 26 to 28, and 33; their checkboxes stay ticked and each 35.x task names what it reworks. 35.1 comes first; 35.3 and 35.11 need 35.1; 35.5, 35.7, 35.9, 35.13, 35.15, and 35.17 need 35.3 (and 35.9 needs 35.11); the Frontend tasks 35.19 to 35.27 need the Backend tasks they call. Task 22.1 (stored `progress`) is superseded by 35.15: build only `views_count` there. The Backend and the Frontend deploy together.
@@ -1069,7 +1116,15 @@ V4 adds group 24, which migrates the already-implemented backend (tasks 1 to 13,
     { "id": 100, "tasks": ["35.23", "35.28", "35.31", "35.32", "35.33"] },
     { "id": 101, "tasks": ["35.30"] },
     { "id": 102, "tasks": ["36.1", "36.3", "36.4"] },
-    { "id": 103, "tasks": ["36.2", "36.5", "36.6"] }
+    { "id": 103, "tasks": ["36.2", "36.5", "36.6"] },
+    { "id": 104, "tasks": ["37.1"] },
+    { "id": 105, "tasks": ["37.2", "37.3", "37.4", "37.14"] },
+    { "id": 106, "tasks": ["37.5", "37.6", "37.8"] },
+    { "id": 107, "tasks": ["37.7"] },
+    { "id": 108, "tasks": ["37.9"] },
+    { "id": 109, "tasks": ["37.10"] },
+    { "id": 110, "tasks": ["37.11", "37.12"] },
+    { "id": 111, "tasks": ["37.13"] }
   ]
 }
 ```

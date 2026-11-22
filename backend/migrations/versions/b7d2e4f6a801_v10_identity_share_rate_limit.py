@@ -1,7 +1,7 @@
 """V10: username and email, share token, avatar path, rate limit attempts
 
-Local-development reset (Decision V): upgrade() empties every user-linked table, so it refuses to run
-unless APP_ENV is development or testing. After it, run `flask seed-users` or `flask seed-data`.
+Local-development reset (Decision V): upgrade() empties every user-linked table when APP_ENV is development
+or testing. Anywhere else it never deletes: it runs only on an empty `users` table (Decision AN). After it, run `flask seed-users` or `flask seed-data`.
 
 Revision ID: b7d2e4f6a801
 Revises: a1c3f7e9b204
@@ -21,10 +21,11 @@ _SCOPES = ("login_pair", "login_ip", "availability", "change_password")
 
 
 def upgrade():
-    if (os.environ.get("APP_ENV") or "production").strip().lower() not in ("development", "testing"):
-        raise RuntimeError("This migration resets local data; set APP_ENV=development to run it")
-    op.execute("TRUNCATE TABLE users CASCADE")
-    print("Local data was reset. Run `flask seed-users` or `flask seed-data`.")
+    if (os.environ.get("APP_ENV") or "production").strip().lower() in ("development", "testing"):
+        op.execute("TRUNCATE TABLE users CASCADE")
+        print("Local data was reset. Run `flask seed-users` or `flask seed-data`.")
+    elif op.get_bind().execute(sa.text("SELECT 1 FROM users LIMIT 1")).first():
+        raise RuntimeError("This migration cannot keep existing users and the users table is not empty; nothing was changed")
 
     op.add_column("users", sa.Column("username", sa.String(length=30), nullable=False))
     op.add_column("users", sa.Column("email", sa.String(length=255), nullable=False))

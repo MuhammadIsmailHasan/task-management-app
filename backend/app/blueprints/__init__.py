@@ -9,6 +9,7 @@ from app.blueprints.analytics.routes import bp as analytics_bp
 from app.blueprints.users.routes import bp as users_bp
 from app.blueprints.shared.routes import bp as shared_bp
 from app.blueprints.invites.routes import bp as invites_bp
+from app.blueprints.health.routes import bp as health_bp
 
 BLUEPRINTS = (
     auth_bp,
@@ -22,6 +23,7 @@ BLUEPRINTS = (
     users_bp,
     shared_bp,
     invites_bp,
+    health_bp,
 )
 
 

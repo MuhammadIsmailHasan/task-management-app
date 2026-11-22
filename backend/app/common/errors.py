@@ -33,6 +33,11 @@ class Conflict(AppError):
     code = "CONFLICT"
 
 
+class ServiceUnavailable(AppError):
+    status = 503
+    code = "SERVICE_UNAVAILABLE"
+
+
 def error_body(code, message, details=None):
     """Error envelope: { status: false, message, error: { code, details? } }."""
     error = {"code": code}
