@@ -6,6 +6,7 @@ import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox, type ComboOption } from "@/components/shared/BaseCombobox";
 import { BasePopover } from "@/components/shared/BasePopover";
+import { RoleTag } from "@/components/shared/RoleTag";
 import type { FieldState } from "@/hooks/useFieldSave";
 import type { FieldKey } from "@/lib/autosave";
 import { shortDate } from "@/lib/format";
@@ -106,7 +107,7 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
             <span className="block truncate">{m.full_name}</span>
             {m.email && <span className="block truncate text-xs text-ink-muted">{m.email}</span>}
           </span>
-          {m.role && <span className="shrink-0 rounded-sm bg-surface px-2 text-2xs font-semibold text-ink-muted capitalize">{m.role}</span>}
+          {m.role && <RoleTag role={m.role} />}
         </span>
       ),
     })),

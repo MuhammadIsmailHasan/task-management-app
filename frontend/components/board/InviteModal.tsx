@@ -141,10 +141,10 @@ export function InviteModal({ boardId, open, onClose, canDecide, onChanged }: In
                 </div>
                 {canDecide && (
                   <div className="flex items-center gap-2">
-                    <BaseButton size="sm" aria-label={`Approve ${r.user.full_name}`} onClick={() => void decide(r, "approved")}>
+                    <BaseButton size="sm" className="min-h-touch lg:min-h-0" aria-label={`Approve ${r.user.full_name}`} onClick={() => void decide(r, "approved")}>
                       Approve
                     </BaseButton>
-                    <BaseButton variant="secondary" size="sm" aria-label={`Reject ${r.user.full_name}`} onClick={() => void decide(r, "rejected")}>
+                    <BaseButton variant="secondary" size="sm" className="min-h-touch lg:min-h-0" aria-label={`Reject ${r.user.full_name}`} onClick={() => void decide(r, "rejected")}>
                       Reject
                     </BaseButton>
                   </div>

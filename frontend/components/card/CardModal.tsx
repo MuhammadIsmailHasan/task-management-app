@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pageTitle } from "@/lib/titles";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseConfirm } from "@/components/shared/BaseConfirm";
 import { BaseCard } from "@/components/shared/BaseCard";
@@ -181,6 +182,17 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
       <BaseConfirm message="Delete this card? This cannot be undone from the board." onConfirm={remove} trigger={<BaseButton variant="danger">Delete</BaseButton>} />
     </div>
   );
+
+  // The open Card names the tab; closing it restores the Board title (Requirement 32, criterion 5).
+  const cardName = draft ? draft.title.trim() || "Untitled card" : "";
+  useEffect(() => {
+    if (!cardName) return;
+    const previous = document.title;
+    document.title = pageTitle(`${cardName} · ${board.name}`);
+    return () => {
+      document.title = previous;
+    };
+  }, [cardName, board.name]);
 
   return (
     <>

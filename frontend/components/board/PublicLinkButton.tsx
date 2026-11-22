@@ -46,7 +46,7 @@ export function PublicLinkButton({ boardId }: { boardId: string }) {
       trigger={
         <BaseButton variant="secondary">
           <Share2 aria-hidden="true" />
-          Public link
+          <span className="sr-only lg:not-sr-only">Public link</span>
         </BaseButton>
       }
     >

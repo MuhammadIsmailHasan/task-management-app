@@ -343,9 +343,9 @@ describe("Role tag follows the list (Property 60)", () => {
         const { unmount } = renderSidebar(shell("manager"));
         for (const [i, role] of roles.entries()) {
           const row = (await screen.findByText(`Person ${i}`)).closest("div.flex.min-h-control") as HTMLElement;
-          expect(within(row).getByText(role)).toBeInTheDocument();
+          expect(within(row).getByText(role === "supervisor" ? "Supervisor" : "Member")).toBeInTheDocument();
         }
-        expect(screen.queryByText(/^(manager|admin)$/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^(manager|admin)$/i)).not.toBeInTheDocument();
         unmount();
       }),
       { numRuns: 10 },

@@ -36,7 +36,7 @@ export function InviteButton({ boardId, canDecide }: { boardId: string; canDecid
     <>
       <BaseButton variant="secondary" onClick={() => setOpen(true)} aria-label={pending ? `Invite, ${pending} waiting` : "Invite"}>
         <UserPlus aria-hidden="true" />
-        Invite
+        <span className="sr-only lg:not-sr-only">Invite</span>
         {pending > 0 && <span aria-hidden="true" className="rounded-full bg-danger px-2 text-2xs font-semibold text-on-brand">{pending}</span>}
       </BaseButton>
       <InviteModal boardId={boardId} open={open} onClose={close} canDecide={canDecide} onChanged={onChanged} />
