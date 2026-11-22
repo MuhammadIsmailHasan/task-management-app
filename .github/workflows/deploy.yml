@@ -1,0 +1,66 @@
+name: CI and deploy
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: backend/requirements.txt }
+      - uses: actions/setup-node@v5
+        with: { node-version: "24", cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - name: Backend tests
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          python -m pytest -q
+      - name: Frontend checks
+        working-directory: frontend
+        run: |
+          npm ci
+          NEXT_PUBLIC_API_URL=/api npm run build
+          npm run typecheck
+          npm test
+
+  smoke:
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - run: bash deploy/smoke.sh
+
+  deploy:
+    needs: [test, smoke]
+    # Turn on with the repository variable DEPLOY_ENABLED=true, after the first manual deploy works.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 30
+    concurrency: { group: production, cancel-in-progress: false }
+    steps:
+      - name: Deploy over SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          # deploy/bare/deploy.sh (no Docker) by default; set the repository variable DEPLOY_SCRIPT=deploy/deploy.sh for Docker
+          DEPLOY_SCRIPT: ${{ vars.DEPLOY_SCRIPT || 'deploy/bare/deploy.sh' }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/key && chmod 600 ~/.ssh/key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 "$SSH_USER@$SSH_HOST" \
+            "set -e; cd /srv/revoboard/app; git fetch origin master; git checkout --detach $GITHUB_SHA; bash $DEPLOY_SCRIPT"

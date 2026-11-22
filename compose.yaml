@@ -1,0 +1,58 @@
+# The host network is the only one: the server's dockerd runs with bridge=none and iptables=false.
+# So there are no `ports:`; each app binds 127.0.0.1 itself and Nginx is the public entry.
+name: revoboard
+
+x-service: &service
+  network_mode: host
+  restart: unless-stopped
+  init: true
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-backend: &backend
+  <<: *service
+  image: revoboard-backend:${TAG:-local}
+  env_file: ["${ENV_FILE:-/srv/revoboard/.env}"]
+  volumes: ["${UPLOADS:-/var/lib/revoboard/uploads}:/data/uploads"]
+
+services:
+  backend:
+    <<: *backend
+    build: { context: ./backend, network: host }
+    environment:
+      APP_ENV: production
+      UPLOAD_DIR: /data/uploads
+      TRUSTED_PROXY_COUNT: "1"
+      SKIP_MIGRATIONS: "${SKIP_MIGRATIONS:-0}"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/api/health', timeout=6)"]
+      interval: 10s
+      timeout: 8s
+      retries: 5
+      start_period: 20s
+
+  scheduler:
+    <<: *backend
+    environment:
+      APP_ENV: production
+      UPLOAD_DIR: /data/uploads
+    entrypoint: ["flask", "run-scheduler"]
+    command: []
+    depends_on:
+      backend: { condition: service_healthy }
+
+  frontend:
+    <<: *service
+    image: revoboard-frontend:${TAG:-local}
+    build: { context: ./frontend, network: host }
+    environment:
+      HOSTNAME: 127.0.0.1
+      PORT: "3000"
+      INTERNAL_API_URL: http://127.0.0.1:5001/api
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

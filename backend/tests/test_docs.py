@@ -64,4 +64,8 @@ def test_committed_openapi_json_is_current(app):
 
     committed = pathlib.Path(__file__).resolve().parents[1] / "openapi.json"
     assert committed.exists(), "run: flask export-openapi"
-    assert json.loads(committed.read_text()) == json.loads(json.dumps(app.extensions["api"].spec.to_dict()))
+    # Python 3.13 renamed the HTTP 422 phrase, so the same app yields two spellings; compare one spelling.
+    def canon(text):
+        return json.loads(text.replace("UNPROCESSABLE_CONTENT", "UNPROCESSABLE_ENTITY").replace("Unprocessable Content", "Unprocessable Entity"))
+
+    assert canon(committed.read_text()) == canon(json.dumps(app.extensions["api"].spec.to_dict()))
