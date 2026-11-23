@@ -184,3 +184,13 @@ Versions match `.kiro/specs/CHANGELOG.md`. Each folder holds requirement domains
 - The owner's server cannot run Docker, and the owner plans to move to AWS EC2 later.
 #### Impact
 - Task 37.13 (first deployment) and 37.12 (steering) remain open.
+
+## V15 - 2026-11-23
+### Changes
+- `v15/` holds `00-OVERVIEW` (Decisions AO and AP, Glossary changes) and `21-BRANDING` (BRAND-06, 07, 08, 10, 11 reworded for the new brand).
+- Product renamed RevoTask to RevoBoard with a new logo, wordmark, and favicon; `--accent` changed from orange (`#f4a340`) to teal (`#006b5f`).
+- Design reference recorded: a Stitch-generated "Kanban Task Management App" design is adopted as a visual/spacing reference only (specs v1-v14 remain the source of truth), with a list of Stitch inventions (estimate field, status dropdown, comment mentions/emoji, mobile Done/bookmark button, Activity "Live Stream"/online-count/export, workspace-wide Categories) explicitly excluded from scope.
+### Reason
+- The owner reviewed `design/stitch-redesign-report.md` and chose the new brand and a real teal accent over the placeholder mark and the navy-only palette.
+### Impact
+- Frontend only, no API/data model/permission change. Files: `app/favicon.ico`, `public/brand/logo-revo.svg`, `public/brand/logo-text-revo.svg`, `components/shared/BrandLogo.tsx`, `app/layout.tsx`, `components/shell/{AppHeader,Sidebar}.tsx`, `lib/titles.ts`, `styles/tokens.css`, and three test files (`branding.test.tsx`, `titles.test.ts` including its brand-length constant, `route-titles.test.ts`). `v1/` to `v14/` are unchanged except where `v15/21-BRANDING` supersedes wording.

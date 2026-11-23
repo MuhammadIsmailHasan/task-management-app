@@ -431,3 +431,14 @@ Contradictions and gaps found; none was resolved silently.
 - The owner's server cannot run Docker, and the owner plans to move to AWS EC2 later.
 #### Impact
 - Task 37.13 (first deployment) and 37.12 (steering) remain open.
+
+## V15 - 2026-11-23
+### Changes
+- **Specification:** Decisions AO (RevoTask renamed to RevoBoard, new logo/favicon from a Stitch-supplied reference image) and AP (`--accent` changed from orange `#f4a340` to teal `#006b5f`), in `specs/v15/00-OVERVIEW.md`. `specs/v15/21-BRANDING.md` reworks BRAND-06, 07, 08, 10, 11 of Requirement 21 for the new brand strings and viewBox sizes (203 by 203 for the mark, 704 by 121 for the full lockup, both up from the V11 sizes).
+- **Design reference:** a full-app Stitch design ("Kanban Task Management App") is recorded as a visual/spacing reference only; `specs/v1/` to `specs/v14/` remain authoritative for behaviour, scope, and data. Recorded exclusions (no spec basis, not implemented): card `estimate` field, card `status` dropdown, comment `@mention`/emoji/attachment, mobile modal bookmark/share and "Done" button, Activity panel "Live Stream"/online-user-count/"Export Audit Trail", and a workspace-wide Categories screen with KPI tiles/import/automated rules.
+- **Implementation:** new Brand_Assets at the unchanged V11 paths (`frontend/app/favicon.ico`, `frontend/public/brand/logo-revo.svg`, `frontend/public/brand/logo-text-revo.svg`); `RevoTask` to `RevoBoard` string replacement in `frontend/app/layout.tsx`, `frontend/components/shell/AppHeader.tsx`, `frontend/components/shell/Sidebar.tsx`, `frontend/components/shared/BrandLogo.tsx` (also its `width`/`height` literals), `frontend/lib/titles.ts`, and the three branding/titles test files; `--accent` and `--logo-w-mark`/`--logo-w-full` updated in `frontend/styles/tokens.css`.
+- **Bug fix (pre-emptive):** `frontend/tests/titles.test.ts`'s property-based length check was hardcoded to `<= 71`, derived from `"RevoTask".length` (8); since `"RevoBoard"` is 9 characters, this is corrected to `<= 72` so the test does not start failing on long names.
+### Reason
+- The owner reviewed the Stitch redesign gap-analysis report (`design/stitch-redesign-report.md`) and chose to adopt its brand (renamed RevoBoard) and a real teal accent, while keeping the specs as the source of truth for everything Stitch invented without a spec basis.
+### Impact
+- Frontend only; no API, data model, or permission change. `v1/` to `v14/` are unchanged except where `v15/21-BRANDING` supersedes wording that named "RevoTask" or the old accent value. Full list of touched files in `specs/CHANGELOG.md`, V15.
