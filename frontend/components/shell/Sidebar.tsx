@@ -135,7 +135,7 @@ export function Sidebar({ boards, open, onNavigate }: SidebarProps) {
     >
       <nav aria-label="Main" className="flex shrink-0 flex-col gap-1 p-3">
         <div className="mb-3 flex items-center gap-3">
-          <BaseTooltip label={collapsed ? "RevoTask" : "Collapse sidebar"} side="right">
+          <BaseTooltip label={collapsed ? "RevoBoard" : "Collapse sidebar"} side="right">
             <BaseButton
               variant="ghost"
               className="hidden h-auto min-h-control shrink-0 px-0 lg:inline-flex"

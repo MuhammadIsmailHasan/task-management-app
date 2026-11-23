@@ -1,7 +1,7 @@
-const BRAND = "RevoTask";
+const BRAND = "RevoBoard";
 const MAX = 60;
 
-/** `RevoTask | <name>`, the name cut at 60 characters; the brand comes first (Requirement 32). */
+/** `RevoBoard | <name>`, the name cut at 60 characters; the brand comes first (Requirement 32). */
 export function pageTitle(name: string): string {
   const clean = name.replace(/\s+/g, " ").trim();
   if (!clean) return BRAND;

@@ -137,18 +137,18 @@ overriding any looser prose description elsewhere.
   **Rationale:** A fixed-height modal that clips its content hides fields.
   **Example:** a card with many subtasks scrolls inside the left pane.
 
-- **Rule:** The application is named RevoTask. The Sidebar's toggle is the logo:
-  expanded it shows the full logo (mark with the RevoTask wordmark); collapsed it
-  shows the mark alone with the tooltip "RevoTask". The logo and the favicon are
+- **Rule:** The application is named RevoBoard. The Sidebar's toggle is the logo:
+  expanded it shows the full logo (mark with the RevoBoard wordmark); collapsed it
+  shows the mark alone with the tooltip "RevoBoard". The logo and the favicon are
   the files the product owner supplied (V11, Decision X): `app/favicon.ico` (file
   convention, no manual `<link>`) and `public/brand/logo-revo.svg` and
   `public/brand/logo-text-revo.svg`, shown only through `BrandLogo`
   (`components/shared/BrandLogo`, variants `mark` and `full`, `next/image` with
-  `unoptimized` because Next.js does not optimize SVG). Alt text is "RevoTask", or
+  `unoptimized` because Next.js does not optimize SVG). Alt text is "RevoBoard", or
   empty where a labelled control or the visible name sits beside it; `width` and
-  `height` are the `viewBox` (480 by 480, 540 by 165) and the display never
-  exceeds them. Both SVG files wrap a raster PNG (640 by 640 and 720 by 220, no
-  alpha), so they are not recolourable and sit on a token surface tile on the
+  `height` are the `viewBox` (203 by 203, 704 by 121) and the display never
+  exceeds them. Both SVG files wrap a raster PNG (203 by 203 and 704 by 121, with
+  alpha transparency), cropped from a supplied reference image, so they sit on a token surface tile on the
   brand panel. Corner radii stay small (Cards, columns,
   buttons, popovers, modal: 8px or less) through the radius tokens.
   **Rationale:** The product owner wants the calmer, less rounded look of the
@@ -371,6 +371,6 @@ overriding any looser prose description elsewhere.
   **Example:** `GET /api/shared/{token}` returns `has_board_access`; when true the page redirects.
 
 ## V13: titles, role tag, control sizes
-- **Rule:** every document title is `RevoTask | <name>` (root `title.template`); a Board uses `generateMetadata`; an open Inbox or Activity panel (and an open Card) sets and restores `document.title`. Cut at 60 characters; never put a token or Email in a title.
+- **Rule:** every document title is `RevoBoard | <name>` (root `title.template`); a Board uses `generateMetadata`; an open Inbox or Activity panel (and an open Card) sets and restores `document.title`. Cut at 60 characters; never put a token or Email in a title.
 - **Rule:** assignee options and Team members rows carry a role tag (`BaseBadge`, "Supervisor" or "Member"); the members endpoint returns `role`.
 - **Rule:** header and modal buttons are 40 pixels (`md`); compact 32 pixels only inside a dense row; a field and its button share one height.

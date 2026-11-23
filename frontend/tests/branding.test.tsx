@@ -34,11 +34,11 @@ describe("BrandLogo", () => {
     );
     const [mark, full] = Array.from(container.querySelectorAll("img"));
     expect(mark.getAttribute("src")).toBe("/brand/logo-revo.svg");
-    expect([mark.getAttribute("width"), mark.getAttribute("height")]).toEqual(["480", "480"]);
+    expect([mark.getAttribute("width"), mark.getAttribute("height")]).toEqual(["203", "203"]);
     expect(full.getAttribute("src")).toBe("/brand/logo-text-revo.svg");
-    expect([full.getAttribute("width"), full.getAttribute("height")]).toEqual(["540", "165"]);
-    expect(mark.getAttribute("alt")).toBe("RevoTask");
-    expect(full.getAttribute("alt")).toBe("RevoTask");
+    expect([full.getAttribute("width"), full.getAttribute("height")]).toEqual(["704", "121"]);
+    expect(mark.getAttribute("alt")).toBe("RevoBoard");
+    expect(full.getAttribute("alt")).toBe("RevoBoard");
   });
 
   it("is decorative (empty alt) when asked", () => {

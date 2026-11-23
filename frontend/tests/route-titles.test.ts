@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn(), useRouter: vi.fn(), usePa
 
 const render = (t: unknown) => {
   const title = (t as { title: string }).title;
-  return `RevoTask | ${title}`; // the root title.template
+  return `RevoBoard | ${title}`; // the root title.template
 };
 
 describe("one title per route (Requirement 32, TITLE-02)", () => {
@@ -22,7 +22,7 @@ describe("one title per route (Requirement 32, TITLE-02)", () => {
     ["(app)/boards", "Home"],
   ])("%s", async (route, name) => {
     const mod = await import(`../app/${route}/page`);
-    expect(render(mod.metadata)).toBe(`RevoTask | ${name}`);
+    expect(render(mod.metadata)).toBe(`RevoBoard | ${name}`);
   });
 
   it("Board, Categories and Shared use the Board name and fall back when it cannot be read", async () => {
@@ -32,12 +32,12 @@ describe("one title per route (Requirement 32, TITLE-02)", () => {
     const board = await import("../app/(app)/boards/[id]/page");
     const cats = await import("../app/(app)/boards/[id]/categories/page");
     const shared = await import("../app/shared/[token]/page");
-    expect(render(await board.generateMetadata({ params }))).toBe("RevoTask | Alpha Board");
-    expect(render(await cats.generateMetadata({ params }))).toBe("RevoTask | Categories · Alpha Board");
-    expect(render(await shared.generateMetadata({ params }))).toBe("RevoTask | Shared · Alpha Board");
+    expect(render(await board.generateMetadata({ params }))).toBe("RevoBoard | Alpha Board");
+    expect(render(await cats.generateMetadata({ params }))).toBe("RevoBoard | Categories · Alpha Board");
+    expect(render(await shared.generateMetadata({ params }))).toBe("RevoBoard | Shared · Alpha Board");
     mocks.serverGet.mockRejectedValue(new Error("x"));
     mocks.request.mockRejectedValue(new Error("x"));
-    expect(render(await board.generateMetadata({ params }))).toBe("RevoTask | Board");
+    expect(render(await board.generateMetadata({ params }))).toBe("RevoBoard | Board");
     expect((await shared.generateMetadata({ params })).robots).toEqual({ index: false, follow: false });
   });
 });

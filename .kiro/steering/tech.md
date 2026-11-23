@@ -102,5 +102,5 @@ inclusion: always
   `app/apple-icon`, and `app/manifest` wait until the owner supplies PNG icons.
   **Rationale:** File conventions need no code, and `unoptimized` avoids the
   SVG injection risk the optimizer's opt-in carries.
-  **Example:** `<Image src="/brand/logo-revo.svg" width={480} height={480} alt="RevoTask" unoptimized />`
+  **Example:** `<Image src="/brand/logo-revo.svg" width={203} height={203} alt="RevoBoard" unoptimized />`
   inside `BrandLogo`.

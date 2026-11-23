@@ -210,7 +210,7 @@ An avatar is drawn only through `BaseAvatar` with the full name as `alt` and too
 **Rule:** Show the logo only through `BrandLogo` (`components/shared/`), which
 renders `next/image` with `unoptimized` for the SVG files in `public/brand/`,
 passes `width` and `height` equal to the file's `viewBox`, and sets alt text
-`RevoTask`, or `alt=""` where a labelled control or the visible name is beside it.
+`RevoBoard`, or `alt=""` where a labelled control or the visible name is beside it.
 **Rationale:** One component keeps paths, size, and alt text consistent; the
 SVG files wrap a PNG, so the display size must not exceed the `viewBox`.
 **Example:**
@@ -232,4 +232,4 @@ Profile page uses the one-column and two-column grid with token classes only.
 **Example:** a `<button>Save changes</button>` in `CardModal` is a violation.
 
 ## V13: titles, role tag, control sizes
-Titles are `RevoTask | <name>` through `metadata.title.template`; use `generateMetadata` for a Board. Show a role tag beside each person in the assignee picker. Buttons beside a 40 pixel field are 40 pixels (`md`), not `sm`.
+Titles are `RevoBoard | <name>` through `metadata.title.template`; use `generateMetadata` for a Board. Show a role tag beside each person in the assignee picker. Buttons beside a 40 pixel field are 40 pixels (`md`), not `sm`.

@@ -39,7 +39,7 @@ export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps)
         <div className="min-w-0 flex-1">
           <Link href="/boards" className="inline-flex items-center gap-2 text-page-title font-semibold text-ink no-underline">
             <BrandLogo variant="mark" size="sm" decorative className="lg:hidden" />
-            RevoTask
+            RevoBoard
           </Link>
         </div>
       )}

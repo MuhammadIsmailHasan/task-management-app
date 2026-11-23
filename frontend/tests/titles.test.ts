@@ -4,16 +4,16 @@ import { pageTitle, panelTitle } from "@/lib/titles";
 
 describe("document titles (Property 59)", () => {
   it("puts the brand first and cuts long names", () => {
-    expect(pageTitle("Alpha Board")).toBe("RevoTask | Alpha Board");
-    expect(pageTitle("")).toBe("RevoTask");
+    expect(pageTitle("Alpha Board")).toBe("RevoBoard | Alpha Board");
+    expect(pageTitle("")).toBe("RevoBoard");
     fc.assert(fc.property(fc.string(), (n) => {
       const t = pageTitle(n);
-      return (t === "RevoTask" || t.startsWith("RevoTask | ")) && t.length <= 71 && !/[\n\r]/.test(t);
+      return (t === "RevoBoard" || t.startsWith("RevoBoard | ")) && t.length <= 72 && !/[\n\r]/.test(t);
     }));
   });
   it("shows the unread count only above zero", () => {
-    expect(panelTitle("inbox", 3)).toBe("RevoTask | Inbox (3)");
-    expect(panelTitle("inbox", 0)).toBe("RevoTask | Inbox");
-    expect(panelTitle("activity", 5)).toBe("RevoTask | Activity");
+    expect(panelTitle("inbox", 3)).toBe("RevoBoard | Inbox (3)");
+    expect(panelTitle("inbox", 0)).toBe("RevoBoard | Inbox");
+    expect(panelTitle("activity", 5)).toBe("RevoBoard | Activity");
   });
 });
