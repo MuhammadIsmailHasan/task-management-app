@@ -11,7 +11,7 @@
   --border: #e4e7f1;
   --brand: #13226b;
   --brand-strong: #0b1750;
-  --accent: #f4a340;
+  --accent: #006b5f;
   --danger: #d64545;
   --ring: #3b5bdb;
 
@@ -108,8 +108,8 @@
   --size-logo-md: 40px;
   --size-logo-lg: 64px;
   /* The logo files' viewBox widths: shown no wider, so the embedded raster is never enlarged. */
-  --logo-w-mark: 480px;
-  --logo-w-full: 540px;
+  --logo-w-mark: 203px;
+  --logo-w-full: 704px;
 
   --border-width-dashed: 1px;
   --border-width-focus: 2px;
