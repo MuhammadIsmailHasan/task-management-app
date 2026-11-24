@@ -11,7 +11,7 @@ export function Command({ className, ...props }: ComponentProps<typeof CommandPr
 
 export function CommandInput({ className, ...props }: ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div className="flex min-h-control items-center gap-2 rounded-sm border border-line bg-surface-raised px-3 focus-within:border-brand">
+    <div className="flex min-h-control items-center gap-2 rounded-field bg-surface px-3 focus-ring-within">
       <Search className="size-icon-sm shrink-0 text-ink-muted" aria-hidden="true" />
       <CommandPrimitive.Input
         data-slot="command-input"
@@ -35,7 +35,7 @@ export function CommandItem({ className, ...props }: ComponentProps<typeof Comma
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "flex min-h-control-sm cursor-pointer items-center gap-2 rounded-sm px-2 text-sm text-ink aria-selected:bg-surface data-[checked=true]:bg-brand-tint",
+        "flex min-h-control-sm cursor-pointer items-center gap-2 rounded-field px-2 text-sm text-ink aria-selected:bg-surface-sunken data-[checked=true]:bg-brand-tint",
         className,
       )}
       {...props}

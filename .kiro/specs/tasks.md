@@ -985,8 +985,65 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
   - [ ] 37.13 Checkpoint: first deployment
     - Green CI, first deploy, seed, forced rollback, server reboot, then a check from the internet. Ask the owner before any action on the server.
     - _Requirements: 33.8, 34.7, 36.1_
+- [ ] 38. Design system, app shell, landing page, host split, and throughput (Decisions AQ to AX, V16)
+  - [x] 38.1 Owner review of V16
+    - The owner approves Requirements 38 to 44 and answers Open Questions 38 to 45 (domain names; rail and Top_Nav both kept; Team destination; Plus Jakarta Sans; `done_delta` meaning; pill nav on the landing page; filled fields and small controls; rail Home circle and landing announcement bar). No code task below starts before this is ticked.
+    - _Requirements: 38.10, 39.21, 42.1, 43.4_
+  - [x] 38.2 Tokens, theme alias, and fonts
+    - New measured values and names in `styles/tokens.css` (canvas and tint, radius roles, button and chip sizes, gradients, shadows); aliases in `styles/globals.css`; the `touch-target` utility; retire the old text, radius, and `--surface-hover` tokens; two `@fontsource-variable` packages; remove every third-party font reference. Tests: V16-T01 and the contrast test V16-T02 (Property 67).
+    - _Requirements: 38.1, 38.2, 38.3, 38.4, 38.5, 38.6, 38.7, 38.8, 38.9, 38.10, 38.11, 38.12, 38.14, 38.15, 38.16, 38.17, 38.21, 38.22, 38.23, 44.1, 44.2_
+  - [x] 38.3 Restyle the shared components to the recipe table
+    - `BaseButton`, `BaseBadge`, `BaseChip`, `BaseCard`, `BaseField`, `BaseModal`, `BasePopover`, `BaseMenu`, `BaseCombobox`, `BaseTooltip`, `BaseAvatar`, `ProgressMeter`, `RoleTag`, and the `components/ui` variants; add `BaseDrawer`; map prototype icons to `lucide-react`; build a recipe test page and the browser test V16-T16 (Property 63, V16-T03). Compare each component with `design/reference/v2/` before ticking.
+    - _Requirements: 38.13, 38.18, 38.19, 38.20, 38.24, 44.3, 39.4_
+  - [x] 38.4 Backend: `completed_at`, its lifecycle, and `done_delta`
+    - Migration with backfill and downgrade; set and clear in create and move; `done_delta` from `completed_at`; tests on PostgreSQL where migration tests use it (Properties 66).
+    - _Requirements: 43.1, 43.2, 43.3, 43.4, 44.11_
+  - [x] 38.5 Backend: throughput endpoints
+    - Board and cross-board routes, `weeks` validation, portable weekly bucketing, constant query count, role rules, regenerate `openapi.json`, update `API.md` (Property 65).
+    - _Requirements: 43.5, 43.6, 43.7, 43.8, 43.9, 43.10, 44.11, 44.12_
+  - [x] 38.6 App shell: header, Icon_Rail, Top_Nav, Nav_Drawer, Skip link
+    - `navItems.ts` as the single list; new `AppShell` and `AppHeader`; remove `Sidebar.tsx`, `useSidebarState.ts`, and the stored collapse key.
+    - _Requirements: 39.1, 39.2, 39.3, 39.4, 39.5, 39.6, 39.9, 39.10, 39.11, 39.22, 39.23, 39.24, 39.25, 44.4_
+  - [x] 38.7 Board_Switcher, Board_Toolbar, Team_View, and the three Side_Panel views
+    - Switcher with search, role tag, percentage, and create action; toolbar with progress meter, Public link, and Invite; Team_View with the member search and remove; Admin's Team goes to `/admin/users`; Inbox and Activity open from the rail and the Top_Nav.
+    - _Requirements: 39.7, 39.8, 39.12, 39.13, 39.14, 39.15, 39.16, 39.17, 39.18, 39.19, 39.20, 39.21, 39.26, 44.4_
+  - [x] 38.8 Restyle Home, the Board page, Cards, Columns, and the Card modal
+    - No hero, no board-level Add Task, no card identifier or estimate, "Priority" label, drag shadow and radius.
+    - _Requirements: 40.1, 40.2, 40.3, 40.7, 40.8, 40.9, 40.10, 40.11, 40.12, 44.6_
+  - [x] 38.9 Restyle sign-in, register, invite, and the error pages
+    - Split layout, link switch between the two routes, separate Username and Email fields, no Terms or entropy meter, auth form card recipe.
+    - _Requirements: 40.4, 40.5, 40.6, 40.21, 44.6_
+  - [x] 38.10 Restyle Inbox, Activity, Categories, Invite and Public link modals, New Board, Admin users, Profile, and the Shared view
+    - Remove nothing that exists; add none of the excluded items.
+    - _Requirements: 40.13, 40.14, 40.15, 40.16, 40.17, 40.18, 40.19, 40.20, 40.22, 44.6_
+  - [x] 38.11 Dashboard page
+    - `/dashboard`, guard, selector, KPI tiles, throughput chart with hidden table, Boards table for a Manager, recent activity, loading, error, and empty states (Requirement 32 title).
+    - _Requirements: 43.11, 43.12, 43.13, 43.14, 43.15, 43.16, 43.17, 43.18, 43.19, 44.13_
+  - [x] 38.12 Host routing and origins
+    - `lib/host.ts`, `lib/origins.ts`, `proxy.ts` matcher and result, `X-Robots-Tag: noindex` on the App_Host, startup validation of `SITE_URL` and `APP_URL`, host-aware `robots.txt` and `sitemap.xml` (Property 64).
+    - _Requirements: 42.1, 42.2, 42.3, 42.4, 42.5, 42.6, 42.7, 42.8, 42.9, 42.14, 41.14, 44.9_
+  - [x] 38.13 Landing page
+    - `app/site/page.tsx`, `components/landing/`, `lib/landing-sample.ts`, metadata, anchors, drawer; truthfulness test (Property 68).
+    - _Requirements: 41.1, 41.2, 41.3, 41.4, 41.5, 41.6, 41.7, 41.8, 41.9, 41.10, 41.11, 41.12, 41.13, 41.14, 41.15, 41.16, 41.17, 41.18, 44.8_
+  - [x] 38.14 Deployment for two hosts
+    - Nginx `server_name` for both hosts and `default_server` for the IP, `/api/` 404 on the Site_Host, env template, `compose.yaml`, `deploy/bare/supervisor.conf`, runbook (DNS, certificate, `Secure` cookie), smoke checks, and CI. Does not change the server; ask the owner before any server action.
+    - _Requirements: 42.8, 42.10, 42.11, 42.12, 42.13, 42.15, 44.10_
+  - [x] 38.15 Update the existing tests that query the Sidebar
+    - AUTH-E2E-SO, the V12 Team members tests, the route tests, and any Playwright selector; none is deleted.
+    - _Requirements: 44.5_
+  - [ ] 38.16 Responsive and keyboard pass
+    - Playwright at 360, 414, 960, and 1280 pixels for the pages of V16-T07; focus order; drawer focus trap.
+    - _Requirements: 40.3, 39.25, 44.7_
+  - [x] 38.17 Sync steering and guidelines to V16
+    - `.kiro/steering/frontend.md`, `tech.md`, `product.md`, `structure.md`, and the frontend guideline: shell, radius and font rules, the prototype reference, the two hosts, the new folders.
+    - _Requirements: 38.1, 39.22, 42.1_
+  - [ ] 38.18 Checkpoint: side-by-side review
+    - Full `pytest`, `tsc --noEmit`, `vitest run`, `next build`; the screenshots of V16-T17 beside the 13 reference renders in `design/reference/v2/` at 1440 and 390 pixels with the owner; record each decision in `specs/CHANGELOG.md`.
+    - _Requirements: 44.14, 44.15, 44.16, 44.17, 38.25, 38.27_
 
 ## Notes
+- Group 38 progress (2026-11-23): implemented and tested on a laptop except 38.16 (the Playwright pass at 360, 414, 960, and 1280 pixels; the repository has no Playwright setup yet, so the width checks were done by eye in Chrome) and 38.18 (the owner's side-by-side review, `V16-T15`, and the browser recipe test `V16-T16` and screenshot run `V16-T17`, which need Playwright). 38.14 changed the deployment files only; nothing was run on the server.
+- Group 38 (V16) is a draft: nothing in it is built until 38.1 is ticked. 38.2 comes first for the Frontend and 38.4 for the Backend; 38.3 needs 38.2; 38.5 needs 38.4; 38.6 needs 38.3; 38.7 needs 38.6; 38.8 to 38.10 need 38.3 and 38.7; 38.11 needs 38.5 and 38.7; 38.12 needs 38.2; 38.13 needs 38.3 and 38.12; 38.14 needs 38.13. Group 38 reworks ticked groups 16 to 19, 26 to 31, 35, and 36; their checkboxes stay ticked and each 38.x task names what it replaces. The tasks of V16 do not touch the API of Requirements 1 to 37 except `done_delta` (38.4) and the two new routes (38.5).
 - Group 37 (V14): the code fixes and the deployment files (Docker mode and bare mode) are done and tested on a laptop and in a simulated server; the first real deployment (37.13) and the steering sync (37.12) are open. 37.1 is resolved (bare mode on the current server); 37.13 comes last and touches production.
 - Group 36 (V13) is Frontend work plus one field (`role`) on the members endpoint; 36.1 and 36.3 and 36.4 are independent, and 36.6 comes last. It reworks ticked 35.x tasks; their checkboxes stay ticked.
 - Round 2 within V12 (no new version) adds 35.31 to 35.33 (placed before 35.29 so that the checkpoint 35.30 stays last) and rewords 35.3, 35.9, 35.10, 35.19, 35.21, 35.28, and 35.30. Explicitly deferred: automated invite-flow end-to-end test; the invite flow is a manual checklist (35.31).
@@ -1124,7 +1181,16 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
     { "id": 108, "tasks": ["37.9"] },
     { "id": 109, "tasks": ["37.10"] },
     { "id": 110, "tasks": ["37.11", "37.12"] },
-    { "id": 111, "tasks": ["37.13"] }
+    { "id": 111, "tasks": ["37.13"] },
+    { "id": 112, "tasks": ["38.1"] },
+    { "id": 113, "tasks": ["38.2", "38.4"] },
+    { "id": 114, "tasks": ["38.3", "38.5", "38.12"] },
+    { "id": 115, "tasks": ["38.6", "38.9", "38.13"] },
+    { "id": 116, "tasks": ["38.7", "38.14"] },
+    { "id": 117, "tasks": ["38.8", "38.10", "38.11"] },
+    { "id": 118, "tasks": ["38.15", "38.16"] },
+    { "id": 119, "tasks": ["38.17"] },
+    { "id": 120, "tasks": ["38.18"] }
   ]
 }
 ```

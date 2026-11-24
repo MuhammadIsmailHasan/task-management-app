@@ -5,19 +5,19 @@ import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { ShellContext } from "@/components/shell/ShellContext";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { AppHeader } from "@/components/shell/AppHeader";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/boards", useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 vi.mock("@/lib/api", () => ({ api: { boards: { members: vi.fn().mockResolvedValue([]) }, auth: { logout: vi.fn() } } }));
 
 const ROOT = path.resolve(import.meta.dirname, "..");
-const shell = { session: null, user: null, boardId: null, inbox: null, refreshInbox: vi.fn(), toggleSidePanel: vi.fn(), closeSidePanel: vi.fn(), adjustUnread: vi.fn() };
+const shell = { session: null, user: null, boardId: null, boards: [], panel: null, inbox: null, refreshInbox: vi.fn(), toggleSidePanel: vi.fn(), closeSidePanel: vi.fn(), adjustUnread: vi.fn() };
 
-function renderSidebar() {
+function renderHeader() {
   return render(
     <ShellContext.Provider value={shell}>
-      <Sidebar boards={[]} open={false} onNavigate={vi.fn()} />
+      <AppHeader board={null} drawerOpen={false} onToggleDrawer={vi.fn()} />
     </ShellContext.Provider>,
   );
 }
@@ -47,16 +47,13 @@ describe("BrandLogo", () => {
   });
 });
 
-describe("Sidebar toggle", () => {
-  it("shows the full logo when expanded and the mark when collapsed, in one named button", async () => {
-    renderSidebar();
-    const toggle = screen.getByRole("button", { name: "Collapse sidebar" });
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(toggle.querySelector("img")!.getAttribute("src")).toBe("/brand/logo-text-revo.svg");
-    await userEvent.click(toggle);
-    const collapsed = screen.getByRole("button", { name: "Expand sidebar" });
-    expect(collapsed).toHaveAttribute("aria-expanded", "false");
-    expect(collapsed.querySelector("img")!.getAttribute("src")).toBe("/brand/logo-revo.svg");
+describe("App_Header logo (SHELL-10)", () => {
+  it("shows the full logo from 960 pixels and the mark with the wordmark below, once, in one home link", () => {
+    renderHeader();
+    const home = screen.getByRole("link", { name: "RevoBoard home" });
+    const srcs = Array.from(home.querySelectorAll("img")).map((i) => i.getAttribute("src"));
+    expect(srcs).toEqual(["/brand/logo-text-revo.svg", "/brand/logo-revo.svg"]);
+    expect(home).toHaveAttribute("href", "/boards");
   });
 });
 

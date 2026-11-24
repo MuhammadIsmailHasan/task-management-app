@@ -39,6 +39,8 @@ const shell = {
   session: { token: "t", userId: "u9", role: "manager" as const, exp: 0 },
   user: null,
   boardId: "b1",
+  boards: [],
+  panel: null,
   inbox: null,
   refreshInbox: async () => undefined,
   toggleSidePanel: () => undefined,

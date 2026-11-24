@@ -35,3 +35,31 @@ form.append("file", new Blob([png], { type: "image/png" }), "a.png");
 check("upload volume is writable", (await fetch(`${O}/api/users/me/avatar`, { method: "POST", headers: auth, body: form })).ok);
 const big = await fetch(`${O}/api/users/me/avatar`, { method: "POST", headers: auth, body: Buffer.alloc(3.5 * 1024 * 1024) });
 check("3 MB body limit", big.status === 413);
+
+// Two hosts (Requirement 42, HOST-13): the same Nginx port, told apart only by the Host header.
+import http from "node:http";
+const SITE = "revoboard.belajardeploy.web.id:8082";
+const APP = "app.revoboard.belajardeploy.web.id:8082";
+const hit = (host, path) =>
+  new Promise((resolve, reject) => {
+    http
+      .get({ host: "127.0.0.1", port: 8082, path, headers: { Host: host } }, (res) => {
+        let body = "";
+        res.on("data", (c) => (body += c));
+        res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body }));
+      })
+      .on("error", reject);
+  });
+const landing = await hit(SITE, "/");
+check("site host serves the landing page", landing.status === 200 && landing.body.includes("RevoBoard") && landing.body.includes("Get started"));
+const siteLogin = await hit(SITE, "/login");
+check("site host sends /login to the app host", siteLogin.status === 308 && siteLogin.headers.location === `http://app.revoboard.belajardeploy.web.id:8082/login`);
+check("site host has no API", (await hit(SITE, "/api/health")).status === 404);
+check("site host hides /site", (await hit(SITE, "/site")).status === 404);
+const appHome = await hit(APP, "/");
+check("app host redirects / to /boards", [307, 308].includes(appHome.status) && String(appHome.headers.location).endsWith("/boards"));
+check("app host hides /site", (await hit(APP, "/site")).status === 404);
+const robots = await hit(APP, "/robots.txt");
+check("app host disallows all crawlers", robots.status === 200 && robots.body.includes("Disallow: /"));
+check("app host API is healthy", (await hit(APP, "/api/health")).status === 200);
+check("the server IP behaves as the app host", (await hit("127.0.0.1:8082", "/site")).status === 404);

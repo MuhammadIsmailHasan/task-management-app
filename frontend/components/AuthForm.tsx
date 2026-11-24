@@ -1,5 +1,6 @@
 "use client";
 
+import { AtSign, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -19,6 +20,8 @@ const COPY = {
   register: { title: "Create your account", sub: "It takes a minute.", cta: "Register", other: "Already registered?", link: "/login", linkText: "Log in" },
 } as const;
 
+const ICON: Record<keyof Values, typeof User> = { full_name: User, identifier: AtSign, username: AtSign, email: Mail, password: Lock };
+
 const GENERIC_LOGIN_ERROR = "Invalid username, email or password.";
 type Values = { full_name: string; identifier: string; username: string; email: string; password: string };
 
@@ -31,6 +34,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [wait, setWait] = useState<number | null>(null);
+  const [reveal, setReveal] = useState(false);
   const left = useCountdown(wait);
   const blocked = left > 0;
   // A blocked availability check stops the on-blur checks until the wait ends (Req 20.16).
@@ -100,26 +104,47 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
     }
   }
 
-  const field = (id: keyof Values, label: string, opts: { type?: string; autoComplete?: string; onBlur?: () => void } = {}) => (
-    <BaseField label={label} htmlFor={id} errors={errors[id]}>
-      <BaseInput
-        id={id}
-        name={id}
-        type={opts.type ?? "text"}
-        autoComplete={opts.autoComplete}
-        value={values[id]}
-        onChange={set(id)}
-        onBlur={opts.onBlur}
-        aria-invalid={errors[id] ? true : undefined}
-        aria-describedby={errors[id] ? `${id}-error` : undefined}
-      />
-    </BaseField>
-  );
+  const field = (id: keyof Values, label: string, opts: { type?: string; autoComplete?: string; onBlur?: () => void } = {}) => {
+    const Icon = ICON[id];
+    const password = id === "password";
+    return (
+      <BaseField label={label} htmlFor={id} errors={errors[id]}>
+        <div className="relative">
+          <Icon aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-icon -translate-y-1/2 text-ink-muted" />
+          <BaseInput
+            id={id}
+            name={id}
+            type={password && reveal ? "text" : (opts.type ?? "text")}
+            autoComplete={opts.autoComplete}
+            className={password ? "pr-12 pl-12" : "pl-12"}
+            value={values[id]}
+            onChange={set(id)}
+            onBlur={opts.onBlur}
+            aria-invalid={errors[id] ? true : undefined}
+            aria-describedby={errors[id] ? `${id}-error` : undefined}
+          />
+          {password && (
+            <BaseButton variant="ghost" size="sm" className="absolute top-1/2 right-2 size-control-sm -translate-y-1/2 px-0" aria-label={reveal ? "Hide password" : "Show password"} onClick={() => setReveal((r) => !r)}>
+              {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </BaseButton>
+          )}
+        </div>
+      </BaseField>
+    );
+  };
 
   return (
     <>
-      <h1 className="text-xl font-bold">{copy.title}</h1>
-      <p className="mt-1 mb-6 text-ink-muted">{copy.sub}</p>
+      <nav aria-label="Sign in or create an account" className="mb-8 flex w-fit gap-1 rounded-field bg-surface p-1 text-sm font-medium">
+        <Link href="/login" aria-current={mode === "login" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "login" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+          Sign in
+        </Link>
+        <Link href="/register" aria-current={mode === "register" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "register" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+          Create account
+        </Link>
+      </nav>
+      <h1 className="font-heading text-xl">{copy.title}</h1>
+      <p className="mt-1 mb-6 text-sm text-ink-muted">{copy.sub}</p>
       <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
         {formError && <BaseAlert>{formError}</BaseAlert>}
         {blocked && <BaseAlert>Too many attempts. Try again in {formatCountdown(left)}.</BaseAlert>}
@@ -128,16 +153,10 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         {mode === "register" && field("username", "Username", { autoComplete: "username", onBlur: () => void checkAvailability("username") })}
         {mode === "register" && field("email", "Email", { type: "email", autoComplete: "email", onBlur: () => void checkAvailability("email") })}
         {field("password", "Password", { type: "password", autoComplete: mode === "login" ? "current-password" : "new-password" })}
-        <BaseButton type="submit" block disabled={busy || blocked}>
+        <BaseButton type="submit" variant="dark" block className="min-h-control rounded-field shadow-modal" disabled={busy || blocked}>
           {busy ? "Please wait…" : copy.cta}
         </BaseButton>
       </form>
-      <p className="mt-4 text-center text-sm text-ink-muted">
-        {copy.other}{" "}
-        <Link href={copy.link} className="font-semibold">
-          {copy.linkText}
-        </Link>
-      </p>
     </>
   );
 }

@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { readOrigins } from "./lib/origins";
+
+// Stop at start-up, with a clear message, when SITE_URL and APP_URL are inconsistent (Requirement 42, HOST-06).
+readOrigins();
 
 const nextConfig: NextConfig = {
   output: "standalone",

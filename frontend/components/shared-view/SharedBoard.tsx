@@ -1,5 +1,6 @@
 "use client";
 
+import { BaseBadge } from "@/components/shared/BaseBadge";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -43,24 +44,24 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
       <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-2 bg-brand px-4 py-2 text-sm text-on-brand lg:px-8">
         <span>Shared view, read only</span>
         {signedIn ? (
-          <Link href="/boards" className="font-semibold text-on-brand">
+          <Link href="/boards" className="font-semibold text-on-accent-tint underline">
             Go to Home
           </Link>
         ) : (
-          <Link href="/login" className="font-semibold text-on-brand">
+          <Link href="/login" className="font-semibold text-on-accent-tint underline">
             Sign in
           </Link>
         )}
       </div>
       <header className="flex shrink-0 flex-col gap-3 border-b border-line bg-surface-raised px-4 py-3 lg:px-8">
         <div>
-          <h1 className="text-page-title font-semibold break-words">{board.name}</h1>
+          <h1 className="font-heading text-title break-words">{board.name}</h1>
           {board.description && <p className="text-sm text-ink-muted">{board.description}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-full lg:w-search">
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-icon -translate-y-1/2 text-ink-muted" />
-            <BaseInput type="search" className="border-transparent bg-surface pl-12" placeholder="Search" aria-label="Search cards" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <BaseInput type="search" className="bg-surface pl-12" placeholder="Search" aria-label="Search cards" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="min-w-0 flex-1">
             <FilterRow categories={categories} categoryId={categoryId} onCategory={setCategoryId} />
@@ -73,11 +74,11 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
           .map((col, i) => {
             const items = visible.filter((c) => c.column_id === col.id).sort((a, b) => a.order - b.order);
             return (
-              <section key={col.id} aria-label={col.name} className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-lg bg-surface p-3 lg:w-column">
+              <section key={col.id} aria-label={col.name} className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-frame bg-surface p-3 lg:w-column">
                 <header className="flex shrink-0 items-center gap-2 px-1">
                   <i aria-hidden="true" className={cn("inline-block size-dot-md shrink-0 rounded-full", SOLID[columnTone(col.name, i)])} />
-                  <h2 className="text-meta font-semibold">{col.name}</h2>
-                  <span className="rounded-full bg-surface-raised px-2 text-xs font-medium text-ink-muted">{items.length}</span>
+                  <h2 className="font-heading text-page-title">{col.name}</h2>
+                  <BaseBadge tone="count">{items.length}</BaseBadge>
                 </header>
                 <div className="flex min-h-column-min flex-1 flex-col gap-2 overflow-y-auto">
                   {items.map((card) => (

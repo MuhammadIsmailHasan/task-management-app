@@ -73,6 +73,19 @@ def _assignee_context(cards):
     return idents, avatar_urls(idents, clock.now())
 
 
+DONE = "Done"
+
+
+def completion_stamp(previous_name, target_name, current, now):
+    """The new `completed_at` of a Card entering `target_name` from `previous_name` (None when it is new).
+
+    Entering Done from another Column sets it, leaving Done clears it, and a reorder inside Done keeps it (Requirement 43).
+    """
+    if target_name == DONE:
+        return current if previous_name == DONE and current is not None else now
+    return None
+
+
 def create_card(actor, column_id, data):
     cid = to_uuid(column_id)
     column = repo.get_column(cid) if cid else None
@@ -84,7 +97,12 @@ def create_card(actor, column_id, data):
     check_dates(fields.get("start_date"), fields.get("end_date"))
     _apply_category(fields, data, board)
     current = repo.max_order(column.id)
-    card = repo.add_card(column_id=column.id, order=1.0 if current is None else current + 1, **fields)
+    card = repo.add_card(
+        column_id=column.id,
+        order=1.0 if current is None else current + 1,
+        completed_at=completion_stamp(None, column.name, None, clock.now()),
+        **fields,
+    )
     activity.add(_aid(actor), "card.created", "card", card.id, {"title": card.title, "card_title": card.title})
     if data.get("assignee_id") is not None:
         _assign(actor, card, data["assignee_id"], board)
@@ -229,6 +247,7 @@ def move_card(actor, card_id, data):
     new_order = ordering.position_for(prev.order if prev else None, nxt.order if nxt else None, [s.order for s in siblings])
     source = card.column_id
     source_column = repo.get_column(source)
+    card.completed_at = completion_stamp(source_column.name if source_column is not None else None, target.name, card.completed_at, clock.now())
     card.column_id = target.id
     card.order = new_order
     activity.add(

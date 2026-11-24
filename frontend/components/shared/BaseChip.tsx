@@ -2,34 +2,34 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
-/** Each tone fills the chip at once; the active chip adds a border in the same colour. */
-const TONE: Record<Tone, string> = {
-  green: "bg-label-green text-label-green-fg",
-  blue: "bg-label-blue text-label-blue-fg",
-  red: "bg-label-red text-label-red-fg",
-  purple: "bg-label-purple text-label-purple-fg",
-  orange: "bg-label-orange text-label-orange-fg",
+/** The category colour shows as a dot before the label; the chip itself follows the filter chip recipe. */
+const DOT: Record<Tone, string> = {
+  green: "bg-tone-green",
+  blue: "bg-tone-blue",
+  red: "bg-tone-red",
+  purple: "bg-tone-purple",
+  orange: "bg-tone-orange",
 };
 
 interface BaseChipProps extends ComponentProps<"button"> {
-  tone: Tone;
+  tone?: Tone;
   active?: boolean;
 }
 
-/** Filter chip: a rounded pill filled with its category colour, no dot; the active one gets a border. */
+/** Filter chip: a 24 pixel white pill with a shadow; the active one is filled with the brand colour. */
 export function BaseChip({ tone, active = false, className, children, type = "button", ...rest }: BaseChipProps) {
   return (
     <button
       type={type}
       aria-pressed={active}
       className={cn(
-        "inline-flex cursor-pointer items-center min-h-control-sm shrink-0 rounded-full border px-4 text-meta whitespace-nowrap font-semibold transition-colors duration-fast ease-out focus-ring",
-        TONE[tone],
-        active ? "border-current" : "border-transparent hover:border-current",
+        "touch-target inline-flex cursor-pointer items-center gap-2 min-h-chip shrink-0 rounded-full px-3 py-half text-xs whitespace-nowrap shadow-card transition-colors duration-fast ease-out focus-ring",
+        active ? "bg-brand text-on-brand" : "bg-surface-raised text-ink-muted hover:bg-surface-sunken",
         className,
       )}
       {...rest}
     >
+      {tone && <i aria-hidden="true" className={cn("size-dot shrink-0 rounded-full", DOT[tone])} />}
       {children}
     </button>
   );

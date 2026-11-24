@@ -4055,6 +4055,179 @@
         ]
       }
     },
+    "/api/boards/{board_id}/analytics/throughput": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "weeks",
+            "description": "How many weeks to return, ending with the current week (default 8, at most 26)",
+            "schema": {
+              "type": "integer",
+              "default": 8,
+              "minimum": 1,
+              "maximum": 26
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThroughputEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Board throughput",
+        "description": "Cards completed per week. Manager on any board; Supervisor only as board owner. Member and Admin 403.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "board_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/analytics/throughput": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "weeks",
+            "description": "How many weeks to return, ending with the current week (default 8, at most 26)",
+            "schema": {
+              "type": "integer",
+              "default": 8,
+              "minimum": 1,
+              "maximum": 26
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThroughputListEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Cross-board throughput",
+        "description": "Manager only. One weekly series per board.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/users": {
       "get": {
         "responses": {
@@ -7061,6 +7234,89 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Analytics"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Week": {
+        "type": "object",
+        "properties": {
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "description": "The Monday of the week, in the application time zone"
+          },
+          "done": {
+            "type": "integer",
+            "description": "Cards completed in that week"
+          }
+        }
+      },
+      "Throughput": {
+        "type": "object",
+        "properties": {
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "weeks": {
+            "type": "array",
+            "description": "Oldest first, every week listed",
+            "items": {
+              "$ref": "#/components/schemas/Week"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Sum of done over the weeks"
+          }
+        }
+      },
+      "ThroughputEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Throughput"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ThroughputListEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Throughput"
             },
             "nullable": true
           }

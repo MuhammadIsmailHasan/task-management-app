@@ -1,32 +1,20 @@
 import type { ReactNode } from "react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 
-/** Server Component: brand panel beside an elevated, rounded form card. The brand panel is hidden below 960px. */
+/** Server Component: one auth card on the canvas, a brand panel beside the form (a compact band below 960 pixels). SCR-04. */
 export function AuthSplitLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="relative grid min-h-screen grid-cols-1 overflow-hidden lg:grid-cols-2">
-      <aside
-        aria-hidden="true"
-        className="relative hidden flex-col overflow-hidden bg-linear-to-br from-brand to-brand-strong p-12 text-on-brand lg:flex"
-      >
-        <div className="pointer-events-none absolute -top-12 -right-12 size-column rounded-full bg-accent opacity-glow blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 -left-12 size-column rounded-full bg-on-brand opacity-glow blur-3xl" />
-        <div className="relative w-fit rounded-md bg-surface-raised p-3">
-          <BrandLogo variant="full" size="lg" />
-        </div>
-        <div className="relative my-auto flex flex-col gap-4">
-          <h2 className="max-w-auth text-2xl font-bold">Plan the work. Move it forward.</h2>
-          <p className="max-w-auth opacity-faint">Boards, cards and comments in one calm place, from your phone to your desk.</p>
-        </div>
-      </aside>
-      <section className="flex items-center justify-center p-4 lg:p-8">
-        <div className="w-full max-w-auth rounded-lg bg-surface-raised p-6 shadow-hover lg:p-8">
-          <div className="mb-6 lg:hidden">
+    <main className="flex min-h-screen items-center justify-center bg-surface p-4 lg:p-8">
+      <div className="grid w-full max-w-site grid-cols-1 overflow-hidden rounded-frame bg-surface-raised shadow-panel lg:grid-cols-2">
+        <aside className="relative flex flex-col gap-6 bg-gradient-brand p-6 text-on-brand lg:min-h-auth-card lg:gap-0 lg:p-12">
+          <div className="w-fit rounded-card bg-surface-raised p-3 shadow-popover">
             <BrandLogo variant="full" size="md" />
           </div>
-          {children}
-        </div>
-      </section>
+          <h2 className="max-w-auth font-heading text-display lg:mt-12">Work in flow, scale with clarity.</h2>
+          <p className="max-w-auth text-sm text-on-brand-muted lg:mt-auto lg:border-t lg:border-on-brand-soft lg:pt-6">Boards, cards, and comments in one calm place, from your phone to your desk.</p>
+        </aside>
+        <section className="flex flex-col justify-center p-6 lg:p-12">{children}</section>
+      </div>
     </main>
   );
 }

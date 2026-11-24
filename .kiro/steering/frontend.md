@@ -8,6 +8,11 @@ This reflects the approved HTML prototype (`design/kanban-prototype.html`) — i
 layout and interaction patterns are the real source of truth for the frontend,
 overriding any looser prose description elsewhere.
 
+> **V16 (approved and implemented, 2026-11-23):** the look follows `design/kanban-prototype-v2.html`, measured
+> from its renders in `design/reference/v2/` (Requirements 38 to 44, `specs/v16/`). Where a rule below names the
+> Sidebar, the 8 pixel radius limit, or the 40 and 32 pixel control sizes, the V16 rule at the end of this file
+> wins. The prototype is the visual source of truth; behaviour, scope, and data still come from the specs.
+
 - **Rule:** Build mobile-first: write the base (no media query) styles for a
   ~360–414px screen first, then use `min-width` media queries to add or adjust
   for tablet/desktop — never the reverse (a `max-width` query stripping a
@@ -30,23 +35,13 @@ overriding any looser prose description elsewhere.
   buried at the bottom of a long scroll; the "+ Add a card" affordance per
   column follows the same rule.
 
-- **Rule:** The app shell has a left `Sidebar` (nav — **Home** first, then
-  **Inbox** and **Activity** links — the **Boards** list, which *is* the
-  board switcher, team members; no profile entry and no Log out item) and a
-  center `Main` area under a persistent **app header** (board header +
-  columns). Inbox and Activity share one **side panel** sliding in
-  from the right, opened from the sidebar's own nav items or the header bell
-  — there is no separate floating dock; the sidebar already covers that
-  entry point. On mobile the sidebar is an off-canvas drawer behind a scrim;
-  above 960px it's always visible, either expanded (icons with text labels,
-  then the Boards list and team members) or collapsed to the icon rail (tooltips on hover
-  and focus); a toggle switches the two and the choice is remembered in the
-  browser. Each board row wraps a long name (V12: no lock or visibility icon, every
-  board is private).
-  **Rationale:** A floating dock duplicated what the sidebar nav already
-  offers — one entry point per feature is simpler to build and to use.
-  **Example:** clicking "Inbox" in the sidebar and clicking the header bell
-  both call the same `toggleSidePanel("inbox")`.
+- **Rule (V16 replaces the Sidebar):** the app shell is a `--surface-100` canvas with a floating white
+  `IconRail` (from 960px: the Home circle, Board, Dashboard, Inbox, Activity, Categories, Team) and one white
+  rounded app frame holding the `AppHeader` (BrandLogo, `TopNav`, bell, user menu) and the page. Below 960px the
+  rail and the top nav become a `NavDrawer` (`BaseDrawer`). The items come from one list, `shell/navItems.ts`.
+  Inbox, Activity, and Team share one floating **side panel** on the right. The Board's name is a `BoardSwitcher`
+  dropdown in the `BoardHeader` (Board toolbar and filter bar). No Log out or Profile item outside the user menu.
+  **Example:** clicking "Inbox" in the rail, the top nav, or the header bell calls `toggleSidePanel("inbox")`.
 
 - **Rule:** A card drag-and-drop move inserts a placeholder element at the
   drop target, animates siblings into place with a FLIP transform, and on
@@ -374,3 +369,15 @@ overriding any looser prose description elsewhere.
 - **Rule:** every document title is `RevoBoard | <name>` (root `title.template`); a Board uses `generateMetadata`; an open Inbox or Activity panel (and an open Card) sets and restores `document.title`. Cut at 60 characters; never put a token or Email in a title.
 - **Rule:** assignee options and Team members rows carry a role tag (`BaseBadge`, "Supervisor" or "Member"); the members endpoint returns `role`.
 - **Rule:** header and modal buttons are 40 pixels (`md`); compact 32 pixels only inside a dense row; a field and its button share one height.
+
+## V16: design system, landing page, two hosts
+
+- **Rule:** one token file (`styles/tokens.css`), no marketing layer. Radius roles `sm` 8, `field` 12, `card` 16,
+  `frame` 24, `full`; primary actions are teal pills 36px high, compact pills 28, chips 24, fields 40 with no
+  border; headings in Plus Jakarta Sans, the rest in Inter, both self-hosted. Controls shorter than 44px keep a
+  44px hit area below 960px (`touch-target`). Every recipe is in Requirement 38, criterion 18.
+- **Rule:** the landing page is `app/site/page.tsx` plus `components/landing/`, served at `/` on the Site_Host
+  through a rewrite in `proxy.ts`; it calls no API and reads no cookie. `lib/host.ts` is the pure routing table
+  and `lib/origins.ts` reads `SITE_URL` and `APP_URL` at request time. The App_Host sends `X-Robots-Tag: noindex`.
+- **Rule:** the Dashboard (`/dashboard`, Supervisor and Manager) reads `GET /analytics/throughput` and the
+  existing analytics; the throughput comes from `cards.completed_at`.

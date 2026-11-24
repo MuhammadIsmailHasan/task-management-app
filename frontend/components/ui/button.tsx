@@ -5,19 +5,20 @@ import { cn } from "@/lib/utils";
 
 /** shadcn/ui Button, themed from the design tokens. Import only from components/shared/. */
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-transparent text-sm font-semibold whitespace-nowrap cursor-pointer select-none transition-all duration-fast ease-out focus-ring disabled:pointer-events-none disabled:opacity-disabled active:translate-y-px [&_svg]:size-icon [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-transparent text-sm font-medium whitespace-nowrap cursor-pointer select-none transition-all duration-fast ease-out focus-ring disabled:pointer-events-none disabled:opacity-disabled active:translate-y-px [&_svg]:size-icon [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-brand text-on-brand shadow-card hover:bg-brand-strong",
-        secondary: "border-line bg-surface-raised text-ink hover:bg-surface-hover",
-        ghost: "bg-transparent text-ink-muted hover:bg-surface-hover hover:text-ink",
-        destructive: "bg-danger text-on-brand shadow-card hover:opacity-faint",
+        default: "bg-accent text-on-accent shadow-card hover:bg-accent-strong",
+        dark: "bg-brand text-on-brand shadow-card hover:bg-brand-strong",
+        secondary: "bg-surface text-ink shadow-card hover:bg-surface-sunken",
+        ghost: "bg-transparent text-ink-muted hover:bg-surface-sunken hover:text-ink",
+        destructive: "bg-danger-soft text-on-danger-soft hover:bg-danger hover:text-on-danger",
       },
       size: {
-        default: "min-h-control px-4",
-        sm: "min-h-control-sm px-3 text-xs",
-        icon: "size-touch",
+        default: "min-h-button px-4 py-2",
+        sm: "min-h-pill px-3 py-1 touch-target",
+        icon: "size-control touch-target",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

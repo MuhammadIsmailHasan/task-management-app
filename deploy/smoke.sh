@@ -4,12 +4,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 [ ! -e /srv/revoboard/.env ] || { echo "This looks like the server; refusing"; exit 1; }
 TMP=$(mktemp -d)
+export SITE_URL=http://revoboard.belajardeploy.web.id:8082 APP_URL=http://app.revoboard.belajardeploy.web.id:8082
 export TAG=smoke ENV_FILE="$TMP/env" UPLOADS="$TMP/uploads" COMPOSE_PROJECT_NAME=revoboard-smoke
 mkdir -m 777 "$UPLOADS"
 PASSWORD=$(openssl rand -hex 12)
 cat > "$ENV_FILE" <<EOF
 DATABASE_URL=postgresql+psycopg://revou:$PASSWORD@127.0.0.1:5432/revoboard_db
-ALLOWED_ORIGINS=http://127.0.0.1:8082
+ALLOWED_ORIGINS=http://app.revoboard.belajardeploy.web.id:8082
 JWT_SECRET=$(openssl rand -hex 32)
 FILE_URL_SECRET=$(openssl rand -hex 32)
 APP_TIMEZONE=Asia/Jakarta
@@ -40,7 +41,7 @@ docker compose up -d --wait --wait-timeout 180
 export SEED_PASSWORD="$PASSWORD"
 docker compose run --rm --no-deps -T -e APP_ENV=development -e SEED_PASSWORD --entrypoint flask backend seed-data </dev/null
 
-sed 's/listen 80 default_server/listen 127.0.0.1:8082 default_server/' deploy/nginx/revoboard.conf > "$TMP/site.conf"
+sed 's/listen 80 default_server/listen 127.0.0.1:8082 default_server/; s/listen 80;/listen 127.0.0.1:8082;/' deploy/nginx/revoboard.conf > "$TMP/site.conf"
 chmod 755 "$TMP"; chmod 644 "$TMP/site.conf"
 docker run -d --name revoboard-smoke-nginx --network host -v "$TMP/site.conf:/etc/nginx/conf.d/default.conf:ro" nginx:stable-alpine >/dev/null
 

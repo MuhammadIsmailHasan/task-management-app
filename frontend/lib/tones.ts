@@ -38,4 +38,7 @@ export const SOLID: Record<Tone, string> = {
   orange: "bg-tone-orange",
 };
 
+/** The same solid colours as a dot, for tags and chips. */
+export const DOT = SOLID;
+
 export const asBadgeTone = (t: Tone): BadgeTone => t;

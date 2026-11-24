@@ -61,15 +61,15 @@ export function ProfileForm({ initial }: { initial: User }) {
 
   return (
     <div className="flex w-full flex-col gap-6 p-4 lg:p-8">
-      <h1 className="text-page-title font-semibold">Profile</h1>
+      <h1 className="font-heading text-title">Profile</h1>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
       <div className="flex flex-col gap-6">
-      <section aria-label="Picture" className="rounded-card border border-line bg-surface-raised p-4">
+      <section aria-label="Picture" className="rounded-frame border border-line bg-surface-raised p-6 shadow-card">
         <AvatarUploader user={user} onChange={update} />
       </section>
 
-      <form className="flex flex-col gap-4 rounded-card border border-line bg-surface-raised p-4" onSubmit={saveName} noValidate aria-label="Account details">
+      <form className="flex flex-col gap-4 rounded-frame border border-line bg-surface-raised p-6 shadow-card" onSubmit={saveName} noValidate aria-label="Account details">
         <BaseField label="Full name" htmlFor="full_name" errors={nameErrors}>
           <BaseInput id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} aria-invalid={nameErrors ? true : undefined} />
         </BaseField>
@@ -90,8 +90,8 @@ export function ProfileForm({ initial }: { initial: User }) {
       </form>
       </div>
 
-      <form className="flex flex-col gap-4 rounded-card border border-line bg-surface-raised p-4" onSubmit={changePassword} noValidate aria-label="Change password">
-        <h2 className="text-heading font-semibold">Change password</h2>
+      <form className="flex flex-col gap-4 rounded-frame border border-line bg-surface-raised p-6 shadow-card" onSubmit={changePassword} noValidate aria-label="Change password">
+        <h2 className="font-heading text-page-title">Change password</h2>
         {pwError && <BaseAlert>{pwError}</BaseAlert>}
         {left > 0 && <BaseAlert>Too many attempts. Try again in {formatCountdown(left)}.</BaseAlert>}
         {pwNotice && <BaseAlert tone="info">{pwNotice}</BaseAlert>}

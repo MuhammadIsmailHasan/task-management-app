@@ -6,13 +6,14 @@ import { api } from "@/lib/api";
 import { getSession, getStoredUser, storeUser, type Session } from "@/lib/session";
 import { panelTitle } from "@/lib/titles";
 import type { Board, Inbox, User } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { AppHeader } from "./AppHeader";
 import { ShellContext, type PanelView } from "./ShellContext";
 import { SidePanel } from "./SidePanel";
-import { Sidebar } from "./Sidebar";
+import { IconRail } from "./IconRail";
+import { NavDrawer } from "./NavDrawer";
+import { SkipLink } from "./SkipLink";
 
-/** Client shell: sidebar drawer + persistent header + side panel host around the page content. */
+/** Client shell: the canvas, the Icon_Rail, and one app frame holding the header and the page; the nav drawer and the side panel host (Requirement 39). */
 export function AppShell({ boards, children }: { boards: Board[]; children: ReactNode }) {
   const pathname = usePathname();
   const boardId = /^\/boards\/([^/]+)/.exec(pathname)?.[1] ?? null;
@@ -74,27 +75,24 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     [],
   );
   const state = useMemo(
-    () => ({ session, user, boardId, inbox, refreshInbox, toggleSidePanel, closeSidePanel, adjustUnread }),
-    [session, user, boardId, inbox, refreshInbox, toggleSidePanel, closeSidePanel, adjustUnread],
+    () => ({ session, user, boardId, boards, panel, inbox, refreshInbox, toggleSidePanel, closeSidePanel, adjustUnread }),
+    [session, user, boardId, boards, panel, inbox, refreshInbox, toggleSidePanel, closeSidePanel, adjustUnread],
   );
   const current = boards.find((b) => b.id === boardId);
 
   return (
     <ShellContext.Provider value={state}>
-      <div className="relative flex h-screen flex-col overflow-hidden">
-        <AppHeader board={current ?? null} drawerOpen={drawer} onToggleDrawer={() => setDrawer((d) => !d)} />
-        <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <div
-          aria-hidden="true"
-          onClick={() => setDrawer(false)}
-          className={cn("fixed inset-0 z-scrim bg-scrim transition-opacity duration-base lg:hidden", drawer ? "opacity-100" : "pointer-events-none opacity-0")}
-        />
-        <Sidebar boards={boards} open={drawer} onNavigate={() => setDrawer(false)} />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <div className="relative flex h-screen overflow-hidden bg-surface lg:gap-4 lg:p-page">
+        <SkipLink />
+        <IconRail />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised lg:rounded-frame lg:shadow-card">
+          <AppHeader board={current ?? null} drawerOpen={drawer} onToggleDrawer={() => setDrawer((d) => !d)} />
+          <main id="main" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-y-auto focus:outline-none">
+            {children}
+          </main>
         </div>
+        <NavDrawer open={drawer} onClose={() => setDrawer(false)} />
         <SidePanel view={panel} onClose={() => setPanel(null)} />
-        </div>
       </div>
     </ShellContext.Provider>
   );

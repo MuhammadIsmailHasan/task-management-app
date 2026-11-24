@@ -72,7 +72,7 @@ export function AvatarUploader({ user, onChange }: AvatarUploaderProps) {
 
   return (
     <section aria-label="Avatar" className="flex flex-col gap-3">
-      <h2 className="text-heading font-semibold">Avatar</h2>
+      <h2 className="font-heading text-page-title">Avatar</h2>
       <div className="flex items-center gap-4">
         <BaseAvatar name={user.full_name} src={preview ?? user.avatar_url} size="md" className="size-touch" />
         <div className="flex flex-wrap items-center gap-2">

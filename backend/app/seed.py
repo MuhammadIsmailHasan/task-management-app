@@ -130,6 +130,7 @@ def seed_demo_data(password, tz="UTC"):
             start_date=today + timedelta(days=s_off) if s_off is not None else None,
             end_date=today + timedelta(days=e_off) if e_off is not None else None,
             order=float(i + 1),
+            completed_at=now - timedelta(days=3) if col.name == "Done" else None,
         )
         db.session.add(card)
         db.session.flush()

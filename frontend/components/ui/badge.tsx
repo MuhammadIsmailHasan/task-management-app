@@ -3,10 +3,13 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /** shadcn/ui Badge; tones are the --label-* colour pairs, shapes are pill and tag. */
-export const badgeVariants = cva("inline-flex items-center gap-1 text-xs font-semibold", {
+export const badgeVariants = cva("inline-flex items-center gap-1 text-2xs font-semibold", {
   variants: {
     tone: {
-      neutral: "bg-surface-hover text-ink-muted",
+      neutral: "bg-surface-sunken text-ink-muted",
+      accent: "bg-accent-tint text-on-accent-tint",
+      danger: "bg-danger-soft text-on-danger-soft",
+      count: "bg-surface-strong text-ink-muted",
       green: "bg-label-green text-label-green-fg",
       yellow: "bg-label-yellow text-label-yellow-fg",
       orange: "bg-label-orange text-label-orange-fg",
@@ -15,9 +18,9 @@ export const badgeVariants = cva("inline-flex items-center gap-1 text-xs font-se
       blue: "bg-label-blue text-label-blue-fg",
     },
     shape: {
-      pill: "rounded-full px-2 py-1",
-      tag: "rounded-sm px-2 py-1 font-medium",
-      outline: "rounded-sm border bg-transparent px-2 py-1 font-medium",
+      pill: "rounded-full px-2 py-half",
+      tag: "rounded-full px-2 py-half font-medium",
+      outline: "rounded-full border bg-transparent px-2 py-half font-medium",
     },
   },
   compoundVariants: [

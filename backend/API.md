@@ -85,6 +85,8 @@ Roles: `guest` (no Token), `member`, `supervisor`, `manager`, `admin`. Admin is 
 | Toggle a subtask | no | only when assigned | board owner or member | yes | yes |
 | Board analytics | no | no | only as owner | yes | no |
 | Cross-board analytics | no | no | no | yes | no |
+| Board throughput | no | no | only as owner | yes | no |
+| Cross-board throughput | no | no | no | yes | no |
 | Manage users | no | no | no | no | yes |
 
 Every board is private (V12): it is visible only to its owner, its members, Managers and Admins, and `visibility` no longer exists (a posted `visibility` is 400). A request without a Token gets 401, a signed-in user without access gets 403. A Manager or an Admin can enable a read-only Public link; a Manager, an Admin or the board owner can enable an Invite link.
@@ -226,6 +228,8 @@ Board and cross-board summaries.
 |---|---|---|---|---|---|
 | GET | `/api/boards/{board_id}/analytics` | Token | 200 | 400, 401, 403, 404 | Board analytics |
 | GET | `/api/analytics/boards` | Token | 200 | 401, 403 | Cross-board analytics |
+| GET | `/api/boards/{board_id}/analytics/throughput` | Token | 200 | 400, 401, 403, 404 | Board throughput |
+| GET | `/api/analytics/throughput` | Token | 200 | 400, 401, 403 | Cross-board throughput |
 
 ### shared
 
@@ -320,6 +324,18 @@ GET /api/boards/{id}/analytics
 200 { "status": true, "message": "OK",
       "data": { "board_id": "…", "name": "Sprint 1", "total": 12, "done": 4, "in_progress": 3, "overdue": 1, "done_delta": 2 } }
 ```
+
+Throughput (Manager; Supervisor as board owner), cards completed per week, oldest first, `weeks` 1 to 26 (default 8):
+
+```http
+GET /api/boards/{id}/analytics/throughput?weeks=2
+
+200 { "status": true, "message": "OK",
+      "data": { "board_id": "…", "name": "Sprint 1", "total": 5,
+                "weeks": [ { "week_start": "2026-11-16", "done": 2 }, { "week_start": "2026-11-23", "done": 3 } ] } }
+```
+
+`GET /api/analytics/throughput` (Manager) returns one such object per board. A week runs Monday to Monday in the application time zone. A card counts in the week of its `completed_at`, which is set when it enters the Done column and cleared when it leaves.
 
 ## Paging
 

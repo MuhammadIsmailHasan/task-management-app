@@ -44,7 +44,7 @@ export function PublicLinkButton({ boardId }: { boardId: string }) {
         if (open) void run(() => api.boards.share(boardId));
       }}
       trigger={
-        <BaseButton variant="secondary">
+        <BaseButton variant="secondary" size="sm">
           <Share2 aria-hidden="true" />
           <span className="sr-only lg:not-sr-only">Public link</span>
         </BaseButton>

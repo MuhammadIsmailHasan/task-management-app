@@ -101,7 +101,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
   return (
     <div className="mx-auto flex w-full max-w-modal-wide flex-col gap-4 p-4 lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-page-title font-semibold">Users</h1>
+        <h1 className="font-heading text-title">Users</h1>
         <BaseButton onClick={() => open("new")}>
           <Plus aria-hidden="true" />
           New user
@@ -110,7 +110,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
       {notice && <BaseAlert tone="info">{notice}</BaseAlert>}
       <ul aria-label="Users" className="m-0 flex list-none flex-col gap-2 p-0">
         {users.map((u) => (
-          <li key={u.id} className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-surface-raised p-3">
+          <li key={u.id} className="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface-raised p-3">
             <BaseAvatar name={u.full_name} src={u.avatar_url} size="md" />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold break-words">{u.full_name}</div>

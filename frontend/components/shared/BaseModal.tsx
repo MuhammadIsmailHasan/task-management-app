@@ -10,7 +10,7 @@ interface BaseModalProps {
   title: ReactNode;
   onClose: () => void;
   children: ReactNode;
-  /** "wide" is a roomy dialog; "full" fills the viewport minus a margin (the card modal). */
+  /** "wide" is a roomy dialog; "card" is the tall two-pane Card modal; "full" fills the viewport minus a margin. */
   size?: DialogSize;
   /** Buttons of the modal, rendered in a bordered bar under the body. */
   footer?: ReactNode;

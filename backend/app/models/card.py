@@ -42,6 +42,8 @@ class Card(TimestampMixin, db.Model):
     order = db.Column(db.Float, nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     archived_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Set when the Card enters a Column named Done, cleared when it leaves (V16, Requirement 43).
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     # Stretch columns (progress, views_count) are intentionally left for a later migration.
 
     subtasks = db.relationship("Subtask", back_populates="card", lazy="raise", order_by="Subtask.order")

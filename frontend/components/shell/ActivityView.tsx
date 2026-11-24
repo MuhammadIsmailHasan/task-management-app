@@ -35,8 +35,8 @@ export function ActivityView() {
     <div className="flex flex-col gap-3">
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {list.rows.map((r) => (
-          <li key={r.id} className="flex items-start gap-3 rounded-sm p-2">
-            <span aria-hidden="true" className="mt-2 size-dot shrink-0 rounded-full bg-ring" />
+          <li key={r.id} className="flex items-start gap-3 rounded-card bg-surface p-4">
+            <span aria-hidden="true" className="mt-2 size-dot shrink-0 rounded-full bg-accent" />
             <ActivityLine entry={r} names={names} columns={columns} showContext />
           </li>
         ))}

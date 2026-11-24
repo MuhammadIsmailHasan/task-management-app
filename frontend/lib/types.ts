@@ -155,6 +155,19 @@ export interface Analytics {
   done_delta: number;
 }
 
+export interface ThroughputWeek {
+  /** The Monday of the week, YYYY-MM-DD. */
+  week_start: string;
+  done: number;
+}
+
+export interface Throughput {
+  board_id: string;
+  name: string;
+  weeks: ThroughputWeek[];
+  total: number;
+}
+
 export interface SharedBoard {
   id: string;
   name: string;

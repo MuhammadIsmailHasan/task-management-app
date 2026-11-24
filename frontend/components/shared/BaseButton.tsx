@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "dark" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md";
 
 interface BaseButtonProps extends Omit<ComponentProps<"button">, "size"> {
@@ -11,7 +11,7 @@ interface BaseButtonProps extends Omit<ComponentProps<"button">, "size"> {
   block?: boolean;
 }
 
-const VARIANT = { primary: "default", secondary: "secondary", ghost: "ghost", danger: "destructive" } as const;
+const VARIANT = { primary: "default", dark: "dark", secondary: "secondary", ghost: "ghost", danger: "destructive" } as const;
 
 /** The only button in the app: a thin wrapper over the shadcn/ui Button, themed from the design tokens. */
 export function BaseButton({ variant = "primary", size = "md", block = false, className, type = "button", ...rest }: BaseButtonProps) {

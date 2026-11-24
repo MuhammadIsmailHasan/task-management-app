@@ -198,7 +198,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
     <>
       <BaseModal
         open
-        size="full"
+        size="card"
         title={`${draft ? draft.title.trim() || "Untitled card" : "Card"} | ${board.name}`}
         scrollBody={false}
         onClose={() => void requestClose()}
@@ -217,7 +217,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
           <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
             <div className="grid grid-cols-1 gap-6 lg:h-full lg:grid-cols-5 lg:grid-rows-1">
               <div className="flex min-w-0 flex-col gap-6 lg:col-span-3 lg:min-h-0 lg:overflow-y-auto">
-                <BaseCard title="Details">
+                <BaseCard plain title="Details">
                   <div className="flex flex-col gap-1">
                     {canEdit ? (
                       <BaseInput
@@ -277,7 +277,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                   </div>
                 </BaseCard>
 
-                <BaseCard title="Attachments">
+                <BaseCard plain title="Attachments">
                   <AttachmentList
                     cardId={card.id}
                     attachments={card.attachments}
@@ -290,7 +290,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                   />
                 </BaseCard>
 
-                <BaseCard title="Subtasks">
+                <BaseCard plain title="Subtasks">
                   <SubtaskChecklist
                     cardId={card.id}
                     subtasks={card.subtasks}
@@ -307,7 +307,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
               {showRight && (
                 <div className="flex min-w-0 flex-col gap-6 lg:col-span-2 lg:min-h-0 lg:overflow-y-auto">
                   {comments !== undefined && (
-                    <BaseCard title="Comments">
+                    <BaseCard plain title="Comments">
                       {canComment && (
                         <CommentComposer
                           onSubmit={async (content) => {
@@ -332,7 +332,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                     </BaseCard>
                   )}
                   {card.activity && (
-                    <BaseCard title="Activity">
+                    <BaseCard plain title="Activity">
                       <CardActivity cardId={card.id} initial={card.activity} names={names} columns={columnNames} />
                     </BaseCard>
                   )}

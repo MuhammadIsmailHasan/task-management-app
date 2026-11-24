@@ -42,7 +42,7 @@ export function CategoriesScreen({ boardId }: { boardId: string }) {
 
   return (
     <div className="flex w-full max-w-modal-wide flex-col gap-6 px-4 py-6 lg:px-8">
-      <h1 className="text-page-title font-semibold">Categories</h1>
+      <h1 className="font-heading text-title">Categories</h1>
       {error && <BaseAlert>{error}</BaseAlert>}
       <form
         method="post"
@@ -80,7 +80,7 @@ export function CategoriesScreen({ boardId }: { boardId: string }) {
       ) : (
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {items.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 rounded-md border border-line p-3 lg:flex-row lg:items-center">
+            <li key={c.id} className="flex flex-col gap-3 rounded-card border border-line p-3 lg:flex-row lg:items-center">
               <BaseBadge shape="tag" tone={categoryTone(c)} className="self-start lowercase lg:self-center">
                 {c.name}
               </BaseBadge>

@@ -64,7 +64,7 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
           </div>
           {card.description ? <p className="text-sm break-words whitespace-pre-wrap">{card.description}</p> : <p className="text-sm text-ink-muted">No description.</p>}
           <section aria-label="Subtasks" className="flex flex-col gap-2">
-            <h3 className="text-heading font-semibold">Subtasks</h3>
+            <h3 className="font-heading text-page-title">Subtasks</h3>
             {card.subtasks.length === 0 && <p className="text-sm text-ink-muted">No subtasks.</p>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {card.subtasks.map((s) => (
@@ -76,7 +76,7 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
             </ul>
           </section>
           <section aria-label="Attachments" className="flex flex-col gap-2">
-            <h3 className="text-heading font-semibold">Attachments</h3>
+            <h3 className="font-heading text-page-title">Attachments</h3>
             {card.attachments.length === 0 && <p className="text-sm text-ink-muted">No attachments.</p>}
             {error && <BaseAlert>{error}</BaseAlert>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">

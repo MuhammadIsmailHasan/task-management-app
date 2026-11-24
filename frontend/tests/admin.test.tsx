@@ -10,7 +10,7 @@ const update = vi.fn();
 vi.mock("@/lib/api", () => ({ api: { users: { create: (...a: unknown[]) => create(...a), update: (...a: unknown[]) => update(...a) } } }));
 
 const user = (over: Partial<AdminUser>): AdminUser => ({ id: "u1", full_name: "Ann Lee", username: "ann", email: "ann@x.com", avatar_url: null, role: "member", ...over });
-const shell = { session: { token: "t", userId: "a1", role: "admin" as const, exp: 9 }, user: null, boardId: null, inbox: null, refreshInbox: vi.fn(), toggleSidePanel: vi.fn(), closeSidePanel: vi.fn(), adjustUnread: vi.fn() };
+const shell = { session: { token: "t", userId: "a1", role: "admin" as const, exp: 9 }, user: null, boardId: null, boards: [], panel: null, inbox: null, refreshInbox: vi.fn(), toggleSidePanel: vi.fn(), closeSidePanel: vi.fn(), adjustUnread: vi.fn() };
 
 function renderScreen(users: AdminUser[]) {
   return render(

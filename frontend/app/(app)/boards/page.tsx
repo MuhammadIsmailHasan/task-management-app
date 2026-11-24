@@ -1,5 +1,6 @@
 import { AnalyticsStrip } from "@/components/board/AnalyticsStrip";
 import { BoardTile } from "@/components/board/BoardTile";
+import { NewBoardButton } from "@/components/board/NewBoardButton";
 import { decodeToken } from "@/lib/session";
 import { serverGet, serverToken } from "@/lib/server";
 import type { Analytics, Board, Member } from "@/lib/types";
@@ -32,14 +33,17 @@ export default async function BoardsHome() {
     analyticsFor(boards),
   ]);
   return (
-    <div className="flex flex-col gap-6 px-4 py-6 lg:px-8">
-      <h1 className="text-page-title font-semibold">Boards</h1>
+    <div className="flex flex-col gap-6 px-page pt-2 pb-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-heading text-title">Boards</h1>
+        {staff && <NewBoardButton />}
+      </div>
       {analytics && analytics.length > 0 && <AnalyticsStrip rows={analytics} />}
       {boards.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-center">
-          <h2 className="text-xl font-bold">No boards yet</h2>
+          <h2 className="font-heading text-xl">No boards yet</h2>
           <p className="text-ink-muted">
-            {staff ? "Create a board from the sidebar." : "You are not on any board yet. Ask a manager or a board owner for an invite link."}
+            {staff ? "Create one with New board." : "You are not on any board yet. Ask a manager or a board owner for an invite link."}
           </p>
         </div>
       ) : (

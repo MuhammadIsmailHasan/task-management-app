@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
+import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseInput } from "@/components/shared/BaseField";
 import { useFlip } from "@/hooks/useFlip";
@@ -84,7 +85,7 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
   }
 
   return (
-    <div ref={root} className="flex min-h-0 flex-1 snap-x snap-proximity scroll-px-4 items-stretch gap-4 overflow-x-auto overflow-y-hidden p-4 lg:scroll-px-8 lg:gap-6 lg:p-8">
+    <div ref={root} className="flex min-h-0 flex-1 snap-x snap-proximity scroll-px-4 items-stretch gap-gutter overflow-x-auto overflow-y-hidden px-page pb-4 lg:scroll-px-6">
       {[...columns].sort((a, b) => a.order - b.order).map((col, colIndex) => {
         const tone = columnTone(col.name, colIndex);
         const inColumn = cards.filter((c) => c.column_id === col.id).sort((a, b) => a.order - b.order);
@@ -102,6 +103,7 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
                   : undefined
             }
             overdue={!!card.end_date && card.end_date < today && col.id !== doneColumnId}
+            done={col.id === doneColumnId}
             draggable={canMove}
             onOpen={() => onOpen(card)}
             onDragStart={(e) => {
@@ -128,16 +130,16 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
           <section
             key={col.id}
             aria-label={col.name}
-            className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-lg bg-surface p-3 lg:w-column"
+            className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-frame bg-surface p-3 lg:w-column"
           >
             <header className="flex shrink-0 items-center gap-2 px-1">
               <i aria-hidden="true" className={cn("inline-block size-dot-md shrink-0 rounded-full", SOLID[tone])} />
-              <h2 className="text-meta font-semibold">{col.name}</h2>
-              <span className="rounded-full bg-surface-raised px-2 text-xs font-medium text-ink-muted">{inColumn.length}</span>
+              <h2 className="font-heading text-page-title">{col.name}</h2>
+              <BaseBadge tone="count">{inColumn.length}</BaseBadge>
             </header>
             <div
               data-testid={`column-${col.name}`}
-              className="flex min-h-column-min flex-1 flex-col gap-2 overflow-y-auto"
+              className="flex min-h-column-min flex-1 flex-col gap-gutter overflow-y-auto"
               onDragOver={(e) => onDragOver(e, col.id)}
               onDrop={onDrop}
             >
@@ -158,9 +160,9 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
                   </div>
                 </form>
               ) : (
-                <BaseButton variant="ghost" size="sm" className="shrink-0 justify-start px-2 font-normal text-ink-muted hover:bg-surface-raised" onClick={() => { setAdding(col.id); setTitle(""); }}>
+                <BaseButton variant="secondary" className="min-h-control shrink-0 rounded-card bg-surface-raised text-ink-muted" onClick={() => { setAdding(col.id); setTitle(""); }}>
                   <Plus aria-hidden="true" />
-                  Add a card
+                  Add Card
                 </BaseButton>
               ))}
           </section>

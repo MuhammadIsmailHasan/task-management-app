@@ -19,19 +19,19 @@ export function BoardTile({ board, members }: { board: Board; members: Member[] 
   return (
     <Link
       href={`/boards/${board.id}`}
-      className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface-raised text-ink no-underline shadow-card transition-all duration-base ease-out hover:-translate-y-lift hover:shadow-hover focus-ring"
+      className="flex h-full flex-col overflow-hidden rounded-frame border border-line bg-surface-raised text-ink no-underline shadow-card transition-all duration-base ease-out hover:-translate-y-lift hover:shadow-hover focus-ring"
     >
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-3 p-6">
         <div className="flex items-start gap-2">
-          <h2 className="min-w-0 text-base font-semibold break-words">{board.name}</h2>
+          <h2 className="min-w-0 font-heading text-page-title break-words">{board.name}</h2>
         </div>
         {board.description && <p className="line-clamp-2 text-meta text-ink-muted">{board.description}</p>}
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <div role="progressbar" aria-label={`${board.name} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-progress flex-1 overflow-hidden rounded-full bg-surface">
-              <div className="h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+            <div role="progressbar" aria-label={`${board.name} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-progress flex-1 overflow-hidden rounded-full bg-surface-sunken">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
             </div>
-            <span className="text-xs text-ink-muted">{percent}%</span>
+            <span className="text-meta font-semibold text-accent">{percent}%</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-ink-muted">
             <span className="inline-flex items-center gap-1" title="Cards">
@@ -52,7 +52,7 @@ export function BoardTile({ board, members }: { board: Board; members: Member[] 
               {shown.map((m, i) => (
                 <BaseAvatar key={m.id} name={m.full_name} src={m.avatar_url} className={i > 0 ? "stack-overlap" : undefined} />
               ))}
-              {extra > 0 && <BaseAvatar name={`${extra} more members`} label={`+${extra}`} className="stack-overlap bg-surface text-brand" />}
+              {extra > 0 && <BaseAvatar name={`${extra} more members`} label={`+${extra}`} className="stack-overlap bg-accent-tint text-on-accent-tint" />}
             </div>
           )}
         </div>

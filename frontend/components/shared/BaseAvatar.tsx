@@ -26,7 +26,7 @@ export function BaseAvatar({ name, size = "sm", className, label, src }: BaseAva
         role="img"
         aria-label={name}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand font-semibold text-on-brand focus-ring",
+          "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-2xs font-bold text-on-brand focus-ring",
           size === "sm" ? "size-avatar-sm text-2xs" : "size-avatar-md text-2xs",
           className,
         )}

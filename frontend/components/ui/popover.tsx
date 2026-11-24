@@ -22,7 +22,7 @@ export function PopoverContent({ className, align = "start", sideOffset = SIDE_O
         collisionPadding={COLLISION_PADDING}
         style={{ maxHeight: "var(--radix-popover-content-available-height)", ...style }}
         className={cn(
-          "z-modal overflow-y-auto rounded-md border border-line bg-surface-raised p-3 shadow-modal focus:outline-none",
+          "z-modal overflow-y-auto rounded-frame border border-line bg-surface-raised p-3 shadow-popover focus:outline-none",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}

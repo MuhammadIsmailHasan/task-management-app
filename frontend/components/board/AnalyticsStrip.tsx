@@ -11,13 +11,13 @@ export function AnalyticsStrip({ rows }: { rows: Analytics[] }) {
     { label: "Overdue", value: sum((a) => a.overdue), icon: AlertTriangle, tone: "text-danger" },
   ];
   return (
-    <section aria-label="Analytics" className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <section aria-label="Analytics" className="grid grid-cols-1 gap-gutter lg:grid-cols-3">
       {stats.map((s) => (
-        <div key={s.label} className="flex items-center gap-3 rounded-card border border-line bg-surface-raised p-4">
+        <div key={s.label} className="flex items-center gap-4 rounded-frame border border-line bg-surface-raised p-6 shadow-card">
           <s.icon className={cn("size-icon", s.tone)} aria-hidden="true" />
           <div>
-            <div className="text-page-title font-semibold">{s.value}</div>
-            <div className="text-xs text-ink-muted">{s.label}</div>
+            <div className="font-heading text-xl">{s.value}</div>
+            <div className="text-meta text-ink-muted">{s.label}</div>
           </div>
         </div>
       ))}

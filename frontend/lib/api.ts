@@ -21,6 +21,7 @@ import type {
   SharedBoard,
   SharedCard,
   Subtask,
+  Throughput,
   User,
 } from "./types";
 
@@ -194,6 +195,8 @@ export const api = {
   analytics: {
     board: (id: string) => get<Analytics>(`/boards/${id}/analytics`),
     all: () => get<Analytics[]>("/analytics/boards"),
+    throughput: (id: string, weeks = 8) => get<Throughput>(`/boards/${id}/analytics/throughput`, { weeks: String(weeks) }),
+    allThroughput: (weeks = 8) => get<Throughput[]>("/analytics/throughput", { weeks: String(weeks) }),
   },
   users: {
     list: () => get<(User & { role: string })[]>("/users"),

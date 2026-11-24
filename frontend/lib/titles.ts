@@ -8,7 +8,8 @@ export function pageTitle(name: string): string {
   return `${BRAND} | ${clean.length > MAX ? `${clean.slice(0, MAX - 1)}…` : clean}`;
 }
 
-/** The title while the Inbox or Activity panel is open; the unread count shows only above zero. */
-export function panelTitle(view: "inbox" | "activity", unread = 0): string {
+/** The title while the Inbox, Activity, or Team panel is open; the unread count shows only above zero. */
+export function panelTitle(view: "inbox" | "activity" | "team", unread = 0): string {
+  if (view === "team") return pageTitle("Team");
   return view === "inbox" ? pageTitle(unread > 0 ? `Inbox (${unread})` : "Inbox") : pageTitle("Activity");
 }

@@ -34,7 +34,7 @@ export function InviteJoin({ token, invite }: { token: string; invite: InviteLoo
   return (
     <div className="mx-auto flex max-w-auth flex-col items-center gap-4 px-4 py-12 text-center">
       <p className="text-sm text-ink-muted">You are invited to</p>
-      <h1 className="text-xl font-bold break-words">{board.name}</h1>
+      <h1 className="font-heading text-xl break-words">{board.name}</h1>
       {board.description && <p className="text-ink-muted break-words">{board.description}</p>}
       {error && <BaseAlert>{error}</BaseAlert>}
       {state === "can_request" && (

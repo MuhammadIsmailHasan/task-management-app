@@ -45,7 +45,7 @@ export function InboxView() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <BaseBadge tone={inbox.unread_count ? "red" : "neutral"}>{inbox.unread_count} unread</BaseBadge>
+        <BaseBadge tone={inbox.unread_count ? "accent" : "neutral"}>{inbox.unread_count} unread</BaseBadge>
         <BaseButton size="sm" variant="secondary" disabled={!inbox.unread_count} onClick={() => run(() => api.notifications.readAll())}>
           Mark all read
         </BaseButton>
@@ -58,9 +58,9 @@ export function InboxView() {
             <Link
               href={hrefFor(n)}
               onClick={() => open(n)}
-              className={cn("flex items-start gap-3 rounded-sm p-3 text-ink no-underline hover:bg-surface focus-ring", !n.is_read && "bg-label-blue")}
+              className={cn("flex items-start gap-3 rounded-card p-4 text-ink no-underline hover:bg-surface-sunken focus-ring", !n.is_read && "bg-surface")}
             >
-              <span aria-hidden="true" className={cn("mt-1 size-dot shrink-0 rounded-full", n.is_read ? "bg-line" : "bg-ring")} />
+              <span aria-hidden="true" className={cn("mt-1 size-dot shrink-0 rounded-full", n.is_read ? "bg-surface-strong" : "bg-accent")} />
               <span className="flex-1 text-sm">
                 <span className="block">{sentenceFor(n)}</span>
                 <span className="mt-1 block text-xs text-ink-muted">{formatWhen(n.created_at) || n.notify_date}</span>

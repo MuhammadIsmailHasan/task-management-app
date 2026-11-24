@@ -27,7 +27,9 @@ old() { sed -n "s/^$1=//p" "$HOME_DIR/.env" 2>/dev/null || true; }
 JWT=$(old JWT_SECRET); FILES=$(old FILE_URL_SECRET)
 cat > "$HOME_DIR/.env" <<EOF
 DATABASE_URL=postgresql+psycopg://revou:$ENCODED@127.0.0.1:5432/revoboard_db
-ALLOWED_ORIGINS=$PUBLIC_URL
+ALLOWED_ORIGINS=${APP_URL:-$PUBLIC_URL}
+SITE_URL=${SITE_URL:-$(old SITE_URL)}
+APP_URL=${APP_URL:-$(old APP_URL)}
 JWT_SECRET=${JWT:-$(python3 -c 'import secrets; print(secrets.token_hex(32))')}
 FILE_URL_SECRET=${FILES:-$(python3 -c 'import secrets; print(secrets.token_hex(32))')}
 APP_TIMEZONE=Asia/Jakarta

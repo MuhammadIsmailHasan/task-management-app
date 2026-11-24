@@ -47,14 +47,13 @@ describe("two badge types on a card", () => {
   const card = { id: "c1", column_id: "x", title: "T", priority: "high", description: null, end_date: null, subtasks: [], attachments: [], category_id: "k1", assignee_id: null } as unknown as Card;
   const category = { id: "k1", board_id: "b1", name: "Design", color: null } as Category;
 
-  it("draws the category as a soft pill and the priority as an outlined badge, both lowercase", () => {
+  it("draws the category as an upper-case tag and the priority as a tinted pill with a flag", () => {
     render(<CardTile card={card} category={category} overdue={false} draggable onOpen={() => undefined} onDragStart={() => undefined} onDragEnd={() => undefined} />);
     const cat = screen.getByText("Design");
     const pri = screen.getByText("high");
-    expect(cat.className).toMatch(/lowercase/);
-    expect(pri.className).toMatch(/lowercase/);
-    expect(pri.className).toMatch(/\bborder\b/);
-    expect(cat.className).not.toMatch(/\bborder\b/);
+    expect(cat.className).toMatch(/uppercase/);
+    expect(pri.className).toMatch(/bg-danger-soft/);
+    expect(cat.className).not.toMatch(/bg-danger-soft/);
   });
 });
 

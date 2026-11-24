@@ -10,7 +10,7 @@ import { BoardTile } from "@/components/board/BoardTile";
 import { CardTile } from "@/components/board/CardTile";
 import { InboxView } from "@/components/shell/InboxView";
 import { ShellContext } from "@/components/shell/ShellContext";
-import { Sidebar } from "@/components/shell/Sidebar";
+import { TeamView } from "@/components/shell/TeamView";
 import { CommentThread } from "@/components/card/CommentThread";
 import { SubtaskChecklist } from "@/components/card/SubtaskChecklist";
 import { buildPatch, mergeSent, toDraft, type Draft, type FieldKey } from "@/lib/autosave";
@@ -38,6 +38,8 @@ const shell = (role: "manager" | "supervisor" | "member" | "admin", userId = "u1
   session: { token: "t", userId, role, exp: 0 },
   user: null,
   boardId: "b1",
+  boards: [{ id: "b1", name: "Alpha", owner_id: "own", archived_at: null }] as Board[],
+  panel: null as "inbox" | "activity" | "team" | null,
   inbox: { items: [], unread_count: 2 },
   refreshInbox: vi.fn(),
   toggleSidePanel: vi.fn(),
@@ -114,16 +116,16 @@ const boards = [{ id: "b1", name: "Alpha", owner_id: "own", archived_at: null } 
 const renderSidebar = (ctx: ReturnType<typeof shell>) =>
   render(
     <ShellContext.Provider value={ctx}>
-      <Sidebar boards={boards} open={false} onNavigate={vi.fn()} />
+      <TeamView />
     </ShellContext.Provider>,
   );
 
-describe("Sidebar members (Requirement 22)", () => {
+describe("Team view members (Requirement 22, V16 SHELL-19, SHELL-20)", () => {
   beforeEach(() => mocks.api.boards.members.mockResolvedValue(members));
 
   it("lists the owner first, tagged Owner, with no remove button, and no Email or lock icon", async () => {
     renderSidebar(shell("manager"));
-    const owner = (await screen.findByText("Olive Owner")).closest("div.flex.min-h-control") as HTMLElement;
+    const owner = (await screen.findByText("Olive Owner")).closest("li") as HTMLElement;
     expect(within(owner).getByText("Owner")).toBeInTheDocument();
     expect(within(owner).queryByRole("button")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Mia Member" })).toBeInTheDocument();
@@ -134,11 +136,11 @@ describe("Sidebar members (Requirement 22)", () => {
   it("shows the add button to a Manager and an Admin only, never to the Board_Owner", async () => {
     const { unmount } = renderSidebar(shell("manager"));
     await screen.findByText("Olive Owner");
-    expect(screen.getAllByRole("button", { name: "Add member" }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("searchbox", { name: "Search people" })).toBeInTheDocument();
     unmount();
     const owner = renderSidebar(shell("supervisor", "own"));
     await screen.findByText("Olive Owner");
-    expect(screen.queryByRole("button", { name: "Add member" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox", { name: "Search people" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove Mia Member" })).toBeInTheDocument(); // the owner may still remove
     owner.unmount();
   });
@@ -335,14 +337,14 @@ describe("Property 58: auto-save sends only what changed", () => {
 });
 
 describe("Role tag follows the list (Property 60)", () => {
-  it("shows each member's role in the Team members rows, never manager or admin", async () => {
+  it("shows each member's role in the Team view rows, never manager or admin", async () => {
     await fc.assert(
       fc.asyncProperty(fc.array(fc.constantFrom("member", "supervisor"), { minLength: 1, maxLength: 4 }), async (roles) => {
         const list = roles.map((role, i) => ({ id: `r${i}`, full_name: `Person ${i}`, username: `p${i}`, avatar_url: null, role })) as Member[];
         mocks.api.boards.members.mockResolvedValue(list);
         const { unmount } = renderSidebar(shell("manager"));
         for (const [i, role] of roles.entries()) {
-          const row = (await screen.findByText(`Person ${i}`)).closest("div.flex.min-h-control") as HTMLElement;
+          const row = (await screen.findByText(`Person ${i}`)).closest("li") as HTMLElement;
           expect(within(row).getByText(role === "supervisor" ? "Supervisor" : "Member")).toBeInTheDocument();
         }
         expect(screen.queryByText(/^(manager|admin)$/i)).not.toBeInTheDocument();

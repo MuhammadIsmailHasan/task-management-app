@@ -86,9 +86,19 @@ The key belongs to a user in the `docker` group, so it is equivalent to root on 
 
 A migration must stay compatible with the previous release, because a rollback does not downgrade the schema.
 
+## Two hosts: landing page and app (V16)
+
+One Next.js process serves both. The **Site_Host** (`revoboard.belajardeploy.web.id`) shows the landing page and sends every other path to the **App_Host** (`app.revoboard.belajardeploy.web.id`), which is the app and `/api`. Anything else (the server IP and port 8082, `localhost`) is the app too, so the IP keeps working before the domain exists.
+
+1. DNS: an address record for each name, pointing at the server.
+2. Nginx: `deploy/nginx/revoboard.conf` already names both hosts and returns 404 for `/api/` on the Site_Host. Change the names there if the domain changes, then reload Nginx.
+3. Environment: put `SITE_URL=https://revoboard.belajardeploy.web.id` and `APP_URL=https://app.revoboard.belajardeploy.web.id` in `/srv/revoboard/.env` (or run the setup script with them in the environment). Both or neither; the Frontend refuses to start with only one. Only the Frontend reads them (bare mode through `run.sh`, Docker mode through `compose.yaml`). `ALLOWED_ORIGINS` is the App_Host origin only.
+4. Cookie: the session cookie stays host-only on the App_Host (no `Domain`), so the landing page never sees it.
+5. Restart: `sudo supervisorctl restart revoboard:` (bare) or deploy again (Docker).
+
 ## Domain and TLS, later
 
-Point the domain at the server, have ports 80 and 443 published, add the certificate to Nginx, add `Secure` to the session cookie in `frontend/lib/session.ts`, then run `setup-server.sh https://<domain>` and deploy again. Setup overwrites the Nginx site, so put the TLS change in `deploy/nginx/revoboard.conf`.
+Have ports 80 and 443 published and add one certificate that covers both names (two names or a wildcard) to Nginx, redirect plain HTTP to HTTPS on both, add `Secure` to the session cookie in `frontend/lib/session.ts`, switch `SITE_URL`, `APP_URL`, and `ALLOWED_ORIGINS` to `https://` values, then run `setup-server.sh https://<app host>` and deploy again. Setup overwrites the Nginx site, so put the TLS change in `deploy/nginx/revoboard.conf`.
 
 ## Smoke test
 
