@@ -2,8 +2,9 @@
 
 import { Check, ChevronDown } from "lucide-react";
 import { useState, type ReactElement, type ReactNode } from "react";
-import { BaseButton } from "@/components/shared/BaseButton";
 import { BasePopover } from "@/components/shared/BasePopover";
+import { controlButtonClasses, controlClasses, controlSize } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 export interface ComboOption {
@@ -45,17 +46,17 @@ export function BaseCombobox({ options, value, onChange, label, placeholder = "S
       onOpenChange={setOpen}
       trigger={
         trigger ?? (
-          <BaseButton variant="secondary" className="w-full justify-between font-normal" aria-label={`${label}: ${selected?.label ?? placeholder}`} aria-haspopup="listbox">
+          <button type="button" className={cn(controlClasses, controlButtonClasses, controlSize.md)} aria-label={`${label}: ${selected?.label ?? placeholder}`} aria-haspopup="listbox">
             <span className={selected ? "truncate" : "truncate text-ink-muted"}>{selected?.label ?? placeholder}</span>
             <ChevronDown className="size-icon-sm shrink-0 text-ink-muted" aria-hidden="true" />
-          </BaseButton>
+          </button>
         )
       }
     >
       <Command label={label}>
         {showSearch && <CommandInput placeholder="Search…" aria-label={`Search ${label}`} />}
         <CommandList aria-label={label}>
-          <CommandEmpty>No results.</CommandEmpty>
+          <CommandEmpty>No matches</CommandEmpty>
           {options.map((o) => (
             <CommandItem
               key={o.value}

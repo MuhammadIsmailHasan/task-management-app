@@ -18,7 +18,7 @@ export function AddColumn({ onCreate }: { onCreate: (name: string) => Promise<vo
   }
 
   return (
-    <section aria-label="Add column" className="flex h-fit w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-frame bg-surface p-3 lg:w-column">
+    <section aria-label="Add column" className="flex h-fit w-column shrink-0 lg:w-column-w-min snap-start flex-col gap-item rounded-ui bg-surface p-item">
       {open ? (
         <form method="post" className="flex flex-col gap-2" onSubmit={submit}>
           <BaseInput autoFocus aria-label="Column name" placeholder="Column name" maxLength={255} value={name} onChange={(e) => setName(e.target.value)} />
@@ -45,7 +45,7 @@ export function AddColumn({ onCreate }: { onCreate: (name: string) => Promise<vo
           />
         </form>
       ) : (
-        <BaseButton variant="secondary" className="min-h-control rounded-card bg-surface-raised text-ink-muted" onClick={() => setOpen(true)}>
+        <BaseButton variant="secondary" className="min-h-control bg-surface-raised text-ink-muted" onClick={() => setOpen(true)}>
           <Plus aria-hidden="true" />
           Add column
         </BaseButton>

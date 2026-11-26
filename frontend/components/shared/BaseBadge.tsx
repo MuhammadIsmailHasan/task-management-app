@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { Badge } from "@/components/ui/badge";
 
-export type BadgeTone = "neutral" | "green" | "yellow" | "orange" | "red" | "purple" | "blue" | "accent" | "danger" | "count";
+export type BadgeTone = "neutral" | "green" | "yellow" | "orange" | "red" | "purple" | "blue" | "amber" | "lime" | "emerald" | "teal" | "cyan" | "sky" | "indigo" | "violet" | "fuchsia" | "pink" | "rose" | "slate" | "accent" | "danger" | "count";
 
 interface BaseBadgeProps extends Omit<ComponentProps<"span">, "shape"> {
   tone?: BadgeTone;

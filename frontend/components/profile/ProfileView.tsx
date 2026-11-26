@@ -31,14 +31,14 @@ export function ProfileView({ initial }: { initial: User }) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6 p-4 lg:p-8">
+    <div className="flex w-full flex-col gap-section px-page pt-surface pb-surface">
       <h1 className="sr-only">Profile</h1>
       <div className="flex flex-col gap-4">
-        <div aria-hidden="true" className="h-cover w-full rounded-card bg-gradient-brand" />
+        <div aria-hidden="true" className="h-cover w-full rounded-ui bg-gradient-brand" />
         <div className="-mt-12 flex flex-col gap-3 px-4 lg:flex-row lg:items-end lg:gap-6 lg:px-8">
           <BaseAvatar name={user.full_name} src={user.avatar_url} size="xl" className="border border-surface-raised" />
           <div className="min-w-0 pb-2">
-            <p className="font-heading text-title break-words">{user.full_name}</p>
+            <p className="font-heading text-xl break-words">{user.full_name}</p>
             <p className="text-sm text-ink-muted">@{user.username}</p>
           </div>
         </div>

@@ -2,7 +2,9 @@ import type { BadgeTone } from "@/components/shared/BaseBadge";
 
 /** Rotation used where the data has no colour of its own (categories, columns). */
 export const TONE_CYCLE = ["green", "blue", "red", "purple", "orange"] as const;
-export type Tone = (typeof TONE_CYCLE)[number];
+/** The 18 category palette keys (Requirement 71), in swatch order. The five of TONE_CYCLE keep their names. */
+export const PALETTE = ["red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose", "slate"] as const;
+export type Tone = (typeof PALETTE)[number];
 
 const COLUMN_TONE: Record<string, Tone> = {
   todo: "orange",
@@ -22,7 +24,7 @@ export function toneForId(id: string): Tone {
 
 /** A category's own colour when it holds a known tone name, otherwise a stable tone from its id. */
 export function categoryTone(c: { id: string; color: string | null }): Tone {
-  return (TONE_CYCLE as readonly string[]).includes(c.color ?? "") ? (c.color as Tone) : toneForId(c.id);
+  return (PALETTE as readonly string[]).includes(c.color ?? "") ? (c.color as Tone) : toneForId(c.id);
 }
 
 export function columnTone(name: string, index: number): Tone {
@@ -31,11 +33,24 @@ export function columnTone(name: string, index: number): Tone {
 
 /** Solid colours for accent bars and progress fills (the --tone-* tokens). */
 export const SOLID: Record<Tone, string> = {
-  green: "bg-tone-green",
-  blue: "bg-tone-blue",
   red: "bg-tone-red",
-  purple: "bg-tone-purple",
   orange: "bg-tone-orange",
+  amber: "bg-tone-amber",
+  yellow: "bg-tone-yellow",
+  lime: "bg-tone-lime",
+  green: "bg-tone-green",
+  emerald: "bg-tone-emerald",
+  teal: "bg-tone-teal",
+  cyan: "bg-tone-cyan",
+  sky: "bg-tone-sky",
+  blue: "bg-tone-blue",
+  indigo: "bg-tone-indigo",
+  violet: "bg-tone-violet",
+  purple: "bg-tone-purple",
+  fuchsia: "bg-tone-fuchsia",
+  pink: "bg-tone-pink",
+  rose: "bg-tone-rose",
+  slate: "bg-tone-slate",
 };
 
 /** The same solid colours as a dot, for tags and chips. */

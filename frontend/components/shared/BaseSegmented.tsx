@@ -31,7 +31,7 @@ export function BaseSegmented<T extends string>({ options, value, onChange, labe
   }
 
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex w-fit gap-1 rounded-full bg-surface p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex w-fit gap-1 rounded-ui bg-surface p-1">
       {options.map((o, i) => {
         const selected = o.value === value;
         return (
@@ -44,8 +44,8 @@ export function BaseSegmented<T extends string>({ options, value, onChange, labe
             size="sm"
             role="radio"
             aria-checked={selected}
-            tabIndex={selected ? 0 : -1}
-            className={cn("rounded-full px-4", selected ? "bg-surface-raised font-semibold text-ink shadow-card hover:bg-surface-raised" : "font-medium text-ink-muted")}
+            tabIndex={selected || (!options.some((x) => x.value === value) && i === 0) ? 0 : -1}
+            className={cn("rounded-ui px-4", selected ? "bg-surface-raised font-semibold text-ink shadow-card hover:bg-surface-raised" : "font-medium text-ink-muted")}
             onClick={() => onChange(o.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
           >

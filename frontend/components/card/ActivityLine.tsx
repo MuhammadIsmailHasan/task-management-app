@@ -38,7 +38,7 @@ export function ActivityLine({ entry, names, columns, showContext = false }: Act
         )}
       </div>
       {p.details.some((d) => d.kind === "change") && (
-        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-meta text-ink-muted">
+        <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm text-ink-muted">
           {p.details.map((d, i) =>
             d.kind === "change" ? (
               <li key={i} className="flex flex-wrap items-center gap-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, GripVertical, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseButton } from "@/components/shared/BaseButton";
@@ -22,12 +22,14 @@ interface ColumnHeaderProps {
   onRename: (name: string) => Promise<void>;
   onMove: (delta: -1 | 1) => Promise<void>;
   onDelete: () => Promise<void>;
+  /** Drag handlers of the grip; the Column itself is dragged by it (COLD-01). */
+  grip?: { onDragStart: (e: React.DragEvent<HTMLElement>) => void; onDragEnd: () => void };
 }
 
 const LOCKED = "The Done column is locked";
 
 /** A Column's title row: name, card count, and for those who manage it a menu with Rename, Move left, Move right, and Delete. */
-export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, onRename, onMove, onDelete }: ColumnHeaderProps) {
+export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, onRename, onMove, onDelete, grip }: ColumnHeaderProps) {
   const locked = column.name === "Done";
   const [renaming, setRenaming] = useState(false);
   const [value, setValue] = useState(column.name);
@@ -48,7 +50,19 @@ export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, 
   }
 
   return (
-    <header className="flex shrink-0 items-center gap-2 px-1">
+    <header className="flex shrink-0 items-center gap-2">
+      {canManage && grip && (
+        <span
+          role="img"
+          aria-label={`Reorder column ${column.name}`}
+          draggable
+          onDragStart={grip.onDragStart}
+          onDragEnd={grip.onDragEnd}
+          className="inline-flex shrink-0 cursor-grab touch-none items-center text-ink-muted select-none active:cursor-grabbing"
+        >
+          <GripVertical className="size-icon-sm" aria-hidden="true" />
+        </span>
+      )}
       <i aria-hidden="true" className={cn("inline-block size-dot-md shrink-0 rounded-full", SOLID[tone])} />
       {renaming ? (
         <BaseInput
@@ -69,7 +83,7 @@ export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, 
           }}
         />
       ) : (
-        <h2 className="min-w-0 font-heading text-page-title break-words">{column.name}</h2>
+        <h3 className="min-w-0 truncate font-heading text-base font-semibold">{column.name}</h3>
       )}
       <BaseBadge tone="count">{count}</BaseBadge>
       {canManage && (

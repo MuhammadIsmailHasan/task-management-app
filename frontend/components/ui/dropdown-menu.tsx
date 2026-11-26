@@ -20,7 +20,7 @@ export function DropdownMenuContent({ className, align = "end", sideOffset = SID
         sideOffset={sideOffset}
         collisionPadding={COLLISION_PADDING}
         className={cn(
-          "z-modal min-w-popover overflow-hidden rounded-frame border border-line bg-surface-raised p-2 shadow-popover",
+          "z-modal min-w-popover overflow-hidden rounded-ui border border-line bg-surface-raised p-2 shadow-popover",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}
@@ -35,7 +35,7 @@ export function DropdownMenuItem({ className, ...props }: ComponentProps<typeof 
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "flex min-h-control cursor-pointer items-center gap-3 rounded-field px-3 text-sm font-medium text-ink no-underline outline-none select-none",
+        "flex min-h-control cursor-pointer items-center gap-3 rounded-ui px-3 text-sm font-medium text-ink no-underline outline-none select-none",
         "data-highlighted:bg-surface-sunken data-disabled:pointer-events-none data-disabled:opacity-disabled [&_svg]:size-icon [&_svg]:shrink-0 [&_svg]:text-ink-muted",
         className,
       )}

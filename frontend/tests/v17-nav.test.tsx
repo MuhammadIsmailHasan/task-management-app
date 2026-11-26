@@ -41,11 +41,11 @@ describe("navigation items by role (NAV-01, NAV-04, NAV-05)", () => {
   const side = (role: Role) => sidebarFor(ctxOf(role, false)).map((i) => i.label);
   const top = (role: Role, isOwner = false, open = true) => topMenuFor(ctxOf(role, open, isOwner)).map((i) => i.label);
 
-  it("gives the Sidebar Dashboard to a Supervisor and a Manager only, My Tasks to everyone but an Admin, Users to an Admin only", () => {
+  it("gives the Sidebar Dashboard to staff and Admin, My Tasks to a Member and a Supervisor only, Users to an Admin only (V18)", () => {
     expect(side("supervisor")).toEqual(["Dashboard", "My Tasks", "Boards"]);
-    expect(side("manager")).toEqual(["Dashboard", "My Tasks", "Boards"]);
+    expect(side("manager")).toEqual(["Dashboard", "Boards"]);
     expect(side("member")).toEqual(["My Tasks", "Boards"]);
-    expect(side("admin")).toEqual(["Boards", "Users"]);
+    expect(side("admin")).toEqual(["Dashboard", "Boards", "Users"]);
   });
 
   it("shows the Top_Menu only while a Board is open", () => {

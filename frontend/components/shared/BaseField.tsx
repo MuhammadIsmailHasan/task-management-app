@@ -4,8 +4,8 @@ import { Input, Textarea } from "@/components/ui/input";
 /** Label + control + field errors. The error ids pair with aria-describedby on the control. */
 export function BaseField({ label, htmlFor, errors, children }: { label: string; htmlFor: string; errors?: string[]; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={htmlFor} className="text-meta font-semibold">
+    <div className="flex flex-col gap-label">
+      <label htmlFor={htmlFor} className="text-sm font-semibold">
         {label}
       </label>
       {children}
@@ -31,7 +31,7 @@ export function BaseAlert({ children, tone = "error" }: { children: ReactNode; t
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={tone === "error" ? "rounded-field bg-danger-soft p-3 text-sm text-on-danger-soft" : "rounded-field bg-surface p-3 text-sm text-ink-muted"}
+      className={tone === "error" ? "rounded-ui bg-danger-soft p-item text-sm text-on-danger-soft" : "rounded-ui bg-surface p-item text-sm text-ink-muted"}
     >
       {children}
     </div>

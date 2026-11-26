@@ -67,6 +67,9 @@ export interface Subtask {
   title: string;
   is_done: boolean;
   order: number;
+  /** Who added it (null for rows made before V18) and whether the viewer may rename, reorder, or delete it. */
+  created_by_id?: string | null;
+  can_edit?: boolean;
 }
 
 export interface Attachment {
@@ -77,6 +80,8 @@ export interface Attachment {
   url: string | null;
   file_url: string | null;
   expires_at: string | null;
+  created_by_id?: string | null;
+  can_edit?: boolean;
 }
 
 export interface Comment {

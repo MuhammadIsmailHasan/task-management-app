@@ -6,6 +6,7 @@ import { CardModal } from "@/components/card/CardModal";
 import { BaseAlert } from "@/components/shared/BaseField";
 import { useShell } from "@/components/shell/ShellContext";
 import { api } from "@/lib/api";
+import { CATEGORIES_CHANGED } from "@/lib/categories";
 import { ApiError } from "@/lib/http";
 import { computeDropOrder, needsRebalance } from "@/lib/ordering";
 import type { Board as BoardT, Card, Category, Comment, Member } from "@/lib/types";
@@ -55,6 +56,17 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     };
   }, [board.id]);
 
+  // The Categories panel changed something: reload the categories and the Cards (a deleted category leaves its Cards) (CATP-04).
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      if ((e as CustomEvent<{ boardId: string }>).detail?.boardId !== board.id) return;
+      api.categories.listForBoard(board.id).then(setCategories).catch(() => undefined);
+      void refetchRef.current();
+    };
+    window.addEventListener(CATEGORIES_CHANGED, onChanged);
+    return () => window.removeEventListener(CATEGORIES_CHANGED, onChanged);
+  }, [board.id]);
+
   useEffect(() => {
     let live = true;
     api.boards.members(board.id).then((m) => live && setMembers(m)).catch(() => live && setMembers([]));
@@ -86,6 +98,24 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
 
   const failColumn = (err: unknown, fallback: string) => setError(err instanceof ApiError ? err.message : fallback);
 
+  /** Move a Column to a 0-based position at once, then reconcile; an error puts it back (COLD-03). */
+  async function reorder(id: string, to: number) {
+    const ordered = [...columns].sort((a, b) => a.order - b.order);
+    const from = ordered.findIndex((c) => c.id === id);
+    if (from < 0 || to < 0 || to >= ordered.length || from === to) return;
+    const snapshot = columns;
+    const next = [...ordered];
+    next.splice(to, 0, next.splice(from, 1)[0]);
+    setError(null);
+    setColumns(next.map((c, i) => ({ ...c, order: i })));
+    try {
+      await api.columns.move(id, to);
+    } catch (err) {
+      setColumns(snapshot);
+      failColumn(err, "Could not move the column.");
+    }
+  }
+
   const columnActions = canManageColumns
     ? {
         onRename: async (id: string, name: string) => {
@@ -99,22 +129,10 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
           }
         },
         onMove: async (id: string, delta: -1 | 1) => {
-          const ordered = [...columns].sort((a, b) => a.order - b.order);
-          const from = ordered.findIndex((c) => c.id === id);
-          const to = from + delta;
-          if (from < 0 || to < 0 || to >= ordered.length) return;
-          const snapshot = columns;
-          const next = [...ordered];
-          next.splice(to, 0, next.splice(from, 1)[0]);
-          setError(null);
-          setColumns(next.map((c, i) => ({ ...c, order: i })));
-          try {
-            await api.columns.move(id, to);
-          } catch (err) {
-            setColumns(snapshot);
-            failColumn(err, "Could not move the column.");
-          }
+          const from = [...columns].sort((a, b) => a.order - b.order).findIndex((c) => c.id === id);
+          await reorder(id, from + delta);
         },
+        onReorder: (id: string, to: number) => reorder(id, to),
         onDelete: async (id: string) => {
           setError(null);
           await api.columns.remove(id); // a 409 keeps the dialog open with its message (COL-05)
@@ -145,6 +163,9 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
       setError(err instanceof ApiError ? err.message : "Could not load cards.");
     }
   }, [board.id, search, categoryId]);
+
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
 
   useEffect(() => {
     if (first.current) {
@@ -244,7 +265,11 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
           columns={columns}
           categories={categories}
           onClose={closeCard}
-          onChanged={(card) => setCards((all) => (card.archived_at ? (setArchivedCount((n) => n + 1), all.filter((c) => c.id !== card.id)) : all.map((c) => (c.id === card.id ? { ...c, ...card } : c))))}
+          onChanged={(card) => {
+            // the count changes outside the state updater: React may run an updater twice (archived count +2 bug)
+            if (card.archived_at && cards.some((c) => c.id === card.id)) setArchivedCount((n) => n + 1);
+            setCards((all) => (card.archived_at ? all.filter((c) => c.id !== card.id) : all.map((c) => (c.id === card.id ? { ...c, ...card } : c))));
+          }}
           onDeleted={(id) => {
             setCards((all) => all.filter((c) => c.id !== id));
             closeCard();

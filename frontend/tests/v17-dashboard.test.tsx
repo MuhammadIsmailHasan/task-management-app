@@ -142,8 +142,10 @@ describe("DashboardView (Requirements 43 and 51)", () => {
   it("changing a filter writes it to the query string instead of fetching by itself", async () => {
     view("manager");
     await screen.findByText("57% Done");
-    await userEvent.click(screen.getByRole("button", { name: "Last 7 days" }));
-    expect(mocks.replace).toHaveBeenCalledWith(expect.stringMatching(/^\/app\/dashboard\?from=\d{4}-\d{2}-\d{2}&to=\d{4}-\d{2}-\d{2}$/));
+    expect(screen.queryByRole("radio", { name: "Last 7 days" })).not.toBeInTheDocument(); // no presets (DASH-27)
+    await userEvent.click(screen.getByRole("button", { name: /^From:/ }));
+    await userEvent.click(screen.getByRole("button", { name: /October 5th, 2026/ }));
+    expect(mocks.replace).toHaveBeenCalledWith(expect.stringContaining("from=2026-10-05"));
   });
 
   it("offers the people of the scope in the Member filter", async () => {
@@ -157,9 +159,10 @@ describe("DashboardView (Requirements 43 and 51)", () => {
   it("the Due on date has its own control and is sent as due_on", async () => {
     view("manager");
     await screen.findByText("57% Done");
-    const field = screen.getByLabelText("Due on");
-    expect(field).toHaveValue("2026-11-27");
-    fireEvent.change(field, { target: { value: "2026-11-30" } });
+    const field = screen.getByRole("button", { name: /^Due on:/ });
+    expect(field).toHaveAccessibleName(/27/);
+    await userEvent.click(field);
+    await userEvent.click(screen.getByRole("button", { name: /November 30th, 2026/ }));
     expect(mocks.replace).toHaveBeenCalledWith(expect.stringContaining("due_on=2026-11-30"));
   });
 

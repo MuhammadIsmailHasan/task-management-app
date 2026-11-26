@@ -32,15 +32,15 @@ export function SidePanel({ view, onClose }: SidePanelProps) {
         aria-label={TITLE[shown]}
         aria-hidden={!view}
         className={cn(
-          "fixed inset-y-0 right-0 z-panel flex w-full flex-col bg-surface-raised shadow-panel transition-transform duration-slow ease-out lg:inset-y-page lg:right-page lg:w-side lg:max-w-full lg:rounded-frame",
+          "fixed inset-y-0 right-0 z-panel flex w-full flex-col bg-surface-raised shadow-panel transition-transform duration-slow ease-out lg:inset-y-page lg:right-page lg:w-side lg:max-w-full lg:rounded-ui",
           view ? "translate-x-0" : "invisible translate-x-full",
         )}
       >
         <div className="flex items-center gap-3 p-6 pb-4">
-          <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-card bg-accent-tint text-on-accent-tint">
+          <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
             <Icon className="size-icon" />
           </span>
-          <h2 className="min-w-0 flex-1 font-heading text-title">{TITLE[shown]}</h2>
+          <h2 className="min-w-0 flex-1 font-heading text-page-title">{TITLE[shown]}</h2>
           <BaseButton variant="ghost" size="sm" className="size-control-sm px-0" onClick={onClose} aria-label="Close panel">
             <X aria-hidden="true" />
           </BaseButton>

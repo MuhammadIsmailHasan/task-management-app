@@ -34,20 +34,21 @@ export function MembersView() {
     };
   }, [boardId, version]);
 
-  if (!boardId) return <p className="text-meta text-ink-muted">Open a board to see its team.</p>;
+  if (!boardId) return <p className="text-sm text-ink-muted">Open a board to see its team.</p>;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-section">
       {canAdd && (
         // --space-4 between the panel header and the search field (FIX-06)
         <div data-testid="member-search-wrap" className="pt-4">
           <MemberSearch boardId={boardId} onAdded={() => setVersion((v) => v + 1)} />
         </div>
       )}
+      <h3 className="font-heading text-base font-semibold">Members ({members.length})</h3>
       <ul className="m-0 flex list-none flex-col gap-2 p-0" aria-label="Team members">
-        {members.length === 0 && <li className="text-meta text-ink-muted">No members yet.</li>}
+        {members.length === 0 && <li className="text-sm text-ink-muted">No members yet.</li>}
         {members.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 rounded-card p-3 hover:bg-surface">
+          <li key={m.id} className="flex items-center gap-3 rounded-ui p-item hover:bg-surface">
             <BaseAvatar name={m.full_name} src={m.avatar_url} size="md" inactive={m.is_active === false} unavailable={m.is_available === false} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 text-sm font-semibold break-words">

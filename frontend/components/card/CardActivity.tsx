@@ -17,18 +17,24 @@ interface CardActivityProps {
 /** The card's own log: the embedded first page, then Load more asks for older rows with `before`. */
 export function CardActivity({ cardId, initial, names, columns }: CardActivityProps) {
   const [extra, setExtra] = useState<ActivityEntry[]>([]);
-  const [hasMore, setHasMore] = useState(initial.length >= EMBEDDED_PAGE);
+  const [shown, setShown] = useState(PAGE);
+  const [exhausted, setExhausted] = useState(initial.length < EMBEDDED_PAGE);
   const [busy, setBusy] = useState(false);
-  const rows = [...initial, ...extra];
+  const all = [...initial, ...extra];
+  const rows = all.slice(0, shown);
+  const hasMore = all.length > shown || !exhausted;
 
   async function loadMore() {
-    const last = rows[rows.length - 1];
+    // five more rows: from what is already here first, then from the server with `before`
+    if (all.length >= shown + PAGE || exhausted) return setShown((n) => n + PAGE);
+    const last = all[all.length - 1];
     if (!last) return;
     setBusy(true);
     try {
       const page = await api.cards.activity(cardId, { limit: EMBEDDED_PAGE, before: last.id });
       setExtra((cur) => [...cur, ...page]);
-      setHasMore(page.length === EMBEDDED_PAGE);
+      setExhausted(page.length < EMBEDDED_PAGE);
+      setShown((n) => n + PAGE);
     } finally {
       setBusy(false);
     }
@@ -39,12 +45,15 @@ export function CardActivity({ cardId, initial, names, columns }: CardActivityPr
       <ActivityList entries={rows} names={names} columns={columns} />
       {hasMore && (
         <BaseButton variant="secondary" disabled={busy} onClick={() => void loadMore()}>
-          {busy ? "Loading…" : "Load more"}
+          {busy ? "Loading…" : "Load more activity"}
         </BaseButton>
       )}
     </div>
   );
 }
+
+/** Rows shown at a time (CMV-06). */
+const PAGE = 5;
 
 /** The card response embeds this many activity rows (the API default page). */
 const EMBEDDED_PAGE = 20;

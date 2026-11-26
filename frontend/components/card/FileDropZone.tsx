@@ -45,7 +45,7 @@ export function FileDropZone({ onFile }: FileDropZoneProps) {
           take(e.dataTransfer.files?.[0]);
         }}
         className={cn(
-          "rule-dashed flex min-h-dropzone cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-line px-3 text-center text-sm text-ink-muted transition-colors duration-fast focus-ring",
+          "rule-dashed flex min-h-dropzone cursor-pointer flex-col items-center justify-center gap-2 rounded-ui border border-line px-3 text-center text-sm text-ink-muted transition-colors duration-fast focus-ring",
           over && "border-brand bg-brand-tint text-brand",
         )}
       >

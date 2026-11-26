@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LandingHeader } from "@/components/landing/LandingHeader";
-import { ClosingCta, Faq, Features, Hero, LandingFooter, Roles, Teams, Workflow } from "@/components/landing/sections";
+import { ClosingCta, Features, Hero, LandingFooter, Roles, Workflow } from "@/components/landing/sections";
 import { SkipLink } from "@/components/shell/SkipLink";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +29,7 @@ export default function LandingPage() {
         <Hero />
         <Features />
         <Workflow />
-        <Teams />
         <Roles />
-        <Faq />
         <ClosingCta />
       </main>
       <LandingFooter />

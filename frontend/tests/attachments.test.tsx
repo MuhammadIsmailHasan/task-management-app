@@ -221,7 +221,7 @@ describe("CardModal Auto_Save", () => {
   it("uses plain attribute rows, no column select, and only Archive and Delete in the footer", async () => {
     modal();
     await screen.findByLabelText("Title");
-    for (const name of [/^Column: Todo/, /^Label: /, /^Priority: Medium/, /^Dates: /, /^Assignee: /]) {
+    for (const name of [/^Label: /, /^Priority: Medium/, /^Dates: /, /^Assignee: /]) {
       expect(screen.getAllByLabelText(name).length).toBeGreaterThan(0);
     }
     expect(screen.queryByLabelText("Move to column")).not.toBeInTheDocument();

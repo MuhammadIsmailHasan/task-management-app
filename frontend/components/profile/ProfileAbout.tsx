@@ -98,11 +98,11 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-label="Picture" className="rounded-card border border-line bg-surface-raised p-6">
+      <section aria-label="Picture" className="rounded-ui border border-line bg-surface-raised p-surface">
         <AvatarUploader user={user} onChange={onChange} />
       </section>
 
-      <form className="flex flex-col gap-4 rounded-card border border-line bg-surface-raised p-6" onSubmit={save} noValidate aria-label="Account details">
+      <form className="flex flex-col gap-4 rounded-ui border border-line bg-surface-raised p-surface" onSubmit={save} noValidate aria-label="Account details">
         {shown.form && <BaseAlert>{shown.form[0]}</BaseAlert>}
         <BaseField label="Full name" htmlFor="full_name" errors={shown.full_name}>
           <BaseInput id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} aria-invalid={shown.full_name ? true : undefined} />
@@ -114,7 +114,7 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
           <BaseInput id="email" type="email" autoComplete="email" value={email} onChange={(e) => (setEmail(e.target.value), setErrors((c) => ({ ...c, email: [] })))} aria-invalid={shown.email?.length ? true : undefined} />
         </BaseField>
         {user.pending_email && (
-          <div role="status" className="flex flex-col gap-2 rounded-field bg-surface p-3 text-sm">
+          <div role="status" className="flex flex-col gap-2 rounded-ui bg-surface p-item text-sm">
             <span>
               Waiting for confirmation: <strong className="break-all">{user.pending_email}</strong>. Your current address stays in use until you confirm.
             </span>
@@ -136,7 +136,7 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
         </div>
       </form>
 
-      <section aria-label="Availability" className="flex items-center justify-between gap-4 rounded-card border border-line bg-surface-raised p-6">
+      <section aria-label="Availability" className="flex items-center justify-between gap-4 rounded-ui border border-line bg-surface-raised p-surface">
         <div className="min-w-0">
           <h2 className="font-heading text-page-title">Available for work</h2>
           <p className="text-sm text-ink-muted">While this is off you are not offered in the member and assignee pickers. Cards you already have stay yours.</p>

@@ -1,3 +1,5 @@
+import { reportResult } from "@/lib/toast";
+
 /** One place that unwraps the { status, message, data } envelope and throws ApiError on failure. */
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api").replace(/\/$/, "");
@@ -65,6 +67,7 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   try {
     res = await fetch(url, { method, headers, body, cache: "no-store" });
   } catch {
+    reportResult(method, path, { ok: false, message: "Cannot reach the server. Check your connection and try again.", httpStatus: 0, hasDetails: false });
     throw new ApiError(0, "NETWORK_ERROR", "Cannot reach the server");
   }
 
@@ -80,11 +83,15 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
     data?: T;
     error?: { code?: string; details?: Record<string, unknown> };
   };
-  if (env.status === true) return env.data as T;
+  if (env.status === true) {
+    reportResult(method, path, { ok: true, message: env.message });
+    return env.data as T;
+  }
   const raw = env.error?.details ?? {};
   const retry = Number(raw.retry_after ?? res.headers?.get?.("Retry-After"));
   const fields: Details = {};
   for (const [key, value] of Object.entries(raw)) if (Array.isArray(value)) fields[key] = value.map(String);
+  reportResult(method, path, { ok: false, message: env.message ?? "", httpStatus: res.status, hasDetails: Object.keys(fields).length > 0 });
   throw new ApiError(
     res.status,
     env.error?.code ?? "ERROR",

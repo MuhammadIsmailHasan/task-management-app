@@ -15,9 +15,9 @@ interface BaseCardProps {
 export function BaseCard({ title, children, action, className, plain = false }: BaseCardProps) {
   const id = `card-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
-    <section aria-labelledby={id} className={cn("flex min-w-0 shrink-0 flex-col overflow-hidden", !plain && "rounded-frame border border-line bg-surface-raised shadow-card", className)}>
+    <section aria-labelledby={id} className={cn("flex min-w-0 shrink-0 flex-col overflow-hidden", !plain && "rounded-ui border border-line bg-surface-raised shadow-card", className)}>
       <header className={cn("flex items-center justify-between gap-2", plain ? "pb-3" : "px-6 pt-6")}>
-        <h3 id={id} className="font-heading text-page-title">
+        <h3 id={id} className="font-heading text-base font-semibold">
           {title}
         </h3>
         {action}

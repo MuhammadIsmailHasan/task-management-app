@@ -23,8 +23,8 @@ export function BaseDrawer({ open, onClose, title, children }: BaseDrawerProps) 
           className="fixed inset-y-0 left-0 z-sidebar flex w-sidebar max-w-full flex-col gap-4 overflow-y-auto bg-surface-raised p-4 shadow-panel focus:outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left lg:hidden"
         >
           <div className="flex items-center justify-between">
-            <DialogPrimitive.Title className="font-heading text-title">{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close aria-label="Close menu" className="inline-flex size-control touch-target items-center justify-center rounded-full text-ink-muted hover:bg-surface-sunken hover:text-ink focus-ring">
+            <DialogPrimitive.Title className="font-heading text-page-title">{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Close aria-label="Close menu" className="inline-flex size-control touch-target items-center justify-center rounded-ui text-ink-muted hover:bg-surface-sunken hover:text-ink focus-ring">
               <X className="size-icon" aria-hidden="true" />
             </DialogPrimitive.Close>
           </div>

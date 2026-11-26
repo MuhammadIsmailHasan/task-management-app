@@ -26,39 +26,35 @@ export function BoardHeader({ board, cards, categories, categoryId, search, onSe
   const doneId = board.columns?.find((c) => c.name === "Done")?.id;
   const done = doneId ? cards.filter((c) => c.column_id === doneId).length : 0;
   const percent = cards.length ? Math.round((done / cards.length) * 100) : 0;
-  const columnCount = board.columns?.length ?? 0;
 
   return (
-    <header className="relative z-header flex shrink-0 flex-col gap-4 px-page pt-2 pb-4">
+    <header className="relative z-header flex shrink-0 flex-col gap-field px-page pt-surface pb-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="inline-flex items-center gap-2 text-2xs text-ink-muted uppercase">
+          <span className="inline-flex items-center gap-2 text-xs text-ink-muted uppercase">
             <i aria-hidden="true" className="size-dot rounded-full bg-accent" />
             Active board
           </span>
           <BoardSwitcher board={board} />
-          <p className="text-sm text-ink-muted">
-            {columnCount} Columns · {cards.length} Total Tasks{board.description ? ` · ${board.description}` : ""}
-          </p>
         </div>
-        <BaseLinkButton variant="secondary" size="sm" href={boardViewPath(board.slug, "archived")}>
+        <BaseLinkButton variant="secondary" className="min-h-control" href={boardViewPath(board.slug, "archived")}>
           <Archive aria-hidden="true" />
           Archived
-          <span className="rounded-full bg-surface-strong px-2 text-2xs font-semibold">{archivedCount}</span>
+          <span className="inline-flex min-h-chip items-center rounded-ui bg-surface-strong px-2 text-xs font-semibold">{archivedCount}</span>
         </BaseLinkButton>
       </div>
-      <section aria-label="Filters" className="flex flex-wrap items-center gap-3 rounded-frame bg-surface p-3">
-        <div className="min-w-0 flex-1">
+      <section aria-label="Filters" className="flex flex-wrap items-center gap-field rounded-ui bg-surface p-item">
+        <div className="w-full min-w-0 lg:w-auto lg:flex-1">
           <FilterRow categories={categories} categoryId={categoryId} onCategory={onCategory} />
         </div>
         {cards.length > 0 && (
-          <div className="inline-flex items-center gap-3 rounded-full bg-surface-raised px-3 py-2 text-meta shadow-card">
+          <div className="inline-flex min-h-control items-center gap-3 rounded-ui bg-surface-raised px-4 text-sm shadow-card">
             <TrendingUp aria-hidden="true" className="size-icon-sm text-accent" />
             <span>
               {done} of {cards.length} done <span className="text-accent">({percent}%)</span>
             </span>
-            <div role="progressbar" aria-label="Board progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-progress-lg w-progress-meter overflow-hidden rounded-full bg-surface-sunken">
-              <div className="h-full rounded-full bg-accent transition-all duration-base" style={{ width: `${percent}%` }} />
+            <div role="progressbar" aria-label="Board progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-progress-lg w-progress-meter overflow-hidden rounded-ui bg-surface-sunken">
+              <div className="h-full rounded-ui bg-accent transition-all duration-base" style={{ width: `${percent}%` }} />
             </div>
           </div>
         )}

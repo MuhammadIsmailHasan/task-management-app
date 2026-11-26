@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** shadcn/ui Button, themed from the design tokens. Import only from components/shared/. */
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-transparent text-sm font-medium whitespace-nowrap cursor-pointer select-none transition-all duration-fast ease-out focus-ring disabled:pointer-events-none disabled:opacity-disabled active:translate-y-px [&_svg]:size-icon [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-ui border border-transparent text-sm font-medium whitespace-nowrap cursor-pointer select-none transition-all duration-fast ease-out focus-ring disabled:pointer-events-none disabled:opacity-disabled active:translate-y-px [&_svg]:size-icon [&_svg]:shrink-0",
   {
     variants: {
       variant: {

@@ -112,7 +112,7 @@ export function VerifyView({ token }: { token: string | null }) {
         <MailCheck aria-hidden="true" className="size-icon-lg text-accent" />
         <h1 className="font-heading text-xl">{changed ? "Email address updated" : "Email confirmed"}</h1>
         <p className="text-sm text-ink-muted">{changed ? "Your new address is now the one you sign in and get notices with." : "Your account is ready. Sign in to start."}</p>
-        <Link href={loginPath(pending.next)} className="inline-flex min-h-control items-center justify-center rounded-field bg-brand px-4 text-sm font-medium text-on-brand no-underline">
+        <Link href={loginPath(pending.next)} className="inline-flex min-h-control items-center justify-center rounded-ui bg-brand px-4 text-sm font-medium text-on-brand no-underline">
           Sign in
         </Link>
       </div>
@@ -125,7 +125,7 @@ export function VerifyView({ token }: { token: string | null }) {
         <MailWarning aria-hidden="true" className="size-icon-lg text-danger" />
         <h1 className="font-heading text-xl">{state.expired ? "This link has expired" : "This link is not valid"}</h1>
         <p className="text-sm text-ink-muted">{state.expired ? "Links work for 24 hours." : "It may have been used already."} Send a new link to your email.</p>
-        <h2 className="text-sm font-semibold">Send a new link</h2>
+        <h2 className="font-heading text-page-title">Send a new link</h2>
         {resendForm}
       </div>
     );

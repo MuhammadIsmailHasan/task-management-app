@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { ProductPreview } from "@/components/landing/ProductPreview";
-import { ClosingCta, Faq, Features, Hero, LandingFooter, Roles, Teams, Workflow } from "@/components/landing/sections";
+import { ClosingCta, Features, Hero, LandingFooter, Roles, Workflow } from "@/components/landing/sections";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { SAMPLE_CARDS, SAMPLE_COLUMNS, sampleFigures } from "@/lib/landing-sample";
 import { deriveProgress } from "@/lib/progress";
@@ -18,9 +18,7 @@ const page = () =>
         <Hero />
         <Features />
         <Workflow />
-        <Teams />
         <Roles />
-        <Faq />
         <ClosingCta />
       </main>
       <LandingFooter />
@@ -31,7 +29,7 @@ describe("Landing_Page (Requirement 41)", () => {
   it("renders the parts in order with the ids the header links to (LAND-02)", () => {
     const { container } = page();
     const ids = Array.from(container.querySelectorAll("main section[id]")).map((s) => s.id);
-    expect(ids).toEqual(["features", "workflow", "teams", "roles", "faq"]);
+    expect(ids).toEqual(["features", "workflow", "roles"]); // round 5: Teams and FAQ removed, less text
   });
 
   it("has one h1 and links only to the app under /app, to `/`, and to its own anchors (LAND-04, LAND-12, PATH-12)", () => {
@@ -48,9 +46,10 @@ describe("Landing_Page (Requirement 41)", () => {
     expect(screen.getAllByRole("link", { name: /Get started/ })[0]).toHaveAttribute("href", "/app/register");
   });
 
-  it("asks the four FAQ questions as native details elements", () => {
-    const { container } = render(<Faq />);
-    expect(container.querySelectorAll("details")).toHaveLength(4);
+  it("keeps the copy short: one line per idea and no FAQ (round 5)", () => {
+    const { container } = page();
+    expect(container.querySelectorAll("details")).toHaveLength(0);
+    for (const p of Array.from(container.querySelectorAll("main p"))) expect((p.textContent ?? "").split(/\s+/).length).toBeLessThanOrEqual(16);
   });
 
   it("claims nothing the product lacks: no pricing, tiers, Viewer role, or the old name (LAND-13)", () => {

@@ -43,7 +43,7 @@ export function CardTile({ card, category, assignee, dueState, done = false, dra
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "flex flex-col gap-3 rounded-card bg-surface-raised p-4 shadow-card transition-all duration-base ease-out focus-ring",
+        "flex flex-col gap-3 rounded-ui bg-surface-raised p-item shadow-card transition-all duration-base ease-out focus-ring",
         "hover:shadow-hover",
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
       )}
@@ -67,10 +67,10 @@ export function CardTile({ card, category, assignee, dueState, done = false, dra
           </BaseBadge>
         )}
       </div>
-      <div className={cn("text-card-title break-words", done && "text-ink-muted line-through")}>{card.title}</div>
-      {card.description && <p className="line-clamp-2 text-card-meta text-ink-muted">{card.description}</p>}
+      <div className={cn("text-base font-semibold break-words", done && "text-ink-muted line-through")}>{card.title}</div>
+      {card.description && <p className="line-clamp-2 text-sm text-ink-muted">{card.description}</p>}
       {total > 0 && <ProgressMeter done={doneCount} total={total} overdue={overdue} />}
-      <div className="flex flex-wrap items-center gap-3 text-card-meta text-ink-muted">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-ink-muted">
         {card.end_date && (
           <span className={cn("inline-flex items-center gap-1", overdue && "font-semibold text-danger", tomorrow && "font-semibold text-ink")}>
             {overdue ? <TriangleAlert className="size-icon-sm" aria-hidden="true" /> : tomorrow ? <Clock className="size-icon-sm" aria-hidden="true" /> : <CalendarDays className="size-icon-sm" aria-hidden="true" />}

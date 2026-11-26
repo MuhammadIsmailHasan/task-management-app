@@ -2,22 +2,29 @@
 
 import { Pencil, Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox } from "@/components/shared/BaseCombobox";
-import { BaseAlert, BaseField, BaseInput } from "@/components/shared/BaseField";
+import { BaseField, BaseInput } from "@/components/shared/BaseField";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { BaseSwitch } from "@/components/shared/BaseSwitch";
 import { useShell } from "@/components/shell/ShellContext";
 import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
-import { boardPath, cardPath } from "@/lib/routes";
+import { boardPath, cardPath, routes } from "@/lib/routes";
 import type { Role, User } from "@/lib/types";
 
 export type AdminUser = User & { role: Role };
+export interface UsersPage {
+  items: AdminUser[];
+  page: number;
+  per_page: number;
+  total: number;
+}
 
 const ROLES: { value: Role; label: string }[] = [
   { value: "member", label: "Member" },
@@ -62,13 +69,78 @@ function changesOf(user: AdminUser, staged: Staged): string[] {
 
 const label = (role: Role) => ROLES.find((r) => r.value === role)?.label ?? role;
 
+/** The pages to link to: the first, the last, and two on each side of the current one, with a gap marker between runs. */
+export function pageList(page: number, last: number): (number | "gap")[] {
+  const keep = new Set([1, last, page - 2, page - 1, page, page + 1, page + 2].filter((n) => n >= 1 && n <= last));
+  const sorted = [...keep].sort((a, b) => a - b);
+  const out: (number | "gap")[] = [];
+  sorted.forEach((n, i) => {
+    if (i > 0 && n - sorted[i - 1] > 1) out.push("gap");
+    out.push(n);
+  });
+  return out;
+}
+
+/** "Showing 21 to 40 of 57", Previous and Next, and page numbers; the page lives in the query string (USRP-04). */
+function Pagination({ page, perPage, total }: { page: number; perPage: number; total: number }) {
+  const last = Math.max(1, Math.ceil(total / perPage));
+  const from = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const to = Math.min(page * perPage, total);
+  const href = (n: number) => `${routes.users}?page=${n}`;
+  const button = "inline-flex min-h-control-sm min-w-control-sm items-center justify-center rounded-ui px-3 text-sm no-underline focus-ring";
+  return (
+    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-field">
+      <p className="text-sm text-ink-muted" aria-live="polite">
+        Showing {from} to {to} of {total}
+      </p>
+      <ul className="m-0 flex list-none flex-wrap items-center gap-1 p-0">
+        <li>
+          {page > 1 ? (
+            <Link href={href(page - 1)} className={`${button} bg-surface text-ink shadow-card hover:bg-surface-sunken`}>
+              Previous
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${button} text-ink-muted opacity-disabled`}>
+              Previous
+            </span>
+          )}
+        </li>
+        {pageList(page, last).map((n, i) => (
+          <li key={`${n}-${i}`}>
+            {n === "gap" ? (
+              <span aria-hidden="true" className="px-1 text-ink-muted">…</span>
+            ) : (
+              <Link href={href(n)} aria-label={`Page ${n}`} aria-current={n === page ? "page" : undefined} className={`${button} ${n === page ? "bg-brand text-on-brand" : "text-ink hover:bg-surface-sunken"}`}>
+                {n}
+              </Link>
+            )}
+          </li>
+        ))}
+        <li>
+          {page < last ? (
+            <Link href={href(page + 1)} className={`${button} bg-surface text-ink shadow-card hover:bg-surface-sunken`}>
+              Next
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${button} text-ink-muted opacity-disabled`}>
+              Next
+            </span>
+          )}
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 /**
  * Admin only (Requirement 53): a table of users with a Role select, an Active switch, an Available switch, and an Update
  * button per row. A change is staged in its row; Update lists the changes in a ConfirmDialog and saves them in one request.
  * There is no delete: an account is turned off, and not while the user has open work. Below 960 pixels each row is a card.
  */
-export function UsersScreen({ initial }: { initial: AdminUser[] }) {
-  const [users, setUsers] = useState(initial);
+export function UsersScreen({ initial }: { initial: UsersPage }) {
+  const router = useRouter();
+  const [users, setUsers] = useState(initial.items);
+  useEffect(() => setUsers(initial.items), [initial.items]); // a refresh after a save brings the re-sorted page
   const [staged, setStaged] = useState<Record<string, Staged>>({});
   const [confirming, setConfirming] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<{ user: AdminUser; details: BlockedDetails } | null>(null);
@@ -77,8 +149,6 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
   const [asking, setAsking] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const shown = users.filter((u) => {
@@ -94,12 +164,11 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
 
   async function saveStaged(user: AdminUser) {
     const body = { ...staged[user.id] };
-    setNotice(null);
     try {
       const saved = (await api.users.update(user.id, body)) as AdminUser;
       setUsers((all) => all.map((u) => (u.id === saved.id ? { ...u, ...saved } : u)));
       setStaged((all) => Object.fromEntries(Object.entries(all).filter(([id]) => id !== user.id)));
-      setNotice(`Saved ${saved.username}.`);
+      router.refresh(); // the order depends on the role: reload this page
     } catch (err) {
       if (err instanceof ApiError && err.code === "USER_HAS_OPEN_WORK") {
         setBlocked({ user, details: err.details as unknown as BlockedDetails });
@@ -111,7 +180,6 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
 
   function open(target: AdminUser | "new") {
     setErrors({});
-    setFormError(null);
     setDraft(target === "new" ? EMPTY : { full_name: target.full_name, username: target.username, email: target.email, password: "", role: target.role });
     setEditing(target);
   }
@@ -119,8 +187,8 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
   const set = (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => setDraft((d) => ({ ...d, [key]: e.target.value }));
 
   function fail(err: unknown) {
+    // a field error stays by its field; anything else already raised a Toast (TOAST-06)
     if (err instanceof ApiError && err.details && Object.keys(err.details).length) setErrors(err.details);
-    else setFormError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
   }
 
   function submit(e: FormEvent) {
@@ -133,16 +201,14 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
     if (!editing) return;
     setBusy(true);
     setErrors({});
-    setFormError(null);
     try {
       if (editing === "new") {
-        const created = (await api.users.create({ ...draft })) as AdminUser;
-        setUsers((all) => [...all, created].sort((a, b) => a.full_name.localeCompare(b.full_name)));
-        setNotice(`Created ${created.username}.`);
+        await api.users.create({ ...draft });
+        router.refresh();
       } else {
         const saved = (await api.users.update(editing.id, { full_name: draft.full_name, username: draft.username, email: draft.email })) as AdminUser;
         setUsers((all) => all.map((u) => (u.id === saved.id ? { ...u, ...saved } : u)));
-        setNotice(`Saved ${saved.username}.`);
+        router.refresh();
       }
       setEditing(null);
     } catch (err) {
@@ -165,7 +231,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
     const available = st.is_available ?? u.is_available ?? true;
     const changes = changesOf(u, st);
     return (
-      <li key={u.id} className="grid grid-cols-1 items-center gap-3 rounded-card border border-line bg-surface-raised p-3 lg:grid-cols-12">
+      <li key={u.id} className="grid grid-cols-1 items-center gap-3 rounded-ui border border-line bg-surface-raised p-item lg:grid-cols-12">
         <div className="flex min-w-0 items-center gap-3 lg:col-span-2">
           <BaseAvatar name={u.full_name} src={u.avatar_url} size="md" inactive={u.is_active === false} unavailable={u.is_available === false} />
           <div className="min-w-0">
@@ -215,9 +281,9 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-modal-wide flex-col gap-4 p-4 lg:p-8">
+    <div className="flex w-full flex-col gap-section px-page pt-surface pb-surface">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-title">Users</h1>
+        <h1 className="font-heading text-xl">Users</h1>
         <BaseButton onClick={() => open("new")}>
           <Plus aria-hidden="true" />
           New user
@@ -225,12 +291,9 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
       </div>
       <div className="relative">
         <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-icon -translate-y-1/2 text-ink-muted" />
-        <BaseInput type="search" className="pl-12" placeholder="Search users" aria-label="Search users" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <BaseInput type="search" className="pl-12" placeholder="Search this page" aria-label="Search users on this page" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
-      <div role="status" aria-live="polite">
-        {notice && <BaseAlert tone="info">{notice}</BaseAlert>}
-      </div>
-      <div aria-hidden="true" className="hidden grid-cols-12 gap-3 px-3 text-2xs text-ink-muted uppercase lg:grid">
+      <div aria-hidden="true" className="hidden grid-cols-12 gap-3 px-3 text-xs text-ink-muted uppercase lg:grid">
         <span className="col-span-2">Name</span>
         <span className="col-span-3">Email</span>
         <span className="col-span-2">Role</span>
@@ -242,6 +305,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
         {shown.map(row)}
         {shown.length === 0 && <li className="text-sm text-ink-muted">No users.</li>}
       </ul>
+      <Pagination page={initial.page} perPage={initial.per_page} total={initial.total} />
       <p className="text-xs text-ink-muted">Every change is recorded in the activity log. Accounts are turned off, never deleted.</p>
 
       <BaseModal open={!!editing} title={editing === "new" ? "New user" : "Edit user"} onClose={() => setEditing(null)}>
@@ -255,7 +319,6 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
           onConfirm={save}
         />
         <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-          {formError && <BaseAlert>{formError}</BaseAlert>}
           {field("full_name", "Full name", "text", "off")}
           {field("username", "Username", "text", "off")}
           {field("email", "Email", "email", "off")}
@@ -284,7 +347,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
             <p className="text-sm">Reassign or finish this work first.</p>
             {blocked.details.boards.length > 0 && (
               <section aria-label="Boards they own" className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Boards they own with open cards ({blocked.details.boards_total})</h3>
+                <h3 className="font-heading text-base font-semibold">Boards they own with open cards ({blocked.details.boards_total})</h3>
                 <ul className="m-0 flex list-none flex-col gap-1 p-0">
                   {blocked.details.boards.map((b) => (
                     <li key={b.id} className="flex flex-wrap items-center gap-2 text-sm">
@@ -299,7 +362,7 @@ export function UsersScreen({ initial }: { initial: AdminUser[] }) {
             )}
             {blocked.details.cards.length > 0 && (
               <section aria-label="Cards assigned to them" className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">Open cards assigned to them ({blocked.details.cards_total})</h3>
+                <h3 className="font-heading text-base font-semibold">Open cards assigned to them ({blocked.details.cards_total})</h3>
                 <ul className="m-0 flex list-none flex-col gap-1 p-0">
                   {blocked.details.cards.map((c) => (
                     <li key={c.id} className="text-sm">

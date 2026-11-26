@@ -6,6 +6,8 @@ import { ShellContext } from "@/components/shell/ShellContext";
 import { ApiError } from "@/lib/http";
 import { shellValue } from "./support/shell";
 
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace: vi.fn() }), usePathname: () => "/app/users" }));
 const create = vi.fn();
 const update = vi.fn();
 vi.mock("@/lib/api", () => ({ api: { users: { create: (...a: unknown[]) => create(...a), update: (...a: unknown[]) => update(...a) } } }));
@@ -16,7 +18,7 @@ const shell = shellValue({ session: { token: "t", userId: "a1", role: "admin" as
 function renderScreen(users: AdminUser[]) {
   return render(
     <ShellContext.Provider value={shell}>
-      <UsersScreen initial={users} />
+      <UsersScreen initial={{ items: users, page: 1, per_page: 20, total: users.length }} />
     </ShellContext.Provider>,
   );
 }
@@ -47,8 +49,7 @@ describe("UsersScreen", () => {
     expect(await screen.findByText("Create user “cyd”?")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() => expect(create).toHaveBeenCalledWith({ full_name: "Cy Day", username: "cyd", email: "cy@x.com", password: "long-enough-pass", role: "member" }));
-    expect(await screen.findByText("Created cyd.")).toBeInTheDocument();
-    expect(screen.getByText("Cy Day")).toBeInTheDocument();
+    await waitFor(() => expect(refresh).toHaveBeenCalled()); // the page reloads in its sorted place; the Toast says "User created"
   });
 
   it("maps a 409 onto the username and email fields", async () => {
@@ -74,7 +75,7 @@ describe("UsersScreen", () => {
     await userEvent.type(screen.getByLabelText("Username"), "annlr");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(update).toHaveBeenCalledWith("u1", { full_name: "Ann Lee-Roy", username: "annlr", email: "ann@x.com" }));
-    expect(await screen.findByText("Saved annlr.")).toBeInTheDocument();
+    await waitFor(() => expect(refresh).toHaveBeenCalled()); // the Toast says "User updated"
   });
 
   it("stages a role change in the row and saves it only after Update and a confirmation (ADM-04)", async () => {
@@ -89,7 +90,7 @@ describe("UsersScreen", () => {
     expect(within(dialog).getByText("Role: Member to Supervisor")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(update).toHaveBeenCalledWith("u1", { role: "supervisor" }));
-    expect(await screen.findByText("Saved ann.")).toBeInTheDocument();
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it("lists every staged change together and sends one request with only the changed fields", async () => {
@@ -151,7 +152,7 @@ describe("UsersScreen", () => {
 
   it("filters by name, username, or email", async () => {
     renderScreen([user({}), user({ id: "u2", full_name: "Bob Roy", username: "bob", email: "bob@x.com" })]);
-    await userEvent.type(screen.getByRole("searchbox", { name: "Search users" }), "bob@");
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search users on this page" }), "bob@");
     expect(within(screen.getByRole("list", { name: "Users" })).getAllByRole("listitem")).toHaveLength(1);
   });
 

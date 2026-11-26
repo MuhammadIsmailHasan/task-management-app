@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { isSidebarActive, isTopMenuActive, sidebarFor, topMenuFor } from "./navItems";
 import { useShell } from "./ShellContext";
 
-const row = "flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-card px-3 text-sm font-medium no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
+const row = "flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-ui px-3 text-sm font-medium no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
 
 /**
  * Below 960 pixels the Sidebar and the Top_Menu become this drawer: the global items as 44 pixel rows, then, while a
@@ -38,7 +38,7 @@ export function NavDrawer({ open, onClose }: { open: boolean; onClose: () => voi
       </nav>
       {board && (
         <nav aria-label="This board" className="flex flex-col gap-1">
-          <h3 className="px-3 text-2xs text-ink-muted uppercase">This board</h3>
+          <h3 className="px-3 text-xs text-ink-muted uppercase">This board</h3>
           {topMenuFor(ctx).map((item) => {
             const Icon = item.icon;
             const active = isTopMenuActive(item, board.slug, pathname, panel, shareOpen);
@@ -73,7 +73,7 @@ export function NavDrawer({ open, onClose }: { open: boolean; onClose: () => voi
       )}
       {boards.length > 0 && (
         <section aria-label="Boards" className="flex flex-col gap-1">
-          <h3 className="px-3 text-2xs text-ink-muted uppercase">Boards</h3>
+          <h3 className="px-3 text-xs text-ink-muted uppercase">Boards</h3>
           {boards.map((b) => (
             <Link key={b.id} href={boardPath(b.slug)} onClick={onClose} aria-current={b.id === boardId ? "page" : undefined} className={cn(row, "font-normal break-words", b.id === boardId ? "bg-surface-sunken text-ink" : "text-ink")}>
               <span className="min-w-0">{b.name}</span>

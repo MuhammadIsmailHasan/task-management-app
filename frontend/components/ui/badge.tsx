@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 /** shadcn/ui Badge; tones are the --label-* colour pairs, shapes are pill and tag. */
-export const badgeVariants = cva("inline-flex items-center gap-1 text-2xs font-semibold", {
+export const badgeVariants = cva("inline-flex min-h-chip items-center gap-1 text-xs font-semibold", {
   variants: {
     tone: {
       neutral: "bg-surface-sunken text-ink-muted",
@@ -16,11 +16,23 @@ export const badgeVariants = cva("inline-flex items-center gap-1 text-2xs font-s
       red: "bg-label-red text-label-red-fg",
       purple: "bg-label-purple text-label-purple-fg",
       blue: "bg-label-blue text-label-blue-fg",
+      amber: "bg-label-amber text-label-amber-fg",
+      lime: "bg-label-lime text-label-lime-fg",
+      emerald: "bg-label-emerald text-label-emerald-fg",
+      teal: "bg-label-teal text-label-teal-fg",
+      cyan: "bg-label-cyan text-label-cyan-fg",
+      sky: "bg-label-sky text-label-sky-fg",
+      indigo: "bg-label-indigo text-label-indigo-fg",
+      violet: "bg-label-violet text-label-violet-fg",
+      fuchsia: "bg-label-fuchsia text-label-fuchsia-fg",
+      pink: "bg-label-pink text-label-pink-fg",
+      rose: "bg-label-rose text-label-rose-fg",
+      slate: "bg-label-slate text-label-slate-fg",
     },
     shape: {
-      pill: "rounded-full px-2 py-half",
-      tag: "rounded-full px-2 py-half font-medium",
-      outline: "rounded-full border bg-transparent px-2 py-half font-medium",
+      pill: "rounded-ui px-2 py-half",
+      tag: "rounded-ui px-2 py-half font-medium",
+      outline: "rounded-ui border bg-transparent px-2 py-half font-medium",
     },
   },
   compoundVariants: [

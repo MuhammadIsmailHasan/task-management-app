@@ -11,7 +11,7 @@ export function NotFound() {
   return (
     <main id="main" className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface p-6 text-center">
       <BrandLogo variant="full" size="md" />
-      <div className="flex w-full max-w-modal flex-col items-center gap-6 rounded-frame bg-surface-raised p-8 shadow-card">
+      <div className="flex w-full max-w-modal flex-col items-center gap-6 rounded-ui bg-surface-raised p-surface shadow-card">
         <svg role="img" aria-label="Error 404" viewBox="0 0 240 96" className="w-full max-w-popover">
           <rect x="0" y="0" width="240" height="96" rx="24" className="fill-accent-tint" />
           <text x="120" y="68" textAnchor="middle" className="fill-brand font-heading text-display" fontWeight="800">

@@ -38,7 +38,7 @@ export function BoardSwitcher({ board }: { board: Board }) {
           <BaseButton
             variant="secondary"
             aria-label={`Switch board: ${board.name}`}
-            className="h-auto w-fit max-w-full justify-start gap-2 rounded-card px-3 py-2 text-left font-heading text-xl whitespace-normal break-words"
+            className="h-auto w-fit max-w-full justify-start gap-2 px-3 py-2 text-left font-heading text-xl whitespace-normal break-words"
           >
             <span className="min-w-0">{board.name}</span>
             <ChevronDown aria-hidden="true" className={cn("size-icon shrink-0 text-ink-muted transition-transform duration-fast", open && "rotate-180")} />
@@ -58,7 +58,7 @@ export function BoardSwitcher({ board }: { board: Board }) {
                   href={boardPath(b.slug)}
                   aria-current={b.id === board.id ? "true" : undefined}
                   onClick={() => setOpen(false)}
-                  className={cn("flex flex-col gap-1 rounded-card px-3 py-2 text-ink no-underline transition-colors duration-fast hover:bg-surface-sunken focus-ring", b.id === board.id && "bg-surface")}
+                  className={cn("flex flex-col gap-1 rounded-ui px-3 py-2 text-ink no-underline transition-colors duration-fast hover:bg-surface-sunken focus-ring", b.id === board.id && "bg-surface")}
                 >
                   <span className="flex items-center gap-2 text-sm font-semibold break-words">
                     <span className="min-w-0">{b.name}</span>
@@ -71,7 +71,7 @@ export function BoardSwitcher({ board }: { board: Board }) {
                 </Link>
               </li>
             ))}
-            {shown.length === 0 && <li className="px-3 text-meta text-ink-muted">No boards found.</li>}
+            {shown.length === 0 && <li className="px-3 text-sm text-ink-muted">No boards found.</li>}
           </ul>
           {canCreate && (
             <BaseButton

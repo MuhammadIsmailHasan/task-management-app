@@ -17,6 +17,8 @@ import { shellValue } from "./support/shell";
 
 const mocks = vi.hoisted(() => ({ api: { cards: { restore: vi.fn() } } }));
 vi.mock("@/lib/api", () => ({ api: mocks.api }));
+const toastSuccess = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/toast", () => ({ toast: { success: toastSuccess, error: vi.fn() }, withoutErrorToast: <T,>(run: () => Promise<T>) => run() }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
 const col = (id: string, name: string, order: number): Column => ({ id, board_id: "b1", name, order });
@@ -228,7 +230,7 @@ describe("Archived view (VIEW-05 to VIEW-07)", () => {
     wrap("manager", <ArchivedView board={board} initialCards={archived} categories={[]} />);
     await userEvent.click(screen.getByRole("button", { name: "Restore Old plan" }));
     expect(mocks.api.cards.restore).toHaveBeenCalledWith("z1");
-    expect(await screen.findByText("Card restored to Todo")).toBeInTheDocument();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Card restored to Todo")); // a Toast (TOAST-01)
     await waitFor(() => expect(screen.queryByText("Old plan")).not.toBeInTheDocument());
     expect(screen.getByText("No archived cards.")).toBeInTheDocument();
   });
@@ -239,10 +241,12 @@ describe("Archived view (VIEW-05 to VIEW-07)", () => {
     expect(screen.queryByRole("button", { name: /Restore/ })).not.toBeInTheDocument();
   });
 
-  it("shows the server's message when the Card cannot be restored", async () => {
+  it("keeps the row when the Card cannot be restored (the request raises the error Toast)", async () => {
     mocks.api.cards.restore.mockRejectedValue(new ApiError(409, "CARD_NOT_ARCHIVED", "The card is not archived"));
     wrap("manager", <ArchivedView board={board} initialCards={archived} categories={[]} />);
     await userEvent.click(screen.getByRole("button", { name: "Restore Old plan" }));
-    expect(await screen.findByText("The card is not archived")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.api.cards.restore).toHaveBeenCalled());
+    expect(screen.getByText("Old plan")).toBeInTheDocument();
+    expect(toastSuccess).not.toHaveBeenCalled();
   });
 });

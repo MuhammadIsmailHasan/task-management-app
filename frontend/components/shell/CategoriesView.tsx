@@ -4,28 +4,27 @@ import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseButton } from "@/components/shared/BaseButton";
-import { BaseCombobox } from "@/components/shared/BaseCombobox";
+import { ColorSwatchPicker } from "@/components/shared/ColorSwatchPicker";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
 import { api } from "@/lib/api";
 import { useShell } from "./ShellContext";
 import { ApiError } from "@/lib/http";
-import { categoryTone, TONE_CYCLE } from "@/lib/tones";
+import { notifyCategoriesChanged } from "@/lib/categories";
+import { categoryTone, PALETTE, TONE_CYCLE, type Tone } from "@/lib/tones";
 import type { Category } from "@/lib/types";
-
-const COLORS = TONE_CYCLE.map((t) => ({ value: t, label: t[0].toUpperCase() + t.slice(1) }));
 
 /** Add, rename, recolor, and delete the categories of the open Board in the Side_Panel (the API enforces who may; NAV-07). */
 export function CategoriesView() {
   const { boardId } = useShell();
-  if (!boardId) return <p className="text-meta text-ink-muted">Open a board to see its categories.</p>;
+  if (!boardId) return <p className="text-sm text-ink-muted">Open a board to see its categories.</p>;
   return <CategoriesList boardId={boardId} />;
 }
 
 function CategoriesList({ boardId }: { boardId: string }) {
   const [items, setItems] = useState<Category[] | null>(null);
   const [name, setName] = useState("");
-  const [color, setColor] = useState<string>(TONE_CYCLE[0]);
+  const [color, setColor] = useState<Tone>(TONE_CYCLE[0]);
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
 
@@ -41,6 +40,7 @@ function CategoriesList({ boardId }: { boardId: string }) {
     setError(null);
     try {
       await action();
+      notifyCategoriesChanged(boardId); // the Board, its views, and an open Card show the change at once (CATP-04)
     } catch (err) {
       setError(err instanceof ApiError ? (err.details?.name?.[0] ?? err.message) : "Something went wrong.");
     }
@@ -49,7 +49,7 @@ function CategoriesList({ boardId }: { boardId: string }) {
   const replace = (c: Category) => setItems((cur) => (cur ?? []).map((x) => (x.id === c.id ? c : x)));
 
   return (
-    <div className="flex flex-col gap-4 pt-4">
+    <div className="flex flex-col gap-section pt-4">
       {error && <BaseAlert>{error}</BaseAlert>}
       <form
         method="post"
@@ -59,15 +59,15 @@ function CategoriesList({ boardId }: { boardId: string }) {
           if (name.trim()) setAsking(true);
         }}
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-label">
           <label htmlFor="category-name" className="text-xs font-medium text-ink-muted">
             New category
           </label>
           <BaseInput id="category-name" value={name} placeholder="Name" onChange={(e) => setName(e.target.value)} />
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-label">
           <span className="text-xs font-medium text-ink-muted">Color</span>
-          <BaseCombobox label="Color" options={COLORS} value={color} onChange={setColor} />
+          <ColorSwatchPicker label="Color" value={color} onChange={setColor} />
         </div>
         <BaseButton type="submit" disabled={!name.trim()}>
           <Plus aria-hidden="true" />
@@ -97,7 +97,7 @@ function CategoriesList({ boardId }: { boardId: string }) {
       ) : (
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {items.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 rounded-card border border-line p-3">
+            <li key={c.id} className="flex flex-col gap-3 rounded-ui border border-line p-item">
               <BaseBadge shape="tag" tone={categoryTone(c)} className="self-start lowercase">
                 {c.name}
               </BaseBadge>
@@ -112,7 +112,7 @@ function CategoriesList({ boardId }: { boardId: string }) {
                 }}
               />
               <div>
-                <BaseCombobox label={`Color of ${c.name}`} options={COLORS} value={categoryTone(c)} onChange={(v) => void run(async () => replace(await api.categories.update(c.id, { color: v })))} />
+                <ColorSwatchPicker label={`Color of ${c.name}`} value={categoryTone(c)} onChange={(v) => void run(async () => replace(await api.categories.update(c.id, { color: v })))} />
               </div>
               <ConfirmDialog
                 title={`Delete category “${c.name}”?`}

@@ -33,8 +33,8 @@ export function BaseAvatar({ name, size = "sm", className, label, src, inactive 
         aria-label={named}
         data-state={state?.toLowerCase()}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-2xs font-bold text-on-brand focus-ring",
-          size === "sm" ? "size-avatar-sm text-2xs" : size === "xl" ? "size-avatar-xl text-title" : "size-avatar-md text-2xs",
+          "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-xs font-bold text-on-brand focus-ring",
+          size === "sm" ? "size-avatar-sm text-xs" : size === "xl" ? "size-avatar-xl text-xl" : "size-avatar-md text-xs",
           inactive && "opacity-disabled",
           !inactive && unavailable && "border border-dashed border-ink-muted",
           className,

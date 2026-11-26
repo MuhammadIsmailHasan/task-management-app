@@ -158,17 +158,17 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
 
   return (
     <>
-      <nav aria-label="Sign in or create an account" className="mb-8 flex w-fit gap-1 rounded-field bg-surface p-1 text-sm font-medium">
-        <Link href={loginPath(next)} aria-current={mode === "login" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "login" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+      <nav aria-label="Sign in or create an account" className="mb-section flex w-fit gap-1 rounded-ui bg-surface p-1 text-sm font-medium">
+        <Link href={loginPath(next)} aria-current={mode === "login" ? "page" : undefined} className={`inline-flex min-h-control-sm items-center rounded-ui px-3 no-underline ${mode === "login" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
           Sign in
         </Link>
-        <Link href={registerPath(next)} aria-current={mode === "register" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "register" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+        <Link href={registerPath(next)} aria-current={mode === "register" ? "page" : undefined} className={`inline-flex min-h-control-sm items-center rounded-ui px-3 no-underline ${mode === "register" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
           Create account
         </Link>
       </nav>
       <h1 className="font-heading text-xl">{copy.title}</h1>
-      <p className="mt-1 mb-6 text-sm text-ink-muted">{copy.sub}</p>
-      <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
+      <p className="mt-label mb-section text-sm text-ink-muted">{copy.sub}</p>
+      <form method="post" className="flex flex-col gap-field" onSubmit={onSubmit} noValidate>
         {formError && <BaseAlert>{formError}</BaseAlert>}
         {unconfirmed && (
           <Link href={routes.verify} className="-mt-2 text-sm font-semibold">
@@ -181,7 +181,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         {mode === "register" && field("username", "Username", { autoComplete: "username", onBlur: () => void checkAvailability("username") })}
         {mode === "register" && field("email", "Email", { type: "email", autoComplete: "email", onBlur: () => void checkAvailability("email") })}
         {field("password", "Password", { type: "password", autoComplete: mode === "login" ? "current-password" : "new-password" })}
-        <BaseButton type="submit" variant="dark" block className="min-h-control rounded-field shadow-modal" disabled={busy || blocked}>
+        <BaseButton type="submit" block className="min-h-control" disabled={busy || blocked}>
           {busy ? "Please wait…" : copy.cta}
         </BaseButton>
       </form>

@@ -171,10 +171,10 @@ export function ShareModal({ boardId, boardName, open, onClose, canPublicLink, c
 
   const inviteSection = (
     <div className="flex flex-col gap-6">
-      <section aria-label="Invite settings" className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
+      <section aria-label="Invite settings" className="flex flex-col gap-3 rounded-ui border border-line bg-surface p-item">
         <div className="flex items-center gap-2">
           <ShieldCheck aria-hidden="true" className="size-icon text-accent" />
-          <h3 className="text-sm font-semibold">Direct invite link</h3>
+          <h3 className="font-heading text-base font-semibold">Direct invite link</h3>
           {invite?.enabled && <BaseBadge tone="accent">Active</BaseBadge>}
         </div>
         <p className="text-sm text-ink-muted">Anyone with the link can ask to join. Nobody gets in until a manager or an admin approves the request.</p>
@@ -201,17 +201,17 @@ export function ShareModal({ boardId, boardName, open, onClose, canPublicLink, c
 
       <section aria-label="Join requests" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
+          <h3 className="flex items-center gap-2 font-heading text-base font-semibold">
             Pending join requests
             {requests.length > 0 && <BaseBadge tone="accent">{requests.length} pending</BaseBadge>}
           </h3>
           <span className="text-xs text-ink-muted">Manager or admin decides</span>
         </div>
-        {!canDecide && <p className="rounded-card bg-surface p-3 text-sm text-ink-muted">A manager or an admin decides on requests.</p>}
+        {!canDecide && <p className="rounded-ui bg-surface p-item text-sm text-ink-muted">A manager or an admin decides on requests.</p>}
         {requests.length === 0 && <p className="text-sm text-ink-muted">No requests waiting.</p>}
         <ul className="m-0 flex list-none flex-col gap-3 p-0">
           {requests.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-card border border-line p-3">
+            <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-ui border border-line p-item">
               <BaseAvatar name={r.user.full_name} src={r.user.avatar_url} size="md" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium break-words">
@@ -238,10 +238,10 @@ export function ShareModal({ boardId, boardName, open, onClose, canPublicLink, c
   );
 
   const publicSection = (
-    <section aria-label="Public link settings" className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
+    <section aria-label="Public link settings" className="flex flex-col gap-3 rounded-ui border border-line bg-surface p-item">
       <div className="flex items-center gap-2">
         <Share2 aria-hidden="true" className="size-icon text-accent" />
-        <h3 className="text-sm font-semibold">Public read-only link</h3>
+        <h3 className="font-heading text-base font-semibold">Public read-only link</h3>
         {share?.enabled && <BaseBadge tone="accent">Active</BaseBadge>}
       </div>
       <p className="text-sm text-ink-muted">Anyone with the link sees cards, subtasks and attachments. Comments and activity stay private.</p>

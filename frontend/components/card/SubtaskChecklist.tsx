@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
+import { BaseCheckbox } from "@/components/shared/BaseCheckbox";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
@@ -71,9 +72,9 @@ export function SubtaskChecklist({ cardId, subtasks, canEdit, onChange }: Subtas
           <li
             key={s.id}
             data-subtask-id={s.id}
-            className="flex items-center gap-2 rounded-sm border border-line bg-surface-raised px-2 py-1 transition-shadow hover:shadow-card"
+            className="flex items-center gap-2 rounded-ui border border-line bg-surface-raised px-2 py-1 transition-shadow hover:shadow-card"
           >
-            {canEdit && (
+            {canEdit && s.can_edit !== false && (
               <span
                 role="img"
                 aria-label="Drag to reorder"
@@ -88,9 +89,7 @@ export function SubtaskChecklist({ cardId, subtasks, canEdit, onChange }: Subtas
                 <GripVertical className="size-icon" aria-hidden="true" />
               </span>
             )}
-            <input
-              type="checkbox"
-              className="size-icon shrink-0 accent-brand"
+            <BaseCheckbox
               aria-label={`Done: ${s.title}`}
               checked={s.is_done}
               disabled={!canEdit}
@@ -100,14 +99,14 @@ export function SubtaskChecklist({ cardId, subtasks, canEdit, onChange }: Subtas
               className={s.is_done ? "min-h-control-sm flex-1 border-transparent text-ink-muted line-through" : "min-h-control-sm flex-1 border-transparent"}
               aria-label={`Subtask title: ${s.title}`}
               defaultValue={s.title}
-              readOnly={!canEdit}
+              readOnly={!canEdit || s.can_edit === false}
               onBlur={(e) => {
                 const next = e.target.value.trim();
-                if (!canEdit || !next || next === s.title) return void (e.target.value = s.title);
+                if (!canEdit || s.can_edit === false || !next || next === s.title) return void (e.target.value = s.title);
                 void guard(async () => replace(await api.subtasks.update(s.id, { title: next })));
               }}
             />
-            {canEdit && (
+            {canEdit && s.can_edit !== false && (
               <ConfirmDialog
                 title={`Delete subtask “${s.title}”?`}
                 message="This cannot be undone."

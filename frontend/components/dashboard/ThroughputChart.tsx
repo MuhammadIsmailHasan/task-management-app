@@ -9,21 +9,21 @@ export function ThroughputChart({ weeks }: { weeks: ThroughputWeek[] }) {
   const total = weeks.reduce((n, w) => n + w.done, 0);
   const last = weeks.length - 1;
   return (
-    <section aria-label="Completed per week" className="flex flex-col gap-4 rounded-frame border border-line bg-surface-raised p-6 shadow-card">
+    <section aria-label="Completed per week" className="flex flex-col gap-4 rounded-ui border border-line bg-surface-raised p-surface shadow-card">
       <header className="flex items-center gap-3">
-        <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-card bg-accent-tint text-on-accent-tint">
+        <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
           <BarChart3 className="size-icon" />
         </span>
-        <h3 className="font-heading text-page-title">Completed per week</h3>
+        <h2 className="font-heading text-page-title">Completed per week</h2>
       </header>
       <div role="img" aria-label={`Cards completed per week over the last ${weeks.length} weeks: ${total} in total`} className="flex h-chart items-end gap-3">
         {weeks.map((w, i) => (
           <div key={w.week_start} className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-            <span className={cn("rounded-full bg-ink px-2 py-half text-2xs text-surface-raised", i === last ? "visible" : "invisible group-hover:visible")}>{w.done}</span>
-            <div className="flex w-full max-w-tile flex-1 items-end overflow-hidden rounded-full bg-surface-strong">
-              <div className={cn("w-full rounded-full", i === last ? "bg-accent" : "bg-accent-tint")} style={{ height: `${shares[i]}%` }} />
+            <span className={cn("rounded-ui bg-ink px-2 py-half text-xs text-surface-raised", i === last ? "visible" : "invisible group-hover:visible")}>{w.done}</span>
+            <div className="flex w-full max-w-tile flex-1 items-end overflow-hidden rounded-ui bg-surface-strong">
+              <div className={cn("w-full rounded-ui", i === last ? "bg-accent" : "bg-accent-tint")} style={{ height: `${shares[i]}%` }} />
             </div>
-            <span className={cn("text-2xs uppercase", i === last ? "text-ink" : "text-ink-muted")}>{formatWeek(w.week_start)}</span>
+            <span className={cn("text-xs uppercase", i === last ? "text-ink" : "text-ink-muted")}>{formatWeek(w.week_start)}</span>
           </div>
         ))}
       </div>

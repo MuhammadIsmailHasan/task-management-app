@@ -46,7 +46,7 @@ interface CardAttributesProps {
 const PRIORITY_COLOR: Record<Priority, string> = { high: "text-label-red-fg", medium: "text-label-orange-fg", low: "text-label-green-fg" };
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 
-const row = "h-auto min-h-control-sm w-auto justify-start gap-2 rounded-full px-4 text-sm font-medium text-ink";
+const row = "h-auto min-h-control-sm w-auto justify-start gap-2 rounded-ui px-4 text-sm font-medium text-ink";
 
 /** The icon and the text of one attribute row; every row has the same height, font, and icon size. */
 function RowContent({ icon: Icon, iconClass, lead, children }: { icon: LucideIcon; iconClass?: string; lead?: ReactNode; children: ReactNode }) {
@@ -60,7 +60,7 @@ function RowContent({ icon: Icon, iconClass, lead, children }: { icon: LucideIco
 
 function StaticRow({ icon, iconClass, lead, label, children, danger }: { icon: LucideIcon; iconClass?: string; lead?: ReactNode; label: string; children: ReactNode; danger?: boolean }) {
   return (
-    <div role="group" aria-label={label} className={cn("flex min-h-control-sm w-fit max-w-full items-center gap-2 rounded-full border border-line px-4 text-sm font-medium", danger && "text-danger")}>
+    <div role="group" aria-label={label} className={cn("flex min-h-control-sm w-fit max-w-full items-center gap-2 rounded-ui border border-line px-4 text-sm font-medium", danger && "text-danger")}>
       <RowContent icon={icon} iconClass={iconClass} lead={lead}>
         {children}
       </RowContent>
@@ -121,10 +121,6 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
 
   return (
     <div role="group" aria-label="Card attributes" className="flex flex-wrap items-start gap-2">
-      <StaticRow icon={Columns3} label={`Column: ${columnName ?? ""}`}>
-        {columnName ?? "No column"}
-      </StaticRow>
-
       <div className="flex min-w-0 flex-col gap-1">
       {canEdit ? (
         <BaseCombobox

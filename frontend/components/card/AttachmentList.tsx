@@ -26,7 +26,7 @@ const KINDS = [
   { value: "file", label: "File" },
 ];
 
-const tile = "flex min-h-control items-center justify-between gap-2 rounded-sm border border-line bg-surface-raised px-3 text-xs";
+const tile = "flex min-h-control items-center justify-between gap-2 rounded-ui border border-line bg-surface-raised px-3 text-xs";
 
 function TypeIcon({ kind }: { kind: "document" | "archive" | "link" }) {
   const Icon = kind === "link" ? LinkIcon : kind === "archive" ? FileArchive : FileText;
@@ -84,7 +84,7 @@ export function AttachmentList({ cardId, attachments, canEdit, onChange }: Attac
                   <TypeIcon kind={iconFor(a)} />
                   <span className="truncate">{a.name}</span>
                 </a>
-                {canEdit && (
+                {canEdit && a.can_edit !== false && (
                   <ConfirmDialog
                     title="Remove attachment?"
                     message={a.name}

@@ -5,14 +5,31 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-export function Command({ className, ...props }: ComponentProps<typeof CommandPrimitive>) {
-  // cmdk would select an item on pointer move and keep it selected after the pointer left; the pointer highlight is ours (CommandItem), the keyboard highlight is cmdk's.
-  return <CommandPrimitive data-slot="command" disablePointerSelection className={cn("flex w-full flex-col gap-2", className)} {...props} />;
+/**
+ * cmdk marks the first item selected as soon as the list opens, which reads as "already chosen" (DS-07). The keyboard
+ * highlight (`aria-selected`) therefore shows only after a key was pressed (`data-kb`); the pointer highlight is ours (CommandItem).
+ */
+export function Command({ className, onKeyDown, ...props }: ComponentProps<typeof CommandPrimitive>) {
+  const [kb, setKb] = useState(false);
+  return (
+    <CommandPrimitive
+      data-slot="command"
+      data-kb={kb ? "true" : "false"}
+      disablePointerSelection
+      className={cn("group/cmd flex w-full flex-col gap-2", className)}
+      onKeyDown={(e) => {
+        if (e.key.length === 1 || e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End") setKb(true);
+        onKeyDown?.(e);
+      }}
+      onPointerMove={() => setKb(false)}
+      {...props}
+    />
+  );
 }
 
 export function CommandInput({ className, ...props }: ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div className="flex min-h-control items-center gap-2 rounded-field bg-surface px-3 focus-ring-within">
+    <div className="flex min-h-control items-center gap-2 rounded-ui bg-surface px-3 focus-ring-within">
       <Search className="size-icon-sm shrink-0 text-ink-muted" aria-hidden="true" />
       <CommandPrimitive.Input
         data-slot="command-input"
@@ -28,7 +45,7 @@ export function CommandList({ className, ...props }: ComponentProps<typeof Comma
 }
 
 export function CommandEmpty({ className, ...props }: ComponentProps<typeof CommandPrimitive.Empty>) {
-  return <CommandPrimitive.Empty className={cn("px-2 py-3 text-center text-meta text-ink-muted", className)} {...props} />;
+  return <CommandPrimitive.Empty className={cn("px-2 py-3 text-center text-sm text-ink-muted", className)} {...props} />;
 }
 
 /** The pointer highlight (`data-hovered`) follows the pointer and clears when it leaves; the keyboard highlight is `aria-selected`. */
@@ -54,7 +71,7 @@ export function CommandItem({ className, ...props }: ComponentProps<typeof Comma
       data-slot="command-item"
       data-hovered={hovered ? "true" : undefined}
       className={cn(
-        "flex min-h-control-sm cursor-pointer items-center gap-2 rounded-field px-2 text-sm text-ink aria-selected:bg-surface-sunken data-[hovered=true]:bg-surface-sunken data-[checked=true]:bg-brand-tint",
+        "flex min-h-control-sm cursor-pointer items-center gap-2 rounded-ui px-2 text-sm text-ink group-data-[kb=true]/cmd:aria-selected:bg-surface-sunken data-[hovered=true]:bg-surface-sunken",
         className,
       )}
       {...props}

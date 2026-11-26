@@ -10,7 +10,7 @@ export const metadata = { title: "Invitation", robots: { index: false, follow: f
 function NotValid() {
   return (
     <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
-      <h1 className="text-xl font-bold">This invite link is not valid</h1>
+      <h1 className="font-heading text-xl">This invite link is not valid</h1>
       <p className="max-w-auth text-ink-muted">Ask the board owner for a new link.</p>
       <Link href={routes.boards} className="font-semibold">
         Go to Home

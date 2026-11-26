@@ -55,7 +55,7 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
       </div>
       <header className="flex shrink-0 flex-col gap-3 border-b border-line bg-surface-raised px-4 py-3 lg:px-8">
         <div>
-          <h1 className="font-heading text-title break-words">{board.name}</h1>
+          <h1 className="font-heading text-xl break-words">{board.name}</h1>
           {board.description && <p className="text-sm text-ink-muted">{board.description}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -74,7 +74,7 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
           .map((col, i) => {
             const items = visible.filter((c) => c.column_id === col.id).sort((a, b) => a.order - b.order);
             return (
-              <section key={col.id} aria-label={col.name} className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-frame bg-surface p-3 lg:w-column">
+              <section key={col.id} aria-label={col.name} className="flex max-h-full w-4/5 max-w-column shrink-0 snap-start flex-col gap-3 rounded-ui bg-surface p-item lg:w-column">
                 <header className="flex shrink-0 items-center gap-2 px-1">
                   <i aria-hidden="true" className={cn("inline-block size-dot-md shrink-0 rounded-full", SOLID[columnTone(col.name, i)])} />
                   <h2 className="font-heading text-page-title">{col.name}</h2>

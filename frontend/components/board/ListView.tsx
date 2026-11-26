@@ -27,21 +27,21 @@ export function ListView({ columns, cards, categories, members, onOpen }: ListVi
   const ordered = [...columns].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-page pb-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-section overflow-y-auto px-page pb-surface">
       {ordered.map((col) => {
         const rows = cards.filter((c) => c.column_id === col.id).sort((a, b) => a.order - b.order);
         const due = (c: Card): DueState => (col.id === doneId ? null : (c.due_state ?? null));
         return (
-          <section key={col.id} aria-label={col.name} className="flex flex-col gap-2 rounded-frame bg-surface p-3">
-            <h2 className="flex items-center gap-2 px-1 font-heading text-page-title">
+          <section key={col.id} aria-label={col.name} className="flex flex-col gap-2 rounded-ui bg-surface p-item">
+            <h3 className="flex items-center gap-2 font-heading text-base font-semibold">
               {col.name}
               <BaseBadge tone="count">{rows.length}</BaseBadge>
-            </h2>
+            </h3>
             {rows.length === 0 ? (
               <p className="px-1 text-sm text-ink-muted">No cards</p>
             ) : (
               <>
-                <div aria-hidden="true" className="hidden grid-cols-6 gap-3 px-4 text-2xs text-ink-muted uppercase lg:grid">
+                <div aria-hidden="true" className="hidden grid-cols-6 gap-3 px-4 text-xs text-ink-muted uppercase lg:grid">
                   <span className="col-span-2">Title</span>
                   <span>Assignee</span>
                   <span>Priority</span>
@@ -58,7 +58,7 @@ export function ListView({ columns, cards, categories, members, onOpen }: ListVi
                           variant="ghost"
                           onClick={() => onOpen(card)}
                           aria-label={`Open card ${card.title}`}
-                          className="grid h-auto min-h-touch w-full grid-cols-1 items-center justify-items-start gap-2 rounded-card bg-surface-raised p-4 text-left font-normal whitespace-normal shadow-card hover:bg-surface-raised hover:shadow-hover lg:grid-cols-6 lg:gap-3"
+                          className="grid h-auto min-h-touch w-full grid-cols-1 items-center justify-items-start gap-2 rounded-ui bg-surface-raised p-item text-left font-normal whitespace-normal shadow-card hover:bg-surface-raised hover:shadow-hover lg:grid-cols-6 lg:gap-3"
                         >
                           <span className="min-w-0 font-medium break-words lg:col-span-2">{card.title}</span>
                           <span className="flex min-w-0 items-center gap-2 text-sm">

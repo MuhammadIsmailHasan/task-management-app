@@ -55,6 +55,19 @@
   --color-tone-red: var(--tone-red);
   --color-tone-purple: var(--tone-purple);
   --color-tone-orange: var(--tone-orange);
+  --color-tone-amber: var(--tone-amber);
+  --color-tone-lime: var(--tone-lime);
+  --color-tone-emerald: var(--tone-emerald);
+  --color-tone-teal: var(--tone-teal);
+  --color-tone-cyan: var(--tone-cyan);
+  --color-tone-sky: var(--tone-sky);
+  --color-tone-indigo: var(--tone-indigo);
+  --color-tone-violet: var(--tone-violet);
+  --color-tone-fuchsia: var(--tone-fuchsia);
+  --color-tone-pink: var(--tone-pink);
+  --color-tone-rose: var(--tone-rose);
+  --color-tone-slate: var(--tone-slate);
+  --color-tone-yellow: var(--tone-yellow);
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-label-green: var(--label-green-bg);
@@ -69,6 +82,30 @@
   --color-label-purple-fg: var(--label-purple-text);
   --color-label-blue: var(--label-blue-bg);
   --color-label-blue-fg: var(--label-blue-text);
+  --color-label-amber: var(--label-amber-bg);
+  --color-label-amber-fg: var(--label-amber-text);
+  --color-label-lime: var(--label-lime-bg);
+  --color-label-lime-fg: var(--label-lime-text);
+  --color-label-emerald: var(--label-emerald-bg);
+  --color-label-emerald-fg: var(--label-emerald-text);
+  --color-label-teal: var(--label-teal-bg);
+  --color-label-teal-fg: var(--label-teal-text);
+  --color-label-cyan: var(--label-cyan-bg);
+  --color-label-cyan-fg: var(--label-cyan-text);
+  --color-label-sky: var(--label-sky-bg);
+  --color-label-sky-fg: var(--label-sky-text);
+  --color-label-indigo: var(--label-indigo-bg);
+  --color-label-indigo-fg: var(--label-indigo-text);
+  --color-label-violet: var(--label-violet-bg);
+  --color-label-violet-fg: var(--label-violet-text);
+  --color-label-fuchsia: var(--label-fuchsia-bg);
+  --color-label-fuchsia-fg: var(--label-fuchsia-text);
+  --color-label-pink: var(--label-pink-bg);
+  --color-label-pink-fg: var(--label-pink-text);
+  --color-label-rose: var(--label-rose-bg);
+  --color-label-rose-fg: var(--label-rose-text);
+  --color-label-slate: var(--label-slate-bg);
+  --color-label-slate-fg: var(--label-slate-text);
 
   /* shadcn/ui variable names, aliased to the tokens */
   --color-background: var(--background);
@@ -94,7 +131,13 @@
   --spacing-5: var(--space-5);
   --spacing-6: var(--space-6);
   --spacing-8: var(--space-8);
+  --spacing-10: var(--space-10);
   --spacing-12: var(--space-12);
+  --spacing-label: var(--space-label);
+  --spacing-field: var(--space-field);
+  --spacing-section: var(--space-section);
+  --spacing-surface: var(--pad-surface);
+  --spacing-item: var(--pad-item);
   --spacing-touch: var(--size-touch);
   --spacing-header: var(--size-header);
   --spacing-button: var(--size-button);
@@ -123,6 +166,7 @@
   --spacing-cell: var(--size-cell);
   --spacing-tooltip-gap: var(--size-tooltip-gap);
   --spacing-column-min: var(--size-column-min);
+  --spacing-column-w-min: var(--column-w-min);
   --spacing-calendar-cell: var(--size-calendar-cell);
   --spacing-switch: var(--size-switch-w);
   --spacing-switch-h: var(--size-switch-h);
@@ -152,10 +196,7 @@
   --spacing-logo-md: var(--size-logo-md);
   --spacing-logo-lg: var(--size-logo-lg);
 
-  --radius-sm: var(--radius-sm);
-  --radius-field: var(--radius-field);
-  --radius-card: var(--radius-card);
-  --radius-frame: var(--radius-frame);
+  --radius-ui: var(--radius-ui);
   --radius-full: var(--radius-full);
 
   --shadow-card: var(--shadow-card);
@@ -181,24 +222,13 @@
 
   --font-sans: var(--font-stack);
   --font-heading: var(--font-heading);
-  --text-2xs: var(--text-2xs);
-  --text-2xs--line-height: var(--text-2xs-lh);
-  --text-2xs--font-weight: 600;
-  --text-2xs--letter-spacing: 0.05em;
   --text-xs: var(--text-xs);
   --text-xs--line-height: var(--text-xs-lh);
   --text-xs--font-weight: 600;
-  --text-meta: var(--text-meta);
-  --text-meta--line-height: var(--text-meta-lh);
-  --text-meta--font-weight: 500;
   --text-sm: var(--text-sm);
   --text-sm--line-height: var(--text-sm-lh);
   --text-base: var(--text-base);
   --text-base--line-height: var(--text-base-lh);
-  --text-title: var(--text-title);
-  --text-title--line-height: var(--text-title-lh);
-  --text-title--font-weight: 600;
-  --text-title--letter-spacing: -0.01em;
   --text-page-title: var(--text-page-title);
   --text-page-title--line-height: var(--text-page-title-lh);
   --text-page-title--font-weight: 600;
@@ -206,13 +236,6 @@
   --text-xl--line-height: var(--text-xl-lh);
   --text-xl--font-weight: 700;
   --text-xl--letter-spacing: -0.015em;
-  --text-card-title: var(--text-card-title);
-  --text-card-title--line-height: var(--text-card-title-lh);
-  --text-card-title--font-weight: 600;
-  --text-card-meta: var(--text-card-meta);
-  --text-card-meta--line-height: var(--text-card-meta-lh);
-  --text-card-tag: var(--text-card-tag);
-  --text-card-tag--line-height: var(--text-card-tag-lh);
   --text-display: var(--text-display);
   --text-display--line-height: var(--text-display-lh);
   --text-display--font-weight: 700;
@@ -240,6 +263,12 @@
   &:focus-visible {
     outline: var(--border-width-focus) solid var(--ring);
     outline-offset: var(--ring-offset);
+  }
+}
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: var(--border-width-focus) solid var(--ring);
+    outline-offset: calc(var(--border-width-focus) * -1);
   }
 }
 @utility focus-ring-within {

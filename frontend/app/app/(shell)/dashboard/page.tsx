@@ -7,11 +7,11 @@ import type { Board } from "@/lib/types";
 
 export const metadata = { title: "Dashboard" };
 
-/** Supervisors see the Boards they own and Managers every Board; Members and Admins go back to Home (Requirement 43). */
+/** Supervisors see the Boards they own and Managers every Board; a Member goes back to Boards (Requirement 43, DASH-23). */
 export default async function DashboardPage() {
   const claims = decodeToken((await serverToken()) ?? "");
-  if (!claims || (claims.role !== "manager" && claims.role !== "supervisor")) redirect(routes.boards);
+  if (!claims || claims.role === "member") redirect(routes.boards);
   const all = await serverGet<Board[]>("/boards");
-  const boards = (claims.role === "manager" ? all : all.filter((b) => b.owner_id === claims.sub)).map((b) => ({ id: b.id, name: b.name }));
+  const boards = (claims.role === "manager" || claims.role === "admin" ? all : all.filter((b) => b.owner_id === claims.sub)).map((b) => ({ id: b.id, name: b.name }));
   return <DashboardView role={claims.role} boards={boards} />;
 }

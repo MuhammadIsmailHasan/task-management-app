@@ -2,7 +2,8 @@
 
 import { useId, useState } from "react";
 import { BaseCalendar } from "@/components/shared/BaseCalendar";
-import { BaseInput } from "@/components/shared/BaseField";
+import { BaseCheckbox } from "@/components/shared/BaseCheckbox";
+import { BaseDateField } from "@/components/shared/BaseDateField";
 import { isRangeValid, minSelectable, normalizeRange, withStart, type Range } from "@/lib/dates";
 
 interface DateRangePickerProps {
@@ -44,9 +45,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         }}
       />
       <div className="grid grid-cols-date-row items-center gap-x-3 gap-y-3">
-        <input
-          type="checkbox"
-          className="size-icon shrink-0 accent-brand"
+        <BaseCheckbox
           aria-label="Use a start date"
           checked={startOn}
           onChange={(e) => {
@@ -57,10 +56,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         <label htmlFor={`${id}-start`} className="text-sm font-semibold">
           Start date
         </label>
-        <BaseInput id={`${id}-start`} type="date" value={value.start} disabled={!startOn} onChange={(e) => setStart(e.target.value)} />
-        <input
-          type="checkbox"
-          className="size-icon shrink-0 accent-brand"
+        <BaseDateField id={`${id}-start`} label="Start date" value={value.start} disabled={!startOn} onChange={setStart} />
+        <BaseCheckbox
           aria-label="Use an end date"
           checked={endOn}
           onChange={(e) => {
@@ -71,15 +68,15 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         <label htmlFor={`${id}-end`} className="text-sm font-semibold">
           End date
         </label>
-        <BaseInput
+        <BaseDateField
           id={`${id}-end`}
-          type="date"
+          label="End date"
           min={value.start || undefined}
           value={value.end}
           disabled={!endOn}
-          aria-invalid={valid ? undefined : true}
-          aria-describedby={valid ? undefined : `${id}-error`}
-          onChange={(e) => setEnd(e.target.value)}
+          invalid={!valid}
+          describedBy={valid ? undefined : `${id}-error`}
+          onChange={setEnd}
         />
       </div>
       <div className="flex flex-col gap-2">

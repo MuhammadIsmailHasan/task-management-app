@@ -27,15 +27,15 @@ export function ActivityView() {
     };
   }, [boardId]);
 
-  if (!boardId) return <p className="text-meta text-ink-muted">Open a board to see its activity.</p>;
-  if (list.error && !list.rows) return <p className="text-meta text-ink-muted">Activity is not available for this board.</p>;
-  if (!list.rows) return <p className="text-meta text-ink-muted">Loading…</p>;
-  if (list.rows.length === 0) return <p className="text-meta text-ink-muted">No activity yet.</p>;
+  if (!boardId) return <p className="text-sm text-ink-muted">Open a board to see its activity.</p>;
+  if (list.error && !list.rows) return <p className="text-sm text-ink-muted">Activity is not available for this board.</p>;
+  if (!list.rows) return <p className="text-sm text-ink-muted">Loading…</p>;
+  if (list.rows.length === 0) return <p className="text-sm text-ink-muted">No activity yet.</p>;
   return (
     <div className="flex flex-col gap-3">
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {list.rows.map((r) => (
-          <li key={r.id} className="flex items-start gap-3 rounded-card bg-surface p-4">
+          <li key={r.id} className="flex items-start gap-3 rounded-ui bg-surface p-item">
             <span aria-hidden="true" className="mt-2 size-dot shrink-0 rounded-full bg-accent" />
             <ActivityLine entry={r} names={names} columns={columns} showContext />
           </li>

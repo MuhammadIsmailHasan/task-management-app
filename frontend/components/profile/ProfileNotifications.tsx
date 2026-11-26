@@ -51,14 +51,14 @@ export function ProfileNotifications() {
   if (!prefs) return <p className="text-sm text-ink-muted">Loading…</p>;
 
   return (
-    <section aria-label="Notification settings" className="flex flex-col gap-4 rounded-card border border-line bg-surface-raised p-6">
+    <section aria-label="Notification settings" className="flex flex-col gap-4 rounded-ui border border-line bg-surface-raised p-surface">
       <p className="text-sm text-ink-muted">These control in-app notifications only.</p>
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {prefs.map((p) => {
           const copy = COPY[p.type];
           const st = status[p.type];
           return (
-            <li key={p.type} className="flex items-center gap-4 rounded-card border border-line p-3">
+            <li key={p.type} className="flex items-center gap-4 rounded-ui border border-line p-item">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{copy.title}</div>
                 <div className="text-xs text-ink-muted">{copy.text}</div>

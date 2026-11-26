@@ -61,8 +61,8 @@ describe("Design_System rules (V16-T01)", () => {
     for (const t of ["--text-heading", "--text-lg", "--radius-md", "--radius-lg", "--surface-hover", "--text-2xl"]) expect(css).not.toContain(`${t}:`);
   });
 
-  it("uses only the five radius roles", () => {
-    const bad = sources.filter((s) => /\brounded-(?!(sm|field|card|frame|full|t-|b-|l-|r-|tl-|tr-|bl-|br-)\b)[a-z0-9-]+/.test(s.text.replace(/rounded-(t|b|l|r)(l|r)?-(sm|field|card|frame|full)/g, ""))).map((s) => s.file);
+  it("uses only the one radius and the circle (DS-18, V18 round 3)", () => {
+    const bad = sources.filter((s) => /\brounded-(?!(ui|full|t-|b-|l-|r-|tl-|tr-|bl-|br-)\b)[a-z0-9-]+/.test(s.text.replace(/rounded-(t|b|l|r)(l|r)?-(ui|full)/g, ""))).map((s) => s.file);
     expect(bad).toEqual([]);
   });
 

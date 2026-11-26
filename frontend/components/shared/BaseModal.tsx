@@ -38,7 +38,7 @@ export function BaseModal({ open, title, onClose, children, size = "md", footer,
           {headerAside}
           <DialogCloseButton />
         </DialogHeader>
-        <div className={cn("min-h-0 flex-1 px-6 pb-6", scrollBody ? "overflow-y-auto" : "flex flex-col overflow-hidden")}>{children}</div>
+        <div className={cn("min-h-0 flex-1 px-surface pb-surface", scrollBody ? "overflow-y-auto" : "flex flex-col overflow-hidden")}>{children}</div>
         {footer && <DialogFooter>{footer}</DialogFooter>}
       </DialogContent>
     </Dialog>

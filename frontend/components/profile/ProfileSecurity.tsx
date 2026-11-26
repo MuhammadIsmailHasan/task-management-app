@@ -48,7 +48,7 @@ export function ProfileSecurity() {
   };
 
   return (
-    <form className="flex flex-col gap-4 rounded-card border border-line bg-surface-raised p-6" onSubmit={submit} noValidate aria-label="Change password">
+    <form className="flex flex-col gap-4 rounded-ui border border-line bg-surface-raised p-surface" onSubmit={submit} noValidate aria-label="Change password">
       <h2 className="font-heading text-page-title">Change password</h2>
       {error && <BaseAlert>{error}</BaseAlert>}
       {left > 0 && <BaseAlert>Too many attempts. Try again in {formatCountdown(left)}.</BaseAlert>}

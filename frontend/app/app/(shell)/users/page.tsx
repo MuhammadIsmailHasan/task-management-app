@@ -1,15 +1,19 @@
 import { redirect } from "next/navigation";
-import { UsersScreen, type AdminUser } from "@/components/admin/UsersScreen";
+import { UsersScreen, type UsersPage } from "@/components/admin/UsersScreen";
 import { serverGet, serverToken } from "@/lib/server";
 import { decodeToken } from "@/lib/session";
 import { routes } from "@/lib/routes";
 
 export const metadata = { title: "Users" };
 
-/** Admin only: anyone else goes back to the boards (the Backend answers 403 to them anyway). */
-export default async function UsersPage() {
+/** Admin only: anyone else goes back to the boards (the Backend answers 403 to them anyway). 20 users a page, by role then name (USRP-02, USRP-03). */
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const claims = decodeToken((await serverToken()) ?? "");
   if (claims?.role !== "admin") redirect(routes.boards);
-  const users = await serverGet<AdminUser[]>("/users");
-  return <UsersScreen initial={users} />;
+  const raw = Number((await searchParams).page);
+  const page = Number.isInteger(raw) && raw >= 1 ? raw : 1;
+  const users = await serverGet<UsersPage>("/users", { page: String(page), per_page: String(PER_PAGE) });
+  return <UsersScreen key={page} initial={users} />;
 }
+
+const PER_PAGE = 20;

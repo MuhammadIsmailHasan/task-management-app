@@ -3,6 +3,7 @@
 import { cloneElement, useId, useRef, useState, type MouseEvent, type ReactElement, type ReactNode } from "react";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseModal } from "@/components/shared/BaseModal";
+import { withoutErrorToast } from "@/lib/toast";
 
 interface ConfirmDialogProps {
   /** The element that asks; it opens the dialog instead of acting. Focus returns to it on close. */
@@ -52,7 +53,7 @@ export function ConfirmDialog({ trigger, message, confirmLabel = "Delete", title
     setBusy(true);
     setError(null);
     try {
-      await onConfirm();
+      await withoutErrorToast(async () => onConfirm());
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : "Something went wrong. Try again.");

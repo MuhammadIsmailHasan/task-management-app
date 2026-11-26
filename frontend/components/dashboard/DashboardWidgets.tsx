@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarClock, CircleAlert, ListOrdered } from "lucide-react";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
-import { BaseInput } from "@/components/shared/BaseField";
+import { BaseDateField } from "@/components/shared/BaseDateField";
 import { DueBadge } from "@/components/board/DueBadge";
 import { finishedShares } from "@/lib/dashboard";
 import { shortDate } from "@/lib/format";
@@ -13,7 +13,7 @@ const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "ac
 /** One row of a card list: the title opens the Card over its Board; the rest is context (DASH-14). */
 function Row({ card }: { card: TaskCard }) {
   return (
-    <li className="flex flex-col gap-1 rounded-card bg-surface p-3 text-sm">
+    <li className="flex flex-col gap-1 rounded-ui bg-surface p-item text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Link href={cardPath(card.board_slug, card.id)} className="min-w-0 font-semibold break-words">
           {card.title}
@@ -32,9 +32,9 @@ function Row({ card }: { card: TaskCard }) {
 
 function Widget({ label, icon: Icon, count, note, aside, empty, cards, more }: { label: string; icon: typeof CircleAlert; count?: number; note?: string; aside?: React.ReactNode; empty: string; cards: TaskCard[]; more?: number }) {
   return (
-    <section aria-label={label} className="flex flex-col gap-3 rounded-frame border border-line bg-surface-raised p-6 shadow-card">
+    <section aria-label={label} className="flex flex-col gap-3 rounded-ui border border-line bg-surface-raised p-surface shadow-card">
       <header className="flex flex-wrap items-center gap-3">
-        <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-card bg-accent-tint text-on-accent-tint">
+        <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
           <Icon className="size-icon" />
         </span>
         <h2 className="min-w-0 flex-1 font-heading text-page-title">{label}</h2>
@@ -69,18 +69,18 @@ export function DashboardWidgets({ data, dueOn, onDueOn }: { data: DashboardData
         aside={
           <label className="flex items-center gap-2 text-xs text-ink-muted">
             Due on
-            <BaseInput type="date" aria-label="Due on" value={dueOn || data.due_tomorrow.due_on} onChange={(e) => onDueOn(e.target.value)} />
+            <BaseDateField label="Due on" size="sm" value={dueOn || data.due_tomorrow.due_on} onChange={(v) => v && onDueOn(v)} />
           </label>
         }
       />
       <Widget label="Top 5 priority cards" icon={ListOrdered} note="Not limited by the date range" empty="No cards to rank" cards={data.top_priority.cards} />
-      <section aria-label="Finished on time" className="flex flex-col gap-3 rounded-frame border border-line bg-surface-raised p-6 shadow-card">
+      <section aria-label="Finished on time" className="flex flex-col gap-3 rounded-ui border border-line bg-surface-raised p-surface shadow-card">
         <h2 className="font-heading text-page-title">Finished on time and overdue</h2>
         {!shares ? (
           <p className="text-sm text-ink-muted">No finished cards in this period</p>
         ) : (
           <>
-            <div role="img" aria-label={`${data.finished.on_time} finished on time, ${data.finished.overdue} finished overdue`} className="flex h-progress-lg w-full overflow-hidden rounded-full bg-surface-strong">
+            <div role="img" aria-label={`${data.finished.on_time} finished on time, ${data.finished.overdue} finished overdue`} className="flex h-progress-lg w-full overflow-hidden rounded-ui bg-surface-strong">
               <div className="h-full bg-accent" style={{ width: `${shares.onTime}%` }} />
               <div className="h-full bg-danger" style={{ width: `${shares.overdue}%` }} />
             </div>
@@ -101,11 +101,11 @@ export function DashboardWidgets({ data, dueOn, onDueOn }: { data: DashboardData
           </>
         )}
         <dl className="m-0 grid grid-cols-2 gap-3">
-          <div className="rounded-card bg-surface p-3">
+          <div className="rounded-ui bg-surface p-item">
             <dt className="text-xs text-ink-muted">Finished on time</dt>
             <dd className="m-0 font-heading text-page-title">{data.finished.on_time}</dd>
           </div>
-          <div className="rounded-card bg-surface p-3">
+          <div className="rounded-ui bg-surface p-item">
             <dt className="text-xs text-ink-muted">Finished overdue</dt>
             <dd className="m-0 font-heading text-page-title">{data.finished.overdue}</dd>
           </div>

@@ -59,7 +59,7 @@ export function InboxView() {
     return (
       <div className="flex flex-col gap-3">
         {switcher}
-        <p className="text-meta text-ink-muted">{list.error}</p>
+        <p className="text-sm text-ink-muted">{list.error}</p>
       </div>
     );
   if (!list.rows || !inbox)
@@ -80,14 +80,14 @@ export function InboxView() {
         </BaseButton>
       </div>
       {error && <BaseAlert>{error}</BaseAlert>}
-      {list.rows.length === 0 && <p className="text-meta text-ink-muted">{filter === "unread" ? "No unread notifications" : "No notifications."}</p>}
+      {list.rows.length === 0 && <p className="text-sm text-ink-muted">{filter === "unread" ? "No unread notifications" : "No notifications."}</p>}
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {list.rows.map((n) => (
           <li key={n.id}>
             <Link
               href={hrefFor(n)}
               onClick={() => open(n)}
-              className={cn("flex items-start gap-3 rounded-card p-4 text-ink no-underline hover:bg-surface-sunken focus-ring", !n.is_read && "bg-surface")}
+              className={cn("flex items-start gap-3 rounded-ui p-item text-ink no-underline hover:bg-surface-sunken focus-ring", !n.is_read && "bg-surface")}
             >
               <span aria-hidden="true" className={cn("mt-1 size-dot shrink-0 rounded-full", n.is_read ? "bg-surface-strong" : "bg-accent")} />
               <span className="flex-1 text-sm">

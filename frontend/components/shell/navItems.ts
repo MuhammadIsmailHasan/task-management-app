@@ -1,5 +1,5 @@
 import { CalendarDays, History, LayoutDashboard, ListChecks, ListTodo, Share2, SquareKanban, Tags, UserCog, Users, type LucideIcon } from "lucide-react";
-import { boardPath, boardViewPath, routes } from "@/lib/routes";
+import { APP_BASE, boardPath, boardViewPath, routes } from "@/lib/routes";
 import type { Role } from "@/lib/types";
 import type { PanelView } from "./ShellContext";
 
@@ -32,12 +32,12 @@ export interface TopMenuItem extends BaseItem {
 }
 
 const signedIn = (c: NavContext) => !!c.role;
-const staff = (c: NavContext) => c.role === "supervisor" || c.role === "manager";
+const staff = (c: NavContext) => c.role === "supervisor" || c.role === "manager" || c.role === "admin";
 
-/** Global places (NAV-01). Dashboard: Supervisor and Manager. My Tasks: not an Admin, who cannot be an assignee. */
+/** Global places (NAV-01). Dashboard: Supervisor, Manager, Admin. My Tasks: Member and Supervisor; a Manager or Admin cannot be an assignee (TASK-06). */
 export const sidebarItems: SidebarItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: routes.dashboard, isVisible: staff },
-  { id: "my-tasks", label: "My Tasks", icon: ListTodo, href: routes.myTasks, isVisible: (c) => signedIn(c) && c.role !== "admin" },
+  { id: "my-tasks", label: "My Tasks", icon: ListTodo, href: routes.myTasks, isVisible: (c) => c.role === "member" || c.role === "supervisor" },
   { id: "boards", label: "Boards", icon: SquareKanban, href: routes.boards, isVisible: signedIn },
   { id: "users", label: "Users", icon: UserCog, href: routes.users, isVisible: (c) => c.role === "admin" },
 ];
@@ -58,7 +58,7 @@ export const topMenuFor = (ctx: NavContext) => topMenuItems.filter((i) => i.isVi
 
 /** Whether a Sidebar route is the current page. */
 export const isSidebarActive = (item: SidebarItem, pathname: string) =>
-  item.id === "boards" ? pathname === routes.boards || pathname.startsWith(`${routes.boards}/`) : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  item.id === "boards" ? pathname === routes.boards || pathname.startsWith(`${routes.boards}/`) || pathname.startsWith(`${APP_BASE}/b/`) : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
 /** Whether a Top_Menu item is current: a route item by the path, a panel item by the open view. */
 export function isTopMenuActive(item: TopMenuItem, slug: string | null, pathname: string, panel: PanelView | null, shareOpen: boolean): boolean {

@@ -221,7 +221,8 @@ export const api = {
     remove: (id: string) => del<null>(`/categories/${id}`),
   },
   comments: {
-    list: (cardId: string, sort: "latest" | "popular") => get<Comment[]>(`/cards/${cardId}/comments`, { sort }),
+    list: (cardId: string, sort: "latest" | "popular", page: { limit?: number; offset?: number } = {}) =>
+      get<{ items: Comment[]; total: number }>(`/cards/${cardId}/comments`, { sort, limit: page.limit?.toString(), offset: page.offset?.toString() }),
     create: (cardId: string, content: string) => post<Comment>(`/cards/${cardId}/comments`, { content }),
     reply: (commentId: string, content: string) => post<Comment>(`/comments/${commentId}/replies`, { content }),
     togglePriority: (id: string) => patch<Comment>(`/comments/${id}/priority`),
@@ -246,7 +247,7 @@ export const api = {
     cards: () => get<MyCards>("/me/cards"),
   },
   users: {
-    list: () => get<(User & { role: string })[]>("/users"),
+    list: (page = 1, perPage = 20) => get<{ items: (User & { role: string })[]; page: number; per_page: number; total: number }>("/users", { page: String(page), per_page: String(perPage) }),
     create: (body: { full_name: string; username: string; email: string; password: string; role: string }) =>
       post<User>("/users", body),
     update: (id: string, body: { full_name?: string; username?: string; email?: string; role?: string; is_active?: boolean; is_available?: boolean }) =>

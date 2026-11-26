@@ -17,7 +17,7 @@ export function TooltipContent({ className, sideOffset = SIDE_OFFSET, ...props }
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
-        className={cn("z-modal rounded-sm bg-ink px-2 py-1 text-xs text-on-brand shadow-card", className)}
+        className={cn("z-modal rounded-ui bg-ink px-2 py-1 text-xs text-on-brand shadow-card", className)}
         {...props}
       />
     </TooltipPrimitive.Portal>

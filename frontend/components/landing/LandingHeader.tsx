@@ -12,8 +12,7 @@ import { routes } from "@/lib/routes";
 export const ANCHORS = [
   { href: "#features", label: "Features" },
   { href: "#workflow", label: "Workflow" },
-  { href: "#teams", label: "Teams" },
-  { href: "#faq", label: "FAQ" },
+  { href: "#roles", label: "Roles" },
 ] as const;
 
 /** The sticky landing header; below 960 pixels a menu button opens a drawer with the same anchors and buttons (LAND-03). */
@@ -25,7 +24,9 @@ export function LandingHeader() {
         <Menu aria-hidden="true" />
       </BaseButton>
       <Link href="/" aria-label="RevoBoard home" className="inline-flex min-w-0">
-        <BrandLogo variant="full" size="sm" decorative className="max-w-full" />
+        {/* the mark alone below 960 pixels, so the logo and the call to action never overlap */}
+        <BrandLogo variant="mark" size="sm" decorative className="lg:hidden" />
+        <BrandLogo variant="full" size="sm" decorative className="hidden lg:block" />
       </Link>
       <nav aria-label="Sections" className="hidden items-center gap-6 lg:ml-6 lg:flex">
         {ANCHORS.map((a) => (
@@ -34,22 +35,22 @@ export function LandingHeader() {
           </a>
         ))}
       </nav>
-      <div className="ml-auto flex min-w-0 items-center gap-4">
+      <div className="ml-auto flex shrink-0 items-center gap-field">
         <a href={routes.login} className="hidden text-sm font-medium text-ink-muted no-underline hover:text-ink lg:inline">
           Sign in
         </a>
-        <BaseLinkButton variant="dark" href={routes.register}>
+        <BaseLinkButton href={routes.register}>
           Get started
         </BaseLinkButton>
       </div>
       <BaseDrawer open={open} onClose={() => setOpen(false)} title="Menu">
         <nav aria-label="Menu" className="flex flex-col gap-1">
           {ANCHORS.map((a) => (
-            <a key={a.href} href={a.href} onClick={() => setOpen(false)} className="flex min-h-touch items-center rounded-card px-3 text-sm font-medium text-ink no-underline hover:bg-surface-sunken">
+            <a key={a.href} href={a.href} onClick={() => setOpen(false)} className="flex min-h-touch items-center rounded-ui px-3 text-sm font-medium text-ink no-underline hover:bg-surface-sunken">
               {a.label}
             </a>
           ))}
-          <a href={routes.login} className="flex min-h-touch items-center rounded-card px-3 text-sm font-medium text-ink no-underline hover:bg-surface-sunken">
+          <a href={routes.login} className="flex min-h-touch items-center rounded-ui px-3 text-sm font-medium text-ink no-underline hover:bg-surface-sunken">
             Sign in
           </a>
         </nav>

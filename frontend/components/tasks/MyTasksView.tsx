@@ -14,10 +14,10 @@ export function MyTasksView({ data }: { data: MyCards }) {
   if (data.groups.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 px-page py-12 text-center">
-        <span aria-hidden="true" className="inline-flex size-tile items-center justify-center rounded-card bg-accent-tint text-on-accent-tint">
+        <span aria-hidden="true" className="inline-flex size-tile items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
           <ListTodo className="size-icon-lg" />
         </span>
-        <h1 className="font-heading text-page-title">Nothing assigned to you</h1>
+        <h1 className="font-heading text-xl">Nothing assigned to you</h1>
         <p className="text-sm text-ink-muted">Cards assigned to you appear here, grouped by when they are due.</p>
         <Link href={routes.boards} className="text-sm font-semibold">
           Go to boards
@@ -26,10 +26,10 @@ export function MyTasksView({ data }: { data: MyCards }) {
     );
   }
   return (
-    <div className="flex flex-col gap-6 px-page pt-2 pb-6">
+    <div className="flex flex-col gap-section px-page pt-surface pb-surface">
       <h1 className="font-heading text-xl">My tasks</h1>
       {data.groups.map((g) => (
-        <section key={g.key} aria-label={GROUP_LABEL[g.key]} className="flex flex-col gap-2 rounded-frame bg-surface p-3">
+        <section key={g.key} aria-label={GROUP_LABEL[g.key]} className="flex flex-col gap-2 rounded-ui bg-surface p-item">
           <h2 className="flex items-center gap-2 px-1 font-heading text-page-title">
             {GROUP_LABEL[g.key]}
             <BaseBadge tone="count">{g.cards.length}</BaseBadge>
@@ -39,7 +39,7 @@ export function MyTasksView({ data }: { data: MyCards }) {
               <li key={c.id}>
                 <Link
                   href={cardPath(c.board_slug, c.id)}
-                  className="flex min-h-touch flex-col gap-1 rounded-card bg-surface-raised p-4 no-underline shadow-card transition-all duration-base ease-out hover:shadow-hover focus-ring lg:flex-row lg:items-center lg:gap-4"
+                  className="flex min-h-touch flex-col gap-1 rounded-ui bg-surface-raised p-item no-underline shadow-card transition-all duration-base ease-out hover:shadow-hover focus-ring lg:flex-row lg:items-center lg:gap-4"
                 >
                   <span className="min-w-0 flex-1 font-medium break-words text-ink">{c.title}</span>
                   <span className="text-sm text-ink-muted">{c.board_name}</span>

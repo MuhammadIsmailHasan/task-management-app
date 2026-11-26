@@ -9,8 +9,8 @@ const password = process.env.PW ?? "12345678";
 const WIDTHS = [360, 414, 960, 1280];
 const PAGES = {
   public: ["/", "/app/login", "/app/register", "/app/verify", "/app/does-not-exist"],
-  manager: ["/app/boards", "/app/dashboard", "/app/my-tasks", "/app/profile", "/app/profile?tab=security", "/app/profile?tab=notifications", "/app/b/alpha-board", "/app/b/alpha-board/list", "/app/b/alpha-board/calendar", "/app/b/alpha-board/archived"],
-  admin: ["/app/users"],
+  manager: ["/app/boards", "/app/dashboard", "/app/profile", "/app/profile?tab=security", "/app/profile?tab=notifications", "/app/b/alpha-board", "/app/b/alpha-board/list", "/app/b/alpha-board/calendar", "/app/b/alpha-board/archived"],
+  admin: ["/app/users", "/app/dashboard", "/app/users?page=2"],
   member: ["/app/boards", "/app/my-tasks"],
 };
 const browser = await chromium.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });

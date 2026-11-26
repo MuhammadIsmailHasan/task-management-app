@@ -1,16 +1,16 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BaseButton } from "@/components/shared/BaseButton";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { BaseTooltip } from "@/components/shared/BaseTooltip";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { cn } from "@/lib/utils";
 import { isSidebarActive, sidebarFor } from "./navItems";
 import { useShell } from "./ShellContext";
 
-const row = "relative flex shrink-0 cursor-pointer items-center rounded-full no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
+const row = "relative flex shrink-0 cursor-pointer items-center rounded-ui no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
 
 /**
  * The left Sidebar from 960 pixels: the global places only (Dashboard, My Tasks, Boards, Users). Expanded it shows
@@ -26,18 +26,19 @@ export function Sidebar() {
     <nav
       aria-label="Sidebar"
       className={cn(
-        "hidden shrink-0 flex-col gap-2 rounded-frame bg-surface-raised p-3 shadow-card transition-all duration-base lg:flex",
+        "hidden shrink-0 flex-col gap-2 rounded-ui bg-surface-raised p-item shadow-card transition-all duration-base lg:flex",
         expanded ? "w-sidebar" : "w-sidebar-collapsed",
       )}
     >
+      {/* the logo is the toggle (NAVB-01); the space below it separates it from the first item */}
       <BaseButton
         variant="ghost"
         aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
         aria-expanded={expanded}
-        className={cn(row, "size-touch self-end px-0 text-ink-muted hover:bg-surface-sunken hover:text-ink", !expanded && "self-center")}
+        className={cn("mb-section h-auto min-h-touch px-2 hover:bg-surface-sunken", expanded ? "justify-start self-start" : "self-center")}
         onClick={toggle}
       >
-        {expanded ? <PanelLeftClose aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
+        <BrandLogo variant={expanded ? "full" : "mark"} size="sm" decorative />
       </BaseButton>
       {sidebarFor(ctx).map((item) => {
         const Icon = item.icon;

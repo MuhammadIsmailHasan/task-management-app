@@ -56,9 +56,8 @@ describe("DateRangePicker", () => {
 
   it("clears the end date and says why when the start moves past it", async () => {
     render(<Harness start="2026-11-10" end="2026-11-12" />);
-    const start = screen.getByLabelText("Start date");
-    await userEvent.clear(start);
-    await userEvent.type(start, "2026-11-20");
+    await userEvent.click(screen.getByLabelText("Start date"));
+    await userEvent.click(within(screen.getByRole("dialog", { name: "Start date calendar" })).getByRole("button", { name: /November 20th, 2026/ }));
     expect(screen.getByLabelText("range")).toHaveTextContent("2026-11-20|");
     expect(screen.getByText(/end date was cleared/)).toBeInTheDocument();
   });

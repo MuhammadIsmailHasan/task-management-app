@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { isTopMenuActive, topMenuFor, type TopMenuItem } from "./navItems";
 import { useShell } from "./ShellContext";
 
-const pill = "relative inline-flex min-h-control-sm cursor-pointer items-center gap-2 rounded-full px-3 text-sm no-underline transition-colors duration-fast focus-ring xl:px-4 [&_svg]:size-icon-sm [&_svg]:shrink-0";
+const pill = "relative inline-flex min-h-control-sm cursor-pointer items-center gap-2 rounded-ui px-3 text-sm no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon-sm [&_svg]:shrink-0";
 
 /**
  * The board's menu in the App_Header, shown only while a Board is open (NAV-04): Board, List, and Calendar are routes;
@@ -64,7 +64,7 @@ export function TopMenu() {
   }
 
   return (
-    <nav aria-label="Board" className="hidden min-h-control items-center gap-1 rounded-full bg-surface p-1 lg:flex">
+    <nav aria-label="Board" className="hidden min-h-control items-center gap-1 rounded-ui bg-surface p-1 lg:flex">
       {topMenuFor(ctx).map(render)}
     </nav>
   );

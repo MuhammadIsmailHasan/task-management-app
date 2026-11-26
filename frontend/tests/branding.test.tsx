@@ -49,11 +49,11 @@ describe("BrandLogo", () => {
 });
 
 describe("App_Header logo (SHELL-10)", () => {
-  it("shows the full logo from 960 pixels and the mark with the wordmark below, once, in one home link", () => {
+  it("shows the mark with the wordmark below 960 pixels, once, in one home link; the full logo lives in the Sidebar (NAVB-01)", () => {
     renderHeader();
     const home = screen.getByRole("link", { name: "RevoBoard home" });
     const srcs = Array.from(home.querySelectorAll("img")).map((i) => i.getAttribute("src"));
-    expect(srcs).toEqual(["/brand/logo-text-revo.svg", "/brand/logo-revo.svg"]);
+    expect(srcs).toEqual(["/brand/logo-revo.svg"]);
     expect(home).toHaveAttribute("href", "/app/boards");
   });
 });
@@ -114,7 +114,7 @@ describe("Auth layout (FIX-01, FIX-02)", () => {
   });
 
   it("uses the canvas, surface, radius and shadow tokens of the app frame", () => {
-    for (const re of [/bg-surface(?![-\w])/g, /bg-surface-raised/g, /rounded-frame/g, /shadow-card/g]) {
+    for (const re of [/bg-surface(?![-\w])/g, /bg-surface-raised/g, /rounded-ui/g, /shadow-card/g]) {
       expect(tokens(layout, re).length, String(re)).toBeGreaterThan(0);
       expect(tokens(shellSrc, re).length, String(re)).toBeGreaterThan(0);
     }

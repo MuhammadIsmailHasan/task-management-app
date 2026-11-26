@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
+import { RoleTag } from "@/components/shared/RoleTag";
+import { toast } from "@/lib/toast";
 import { api, type Candidate } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 
@@ -20,6 +22,7 @@ export function MemberSearch({ boardId, onAdded }: MemberSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Candidate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   const short = query.trim().length < MIN_CHARS;
 
@@ -46,6 +49,11 @@ export function MemberSearch({ boardId, onAdded }: MemberSearchProps) {
     setError(null);
     try {
       await api.boards.addMember(boardId, user.id);
+      // the search starts over, so the next person is found from a clean field (MEMP-03)
+      setQuery("");
+      setResults(null);
+      input.current?.focus();
+      toast.success(`${user.full_name} added`);
       onAdded();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not add the member.");
@@ -53,27 +61,36 @@ export function MemberSearch({ boardId, onAdded }: MemberSearchProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <BaseInput autoFocus type="search" placeholder="Search people" aria-label="Search people" value={query} onChange={(e) => setQuery(e.target.value)} />
+    <div className="flex flex-col gap-label">
+      <BaseInput ref={input} autoFocus type="search" placeholder="Search people to add" aria-label="Search people" value={query} onChange={(e) => setQuery(e.target.value)} />
       {error && <BaseAlert>{error}</BaseAlert>}
-      <ul className="m-0 flex max-h-popover-list list-none flex-col gap-1 overflow-y-auto p-0" aria-label="People">
-        {results?.map((u) => (
-          <li key={u.id}>
-            <BaseButton variant="ghost" className="h-auto min-h-control w-full justify-start gap-2 px-2 font-normal text-ink" onClick={() => void add(u)}>
-              <BaseAvatar name={u.full_name} src={u.avatar_url} size="md" />
-              <span className="min-w-0 text-left">
-                <span className="block truncate text-sm">{u.full_name}</span>
-                <span className="block truncate text-xs text-ink-muted">
-                  @{u.username} · {u.email}
+      {short && <p className="px-1 text-sm text-ink-muted">Type at least {MIN_CHARS} characters.</p>}
+      {query.length > 0 && (
+        <section aria-label="Add to board" className="flex flex-col gap-1 rounded-ui border border-line bg-surface-raised p-item shadow-popover">
+          <h3 className="px-2 pt-1 text-xs text-ink-muted uppercase">Add to board</h3>
+          <ul className="m-0 flex max-h-popover-list list-none flex-col gap-1 overflow-y-auto p-0" aria-label="People">
+            {results?.map((u) => (
+              <li key={u.id} className="flex items-center gap-2 rounded-ui px-2 py-1 hover:bg-surface">
+                <BaseAvatar name={u.full_name} src={u.avatar_url} size="md" />
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="flex flex-wrap items-center gap-1 text-sm">
+                    <span className="truncate">{u.full_name}</span>
+                    {u.role && <RoleTag role={u.role} />}
+                  </span>
+                  <span className="block truncate text-xs text-ink-muted">
+                    @{u.username} · {u.email}
+                  </span>
                 </span>
-              </span>
-            </BaseButton>
-          </li>
-        ))}
-        {short && <li className="px-2 text-meta text-ink-muted">Type at least {MIN_CHARS} characters.</li>}
-        {!short && results && results.length === 0 && <li className="px-2 text-meta text-ink-muted">No people to add.</li>}
-        {!short && !results && <li className="px-2 text-meta text-ink-muted">Loading…</li>}
-      </ul>
+                <BaseButton size="sm" variant="secondary" aria-label={`Add ${u.full_name}`} onClick={() => void add(u)}>
+                  Add
+                </BaseButton>
+              </li>
+            ))}
+            {!short && results && results.length === 0 && <li className="px-2 text-sm text-ink-muted">No people to add.</li>}
+            {!short && !results && <li className="px-2 text-sm text-ink-muted">Loading…</li>}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

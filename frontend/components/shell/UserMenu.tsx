@@ -15,7 +15,7 @@ export function UserMenu({ user }: { user: User | null }) {
       label="User menu"
       heading={user ? user.full_name : undefined}
       trigger={
-        <BaseButton variant="ghost" size="sm" className="size-control rounded-full px-0" aria-label="User menu">
+        <BaseButton variant="ghost" size="sm" className="size-control rounded-ui px-0" aria-label="User menu">
           {user?.avatar_url ? <BaseAvatar name={user.full_name} src={user.avatar_url} size="md" /> : <UserIcon aria-hidden="true" />}
         </BaseButton>
       }

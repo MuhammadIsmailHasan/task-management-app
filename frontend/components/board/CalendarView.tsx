@@ -55,15 +55,15 @@ export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
   const undated = cards.filter((c) => !c.end_date).length;
 
   const cardButton = (c: Card) => (
-    <BaseButton key={c.id} variant="ghost" size="sm" onClick={() => onOpen(c)} aria-label={`Open card ${c.title}`} className="h-auto min-h-0 w-full min-w-0 justify-start gap-1 rounded-sm bg-surface-sunken px-2 py-1 text-left text-xs font-normal">
+    <BaseButton key={c.id} variant="ghost" size="sm" onClick={() => onOpen(c)} aria-label={`Open card ${c.title}`} className="h-auto min-h-0 w-full min-w-0 justify-start gap-1 bg-surface-sunken px-2 py-1 text-left text-xs font-normal">
       <span className="truncate">{c.title}</span>
     </BaseButton>
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-page pb-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-section overflow-y-auto px-page pb-surface">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-auto font-heading text-xl">{monthLabel(cursor.year, cursor.month)}</h2>
+        <h2 className="mr-auto font-heading text-page-title">{monthLabel(cursor.year, cursor.month)}</h2>
         <BaseButton variant="secondary" size="sm" aria-label="Previous month" onClick={() => shift(-1)}>
           <ChevronLeft aria-hidden="true" />
         </BaseButton>
@@ -74,9 +74,9 @@ export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
           <ChevronRight aria-hidden="true" />
         </BaseButton>
       </div>
-      <div role="grid" aria-label={monthLabel(cursor.year, cursor.month)} className="grid grid-cols-7 gap-1 rounded-frame bg-surface p-2">
+      <div role="grid" aria-label={monthLabel(cursor.year, cursor.month)} className="grid grid-cols-7 gap-1 rounded-ui bg-surface p-2">
         {WEEKDAYS.map((d) => (
-          <div key={d} role="columnheader" className="px-1 py-2 text-center text-2xs text-ink-muted uppercase">
+          <div key={d} role="columnheader" className="px-1 py-2 text-center text-xs text-ink-muted uppercase">
             {d}
           </div>
         ))}
@@ -90,9 +90,9 @@ export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
               role="gridcell"
               aria-selected={iso === selected}
               aria-current={isToday ? "date" : undefined}
-              className={cn("flex min-h-touch flex-col gap-1 rounded-card p-1 lg:min-h-calendar-cell", inMonth ? "bg-surface-raised" : "bg-surface text-ink-muted", iso === selected && "bg-accent-tint lg:bg-surface-raised")}
+              className={cn("flex min-h-touch flex-col gap-1 rounded-ui p-1 lg:min-h-calendar-cell", inMonth ? "bg-surface-raised" : "bg-surface text-ink-muted", iso === selected && "bg-accent-tint lg:bg-surface-raised")}
             >
-              <BaseButton variant="ghost" size="sm" onClick={() => setSelected(iso)} aria-label={`${shortDate(iso)}, ${day.length} ${day.length === 1 ? "card" : "cards"}`} className={cn("h-auto min-h-0 justify-between rounded-sm px-1 py-1 text-xs font-normal", isToday && "font-semibold text-accent")}>
+              <BaseButton variant="ghost" size="sm" onClick={() => setSelected(iso)} aria-label={`${shortDate(iso)}, ${day.length} ${day.length === 1 ? "card" : "cards"}`} className={cn("h-auto min-h-0 justify-between px-1 py-1 text-xs font-normal", isToday && "font-semibold text-accent")}>
                 <span>{Number(iso.slice(8))}</span>
                 {day.length > 0 && <span aria-hidden="true" className="size-dot rounded-full bg-accent lg:hidden" />}
               </BaseButton>
@@ -109,10 +109,10 @@ export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
         })}
       </div>
       <section aria-label={`Cards on ${shortDate(selected)}`} className="flex flex-col gap-2 lg:hidden">
-        <h3 className="text-sm font-semibold">{shortDate(selected)}</h3>
+        <h3 className="font-heading text-base font-semibold">{shortDate(selected)}</h3>
         {selectedCards.length === 0 && <p className="text-sm text-ink-muted">No cards</p>}
         {selectedCards.map((c) => (
-          <BaseButton key={c.id} variant="ghost" onClick={() => onOpen(c)} aria-label={`Open card ${c.title}`} className="h-auto min-h-touch justify-start gap-2 rounded-card bg-surface-raised p-3 text-left text-sm font-normal whitespace-normal shadow-card hover:bg-surface-raised">
+          <BaseButton key={c.id} variant="ghost" onClick={() => onOpen(c)} aria-label={`Open card ${c.title}`} className="h-auto min-h-touch justify-start gap-2 rounded-ui bg-surface-raised p-item text-left text-sm font-normal whitespace-normal shadow-card hover:bg-surface-raised">
             <span className="min-w-0 flex-1 break-words">{c.title}</span>
             <DueBadge state={dueOf(c)} />
           </BaseButton>

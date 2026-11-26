@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 function InvalidLink() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
-      <h1 className="text-xl font-bold">This link is not valid</h1>
+      <h1 className="font-heading text-xl">This link is not valid</h1>
       <p className="max-w-auth text-ink-muted">The link may have been turned off or replaced. Ask the board owner for a new one.</p>
       <Link href={routes.login} className="font-semibold">
         Sign in
