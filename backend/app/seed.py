@@ -8,6 +8,8 @@ import secrets
 from datetime import timedelta
 
 import click
+
+from app.common.rich_text import from_plain_text
 from datetime import datetime, timezone
 from argon2 import PasswordHasher
 
@@ -69,7 +71,7 @@ def _user(username, role, full_name, password, domain="example.com"):
 
 
 def _board(name, owner, members, categories, now, description=None):
-    board = Board(name=name, owner_id=owner.id, description=description)
+    board = Board(name=name, owner_id=owner.id, description=from_plain_text(description))
     db.session.add(board)
     db.session.flush()
     cols = []
@@ -126,7 +128,7 @@ def seed_demo_data(password, tz="UTC"):
     made = {}
     for i, (title, col, prio, cat, assignee, s_off, e_off, desc) in enumerate(cards):
         card = Card(
-            column_id=col.id, title=title, description=desc, priority=prio,
+            column_id=col.id, title=title, description=from_plain_text(desc), priority=prio,
             category_id=cats[cat].id if cat else None,
             assignee_id=assignee.id if assignee else None,
             start_date=today + timedelta(days=s_off) if s_off is not None else None,

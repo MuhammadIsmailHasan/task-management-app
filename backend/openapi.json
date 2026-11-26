@@ -7043,7 +7043,7 @@
           },
           "description": {
             "type": "string",
-            "maxLength": 500,
+            "description": "HTML from the editor, sanitised; at most 500 visible characters",
             "nullable": true
           }
         },
@@ -7177,7 +7177,7 @@
           },
           "description": {
             "type": "string",
-            "maxLength": 500,
+            "description": "HTML from the editor, sanitised; at most 500 visible characters",
             "nullable": true
           },
           "owner_id": {

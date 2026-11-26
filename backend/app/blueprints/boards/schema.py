@@ -16,7 +16,7 @@ class CreateBoardSchema(BaseSchema):
         unknown = ma.RAISE  # a posted `visibility` is a 400: every Board is private (V12)
 
     name = Text(required=True, max_length=255)
-    description = fields.String(allow_none=True, validate=validate.Length(max=500, error="description must be at most 500 characters"))
+    description = fields.String(allow_none=True, metadata={"description": "HTML from the editor, sanitised; at most 500 visible characters"})
 
 
 class UpdateBoardSchema(BaseSchema):
@@ -24,7 +24,7 @@ class UpdateBoardSchema(BaseSchema):
         unknown = ma.RAISE
 
     name = Text(max_length=255)
-    description = fields.String(allow_none=True, validate=validate.Length(max=500, error="description must be at most 500 characters"))
+    description = fields.String(allow_none=True, metadata={"description": "HTML from the editor, sanitised; at most 500 visible characters"})
     owner_id = fields.UUID(allow_none=True, metadata={"description": "Supervisor user id, or null to clear"})
 
 

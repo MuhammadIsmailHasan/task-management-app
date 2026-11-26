@@ -11,7 +11,7 @@ class Board(TimestampMixin, db.Model):
     id = uuid_pk()
     name = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(300), nullable=False)
-    description = db.Column(db.String(500), nullable=True)
+    description = db.Column(db.Text, nullable=True)  # sanitised HTML (round 6)
     share_token = db.Column(db.String(64), nullable=True)
     invite_token = db.Column(db.String(64), nullable=True)
     owner_id = uuid_fk("users.id", nullable=True)

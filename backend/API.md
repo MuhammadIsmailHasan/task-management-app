@@ -372,3 +372,5 @@ The Inbox (`GET /api/notifications`), the board activity feed, and the card acti
 
 A board has a nullable `description` (at most 500 characters, trimmed, empty becomes null), accepted on `POST /api/boards` and `PATCH /api/boards/{id}` (name-change rules) and returned on every board response. `GET /api/boards` also returns four computed integers per board: `card_count` (cards not deleted and not archived), `done_count` (of those, in the `Done` column), `overdue_count` (of those, past their end date and not Done), and `member_count`. They come from two grouped queries whatever the number of boards.
 
+## Rich text descriptions (V18 round 6)
+- `description` on Boards and Cards is HTML from the editor. The Backend keeps only `p br strong em u s ul ol li a h2 h3 blockquote code pre`, `href` and `title` on links (`http`, `https`, `mailto`), and adds `rel="noopener noreferrer nofollow"`; anything else is removed. An empty editor stores `null`. A Board description holds at most 500 visible characters; a Card description at most 20000 characters of HTML.

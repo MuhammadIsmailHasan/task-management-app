@@ -1,4 +1,8 @@
 from app.common.errors import ValidationError
+from app.common.rich_text import clean_html, to_text
+
+# the HTML of a 500 character description with its formatting fits well within this
+MAX_DESCRIPTION_HTML = 5000
 from app.common.http import iso
 
 DEFAULT_COLUMNS = ("Todo", "In Progress", "Review", "Revision", "Done")
@@ -18,15 +22,15 @@ def serialize_column(col):
 
 
 def clean_description(value):
-    """Trimmed; empty becomes None; at most 500 characters."""
+    """Sanitised HTML from the editor (round 6); empty becomes None; at most 500 visible characters."""
     if value is None:
         return None
     if not isinstance(value, str):
         raise ValidationError("description must be text")
-    value = value.strip()
-    if len(value) > 500:
-        raise ValidationError("description must be at most 500 characters")
-    return value or None
+    cleaned = clean_html(value)
+    if len(to_text(cleaned)) > 500 or (cleaned and len(cleaned) > MAX_DESCRIPTION_HTML):
+        raise ValidationError("description must be at most 500 characters", details={"description": ["description must be at most 500 characters"]})
+    return cleaned
 
 
 def serialize_board(board, columns=None, viewer=None, counts=None):

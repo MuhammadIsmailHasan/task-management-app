@@ -1,9 +1,14 @@
+from app.common.rich_text import clean_html
 from app.common import clock
 from app.common.errors import ValidationError
 from app.common.http import iso, parse_date
 from app.common.signing import sign_file_url
 
 PRIORITIES = ("high", "medium", "low")
+
+
+# a description is sanitised HTML from the editor (round 6); this bounds what one Card stores
+MAX_DESCRIPTION_HTML = 20000
 
 
 def _title(value):
@@ -23,7 +28,9 @@ def validate_card_fields(data, partial):
     if "description" in data:
         if data["description"] is not None and not isinstance(data["description"], str):
             raise ValidationError("description must be text")
-        out["description"] = data["description"]
+        out["description"] = clean_html(data["description"])
+        if out["description"] is not None and len(out["description"]) > MAX_DESCRIPTION_HTML:
+            raise ValidationError("description is too long", details={"description": ["description is too long"]})
     if "priority" in data:
         if data["priority"] not in PRIORITIES:
             raise ValidationError("priority must be high, medium or low")
