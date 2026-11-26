@@ -8,6 +8,13 @@ import { cn } from "@/lib/utils";
 export const Dialog = DialogPrimitive.Root;
 export const DialogClose = DialogPrimitive.Close;
 
+/** True for an element of the TinyMCE floating UI (dialogs, menus), which lives outside every modal. */
+const shieldedContent = new WeakSet<Element>();
+
+export function insideEditorUi(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest(".tox-tinymce-aux, .tox-dialog-wrap, .tox-menu, .tox-pop");
+}
+
 export type DialogSize = "md" | "wide" | "card" | "full";
 
 const SIZE: Record<DialogSize, string> = {
@@ -30,6 +37,14 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-modal bg-scrim-strong backdrop-blur-overlay data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        // focus leaving the modal for the TinyMCE floating UI must not reach the focus trap on the document (round 7)
+        ref={(node) => {
+          if (!node || shieldedContent.has(node)) return;
+          shieldedContent.add(node);
+          node.addEventListener("focusout", (event) => {
+            if (insideEditorUi((event as FocusEvent).relatedTarget)) event.stopPropagation();
+          });
+        }}
         className={cn(
           "fixed z-modal flex w-full flex-col overflow-hidden rounded-ui bg-surface-raised shadow-modal focus:outline-none",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
@@ -37,6 +52,24 @@ export function DialogContent({
           className,
         )}
         {...props}
+        // TinyMCE opens its link dialog and menus outside this modal: a click, a focus, or an Escape there must not
+        // close the modal (DS-29, round 7)
+        onPointerDownOutside={(e) => {
+          if (insideEditorUi(e.target)) e.preventDefault();
+          props.onPointerDownOutside?.(e);
+        }}
+        onInteractOutside={(e) => {
+          if (insideEditorUi(e.target)) e.preventDefault();
+          props.onInteractOutside?.(e);
+        }}
+        onFocusOutside={(e) => {
+          if (insideEditorUi(e.target)) e.preventDefault();
+          props.onFocusOutside?.(e);
+        }}
+        onEscapeKeyDown={(e) => {
+          if (insideEditorUi(document.activeElement)) e.preventDefault();
+          props.onEscapeKeyDown?.(e);
+        }}
       >
         {children}
       </DialogPrimitive.Content>

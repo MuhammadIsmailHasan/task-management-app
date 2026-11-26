@@ -8,7 +8,9 @@ import { pageTitle } from "@/lib/titles";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseCard } from "@/components/shared/BaseCard";
-import { BaseAlert, BaseInput, BaseTextarea } from "@/components/shared/BaseField";
+import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
+import { RichText } from "@/components/shared/RichText";
+import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { useShell } from "@/components/shell/ShellContext";
 import { useFieldSave } from "@/hooks/useFieldSave";
@@ -21,7 +23,6 @@ import type { Board, Card, Category, Column, Comment, Member } from "@/lib/types
 import { CardActivity } from "./CardActivity";
 import { AttachmentList } from "./AttachmentList";
 import { CardAttributes } from "./CardAttributes";
-import { CardDescription } from "./CardDescription";
 import { CommentComposer } from "./CommentComposer";
 import { CommentThread, type CommentSort } from "./CommentThread";
 import { FieldStatus } from "./FieldStatus";
@@ -305,15 +306,9 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                       {canWork && <FieldStatus field="description" state={fields.status.description} onRetry={() => void fields.retry("description")} />}
                     </div>
                     {canWork ? (
-                      <BaseTextarea
-                        aria-label="Description"
-                        value={draft.description}
-                        onChange={(e) => set("description", e.target.value)}
-                        onBlur={() => commit("description")}
-                        onKeyDown={(e) => (e.ctrlKey || e.metaKey) && e.key === "Enter" && (e.preventDefault(), commit("description"))}
-                      />
+                      <RichTextEditor label="Description" value={draft.description} onChange={(html) => set("description", html)} onBlur={() => commit("description")} placeholder="Add a description" />
                     ) : (
-                      <CardDescription text={draft.description || null} />
+                      <RichText html={draft.description} />
                     )}
                   </div>
                 </BaseCard>

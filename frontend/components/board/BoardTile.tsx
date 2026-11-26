@@ -2,6 +2,7 @@ import { AlertTriangle, LayoutList, Users } from "lucide-react";
 import Link from "next/link";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import type { Board, Member } from "@/lib/types";
+import { htmlToText } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 import { boardPath } from "@/lib/routes";
 
@@ -26,7 +27,7 @@ export function BoardTile({ board, members }: { board: Board; members: Member[] 
         <div className="flex items-start gap-2">
           <h2 className="min-w-0 font-heading text-page-title break-words">{board.name}</h2>
         </div>
-        {board.description && <p className="line-clamp-2 text-sm text-ink-muted">{board.description}</p>}
+        {htmlToText(board.description) && <p className="line-clamp-2 text-sm text-ink-muted">{htmlToText(board.description)}</p>}
         <div className="mt-auto flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <div role="progressbar" aria-label={`${board.name} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-progress flex-1 overflow-hidden rounded-ui bg-surface-sunken">

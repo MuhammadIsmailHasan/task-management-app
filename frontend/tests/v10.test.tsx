@@ -137,7 +137,7 @@ describe("SharedBoard", () => {
   };
   it("is read only: banner, sign-in link, no add, drag, comments or activity", async () => {
     render(<SharedBoard token="t" board={board} cards={[card]} categories={[]} />);
-    expect(screen.getByText("Shared view, read only")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Read only");
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/app/login");
     expect(screen.queryByText(/add a card/i)).toBeNull();
     expect(screen.getByRole("button", { name: "Open card Ship it" })).toHaveAttribute("draggable", "false");

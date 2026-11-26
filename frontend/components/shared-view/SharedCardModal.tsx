@@ -3,7 +3,9 @@
 import { Calendar, Flag } from "lucide-react";
 import { useState } from "react";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
+import { BaseCheckbox } from "@/components/shared/BaseCheckbox";
 import { BaseAlert } from "@/components/shared/BaseField";
+import { RichText } from "@/components/shared/RichText";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { api } from "@/lib/api";
 import { absoluteFileUrl, hrefFor, isExpired } from "@/lib/attachments";
@@ -43,7 +45,7 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
   return (
     <BaseModal open={!!card} title={card?.title ?? "Card"} onClose={onClose} size="wide">
       {card && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-section">
           <div className="flex flex-wrap items-center gap-2">
             {category && (
               <BaseBadge shape="tag" dot tone={categoryTone(category)} className="lowercase">
@@ -62,14 +64,14 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
             )}
             {card.assignee_name && <span className="text-sm text-ink-muted">Assigned to {card.assignee_name}</span>}
           </div>
-          {card.description ? <p className="text-sm break-words whitespace-pre-wrap">{card.description}</p> : <p className="text-sm text-ink-muted">No description.</p>}
+          <RichText html={card.description} />
           <section aria-label="Subtasks" className="flex flex-col gap-2">
             <h3 className="font-heading text-base font-semibold">Subtasks</h3>
             {card.subtasks.length === 0 && <p className="text-sm text-ink-muted">No subtasks.</p>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {card.subtasks.map((s) => (
                 <li key={s.id} className="flex items-center gap-3 text-sm">
-                  <input type="checkbox" checked={s.is_done} disabled readOnly aria-label={s.title} className="size-checkbox accent-brand" />
+                  <BaseCheckbox checked={s.is_done} disabled readOnly aria-label={s.title} />
                   <span className={s.is_done ? "text-ink-muted line-through" : undefined}>{s.title}</span>
                 </li>
               ))}

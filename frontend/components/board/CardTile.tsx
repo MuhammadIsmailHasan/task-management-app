@@ -5,6 +5,7 @@ import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
 import { shortDate } from "@/lib/format";
 import { categoryTone, DOT } from "@/lib/tones";
 import type { Card, Category, DueState, Priority, Member } from "@/lib/types";
+import { htmlToText } from "@/lib/rich-text";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
@@ -68,7 +69,7 @@ export function CardTile({ card, category, assignee, dueState, done = false, dra
         )}
       </div>
       <div className={cn("text-base font-semibold break-words", done && "text-ink-muted line-through")}>{card.title}</div>
-      {card.description && <p className="line-clamp-2 text-sm text-ink-muted">{card.description}</p>}
+      {htmlToText(card.description) && <p className="line-clamp-2 text-sm text-ink-muted">{htmlToText(card.description)}</p>}
       {total > 0 && <ProgressMeter done={doneCount} total={total} overdue={overdue} />}
       <div className="flex flex-wrap items-center gap-3 text-sm text-ink-muted">
         {card.end_date && (

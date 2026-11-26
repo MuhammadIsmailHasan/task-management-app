@@ -167,7 +167,8 @@
   --lift: 2px;
 
   --container-auth: 420px;
-  --column-w: clamp(17rem, 22vw, 20rem);
+  /* The Column width is a share of the board row (its container): one Column and a peek of the next below 960px, three and a half from 960px; fewer Columns grow to fill the row (DS-21, round 6). */
+  --column-w: calc((100cqw - var(--gutter)) / 1.15);
   --panel-w: 380px;
   --panel-w-sm: 320px;
   --modal-w: 520px;
@@ -179,7 +180,6 @@
   --size-cell: 40px;
   --size-tooltip-gap: 8px;
   --size-column-min: 120px;
-  --column-w-min: 16rem; /* from 960px Columns share the row and never get narrower than this; more Columns scroll (DS-21) */
   --size-calendar-cell: 112px;
   --size-switch-w: 40px;
   --size-switch-h: 24px;
@@ -246,6 +246,7 @@
     --text-display: 34px;
     --text-display-lh: 42px;
     --page-x: var(--space-10);
+    --column-w: calc((100cqw - 3 * var(--gutter)) / 3.5);
     --gutter: var(--space-6);
     --pad-surface: var(--space-8);
     --pad-item: var(--space-5);

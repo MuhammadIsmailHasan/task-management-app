@@ -18,7 +18,7 @@ export function AddColumn({ onCreate }: { onCreate: (name: string) => Promise<vo
   }
 
   return (
-    <section aria-label="Add column" className="flex h-fit w-column shrink-0 lg:w-column-w-min snap-start flex-col gap-item rounded-ui bg-surface p-item">
+    <section aria-label="Add column" className="flex h-fit w-column shrink-0 snap-start flex-col gap-item rounded-ui bg-surface p-item">
       {open ? (
         <form method="post" className="flex flex-col gap-2" onSubmit={submit}>
           <BaseInput autoFocus aria-label="Column name" placeholder="Column name" maxLength={255} value={name} onChange={(e) => setName(e.target.value)} />

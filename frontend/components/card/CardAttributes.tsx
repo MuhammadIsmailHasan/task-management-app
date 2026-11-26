@@ -101,8 +101,8 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
       label: m.full_name,
       keywords: [m.username, ...(m.role ? [m.role] : []), ...(m.email ? [m.email] : [])],
       render: (
-        <span className="flex items-center gap-2">
-          <BaseAvatar name={m.full_name} src={m.avatar_url} />
+        <span className="flex items-center gap-3">
+          <BaseAvatar name={m.full_name} src={m.avatar_url} size="md" />
           <span className="min-w-0 flex-1">
             <span className="block truncate">{m.full_name}</span>
             {m.email && <span className="block truncate text-xs text-ink-muted">{m.email}</span>}
@@ -148,6 +148,7 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
       {canAssign ? (
         <BaseCombobox
           label="Assignee"
+          wide
           options={memberOptions}
           value={value.assignee_id}
           searchable

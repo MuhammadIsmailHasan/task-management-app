@@ -71,7 +71,7 @@ export function CommandItem({ className, ...props }: ComponentProps<typeof Comma
       data-slot="command-item"
       data-hovered={hovered ? "true" : undefined}
       className={cn(
-        "flex min-h-control-sm cursor-pointer items-center gap-2 rounded-ui px-2 text-sm text-ink group-data-[kb=true]/cmd:aria-selected:bg-surface-sunken data-[hovered=true]:bg-surface-sunken",
+        "flex min-h-control cursor-pointer items-center gap-3 rounded-ui px-3 py-2 text-sm text-ink group-data-[kb=true]/cmd:aria-selected:bg-surface-sunken data-[hovered=true]:bg-surface-sunken",
         className,
       )}
       {...props}

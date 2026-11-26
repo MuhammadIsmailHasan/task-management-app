@@ -135,12 +135,12 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
   return (
     <div
       ref={root}
-      className="flex min-h-0 flex-1 snap-x snap-proximity scroll-px-page overflow-x-auto overflow-y-hidden"
+      className="@container mx-page flex min-h-0 flex-1 snap-x snap-proximity overflow-x-auto overflow-y-hidden"
       onDragOver={onRowDragOver}
       onDrop={(e) => void onRowDrop(e)}
     >
       {/* the padding sits on this inner row, so the last Column keeps the same gutter as the first when the row scrolls (DS-21) */}
-      <div className="flex w-max min-w-full items-stretch gap-gutter px-page pb-item">
+      <div className="flex w-max min-w-full items-stretch gap-gutter pb-item">
       {ordered.flatMap((col, colIndex) => {
         const tone = columnTone(col.name, colIndex);
         const inColumn = cards.filter((c) => c.column_id === col.id).sort((a, b) => a.order - b.order);
@@ -190,7 +190,7 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
             key={col.id}
             data-column-id={col.id}
             aria-label={col.name}
-            className={cn("flex max-h-full w-column shrink-0 snap-start flex-col gap-item rounded-ui bg-surface p-item lg:w-0 lg:min-w-column-w-min lg:grow", col.id === colDragId && "opacity-muted")}
+            className={cn("flex max-h-full w-column shrink-0 grow snap-start flex-col gap-item rounded-ui bg-surface p-item", col.id === colDragId && "opacity-muted")}
           >
             <ColumnHeader
               column={col}
