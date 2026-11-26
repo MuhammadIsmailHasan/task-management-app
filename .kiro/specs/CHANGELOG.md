@@ -597,3 +597,17 @@ Contradictions and gaps found; none was resolved silently.
 - **Tests:** `tests/design-system.test.ts` enforces the heading levels and the six sizes; the landing and Archived tests follow the new copy and the Toast.
 - **Checks:** frontend 366 tests and `tsc` pass; the four-width check passes on the development server except the known development-only 404 error.
 - **Task:** 40.25 (done); 40.20 (visual review) stays open.
+
+### Round 6 within V18 - 2026-11-27 (owner review; specs and build together; not committed yet)
+- **DS-28 (new, amends DS-21):** the Column width is a share of the board row: three Columns and half of the fourth from 960 pixels, one and a peek below; fewer Columns fill the row; the row keeps its gutter on both ends. `--column-w-min` is removed. The public board now uses the Board's frame, header, toolbar, Column row, and tiles, with a Read only badge; no token was added.
+- **DS-29 (new):** Board and Card descriptions are TinyMCE rich text, self-hosted (no cloud key). **Licence:** TinyMCE 7 is GPL-2.0-or-later when self-hosted with `licenseKey: "gpl"`; a closed-source deployment needs a commercial licence from Tiny. Every description is sanitised by the Backend (`nh3` allowlist) and again by the Frontend (DOMPurify) before display; previews and search use plain words. Migration `d4a7e1c9b215` makes `boards.description` TEXT and converts existing plain-text descriptions; it was run on the development database.
+- **Known:** the Card search matches the stored HTML, so a word that only appears in a tag name (for example "strong") can match.
+- **Checks:** backend 324 tests, frontend 369 tests, `tsc`, `next build`, and the four-width check on the production build pass; the editor was exercised in the browser (typed bold text, saved on blur).
+- **Task:** 40.26 (done); 40.20 (visual review) stays open.
+
+### Round 7 within V18 - 2026-11-27 (owner review; specs and build together; not committed yet)
+- **TinyMCE link dialog (bug, DS-30):** inside the Card modal the dialog could not be used or closed. The Radix modal turns pointer events off outside itself, treats a click outside as "close", and its focus trap pulled focus back from the dialog's fields. Fixed with three guards: the TinyMCE floating UI gets `pointer-events: auto`; the modal ignores outside clicks, focus, and Escape that come from that UI (`insideEditorUi`); focus events from that UI are stopped before they reach the trap. Checked in the browser: typing in URL, Cancel, the close button, Escape, and Save each close only the link dialog, and Save inserts the link.
+- **Editor look (DS-30):** the TinyMCE skin is unlayered CSS loaded after ours, so our overrides inside `@layer` lost; they are now unlayered and raised with `:root`. One focus ring on the frame; the inner blue border is off; the dialog uses the one radius, app fonts, and the accent Save.
+- **Option rows (DS-31):** list rows are `--control-h` high with `px-3 py-2 gap-3`; the assignee list is wide with `md` avatars.
+- **Board right edge (DS-32):** the Column row is now an inset scroll area (`mx-page`), so Columns clip at the toolbar's right edge instead of the frame edge; the Column width formula follows.
+- **Checks:** frontend 370 tests and `tsc` pass; the four-width check passes except the known development-only 404 error.

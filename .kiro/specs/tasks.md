@@ -1286,6 +1286,12 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
   - [x] 40.25 Round 5 within V18: Archived count, one heading scale, page frame, auth and landing
     - `BoardView.tsx` (Archived count +1 outside the state updater), `ArchivedView.tsx` (page frame, Toast), every heading to its level (DS-24), `text-title` removed, page wrappers (DS-25), `AuthSplitLayout.tsx` and `AuthForm.tsx` (DS-26), `landing/sections.tsx`, `LandingHeader.tsx`, `app/page.tsx` (DS-27); `tests/design-system.test.ts` (DS-24), `v16-landing`, `v17-boards` tests.
     - _Requirements: 61.24, 61.25, 61.26, 61.27_
+  - [x] 40.26 Round 6 within V18: Column width, public board, TinyMCE descriptions
+    - `tokens.css` (`--column-w` from the row container), `Board.tsx`, `AddColumn.tsx`, `SharedBoard.tsx`, `SharedCardModal.tsx`; `RichTextEditor.tsx`, `RichText.tsx`, `lib/rich-text.ts`, `scripts/copy-tinymce.mjs`, `CardModal.tsx`, `NewBoardModal.tsx`, `CardTile.tsx`, `BoardTile.tsx`, `globals.css`; Backend `app/common/rich_text.py`, `boards/dto.py`, `cards/dto.py`, `seed.py`, migration `d4a7e1c9b215`; tests `test_rich_text.py`, `rich-text.test.tsx`.
+    - _Requirements: 61.28, 61.29_
+  - [x] 40.27 Round 7 within V18: TinyMCE dialogs in the Card modal, one editor focus ring, option rows, board right edge
+    - `components/ui/dialog.tsx` (`insideEditorUi`, outside-interaction guards, focusout shield), `RichTextEditor.tsx` (focus shield on the floating UI), `globals.css` (unlayered `:root .tox` overrides), `command.tsx`, `CardAttributes.tsx`, `Board.tsx`, `SharedBoard.tsx`, `tokens.css`; `tests/rich-text.test.tsx`.
+    - _Requirements: 61.30, 61.31, 61.32_
   - [x] 40.19 Tests, width check, documents
     - _Requirements: 72.1 to 72.3, 72.5_
   - [ ] 40.20 Checkpoint: owner's visual review (includes 39.52)

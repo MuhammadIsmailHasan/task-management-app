@@ -32,6 +32,7 @@ V18 introduces no visual language of its own: every visual rule uses Design_Syst
 | Sidebar toggle (round 2) | The logo is the toggle; no separate expand icon; `--space-section` below the logo. |
 | Header (round 2) | A border line under the App_Header; the Top_Menu centred. |
 | Shapes and magic numbers (round 2) | One radius per role; every form control shares one look; no magic number anywhere, enforced by a test. |
+| Columns, public board, rich text (round 6) | 3.5 Columns visible from 960 px; the public board on the Board layout; TinyMCE for Board and Card descriptions, sanitised on both sides. |
 | Type, auth, landing (round 5) | Six text sizes, one size per heading level; one page frame; auth and landing on the same scale; landing copy cut. |
 | Board and type (round 4) | Column padding from the inner row, the last Column keeps its gutter, Columns share the row from 960 px; seven text sizes; no Board meta line. |
 | One radius (round 3) | `--radius-ui` for every component, `--radius-full` for circles only; `--pad-surface` and `--pad-item` for padding; a larger page gutter; a full-size Card modal; inset focus rings. |
