@@ -34,6 +34,7 @@ def serialize_board(board, columns=None, viewer=None, counts=None):
     data = {
         "id": str(board.id),
         "name": board.name,
+        "slug": board.slug,
         "description": board.description,
         "owner_id": str(board.owner_id) if board.owner_id else None,
         "archived_at": iso(board.archived_at),

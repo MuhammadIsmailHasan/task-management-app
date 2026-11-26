@@ -6,6 +6,8 @@ from app.blueprints.boards import repository as repo
 from app.blueprints.notifications import repository as notifications
 from app.blueprints.boards.dto import DEFAULT_COLUMNS, clean_description, clean_name
 from app.common import clock
+from app.common.slug import is_valid_slug
+from app.models.board import unique_slug
 from app.common.errors import Forbidden, NotFound, Unauthorized, ValidationError
 from app.common.ids import to_uuid
 from flask import current_app
@@ -61,6 +63,17 @@ def load_board(actor, board_id):
     return require_access(actor, board)
 
 
+def board_detail_by_slug(actor, slug):
+    """Same 401/403/404 rules as board_detail; a value that cannot be a slug is a plain 404 (SLUG-06)."""
+    if actor is None:
+        raise Unauthorized("Authentication required")
+    board = repo.get_by_slug(slug) if is_valid_slug(slug) else None
+    if board is None:
+        raise NotFound("Board not found")
+    require_access(actor, board)
+    return repo.get_detail(board.id)
+
+
 def board_detail(actor, board_id):
     """Board with columns loaded; same 404/401/403 rules as load_board."""
     bid = to_uuid(board_id)
@@ -107,6 +120,7 @@ def update_board(actor, board_id, data):
             raise Forbidden("Not allowed to rename the board")
     if "name" in data:
         board.name = clean_name(data["name"])
+        board.slug = unique_slug(db.session.connection(), board.name, exclude_id=board.id)  # a rename moves the slug; the old one is not kept (OQ46)
         activity.add(to_uuid(actor.id), "board.updated", "board", board.id, {"name": board.name})
     if "description" in data:
         board.description = clean_description(data["description"])
@@ -166,11 +180,11 @@ def require_manage_members(actor, board):
         raise Forbidden("Owner, Manager or Admin only")
 
 
-def list_members(actor, board_id, with_email=False):
+def list_members(actor, board_id, with_email=False, assignable=False):
     board = load_board(actor, board_id)
     if with_email and not can_write_staff(actor, board):
         raise Forbidden("Staff access required")
-    return repo.list_members(board)
+    return repo.list_members(board, assignable=assignable)
 
 
 def member_candidates(actor, board_id, search):
@@ -190,6 +204,8 @@ def add_member(actor, board_id, data):
         raise ValidationError(
             "Only Member and Supervisor accounts can be added", details={"user_id": ["Managers and Admins already see every board"]}
         )
+    if not (user.is_active and user.is_available):  # the picker never offers them, and a direct add is refused (ADM-08)
+        raise ValidationError("This person is not available to be added", details={"user_id": ["The user is inactive or unavailable"]})
     if repo.get_member(board.id, user.id):
         from app.common.errors import Conflict
 
@@ -223,18 +239,6 @@ def remove_member(actor, board_id, user_id):
     db.session.commit()
 
 
-def add_column(actor, board_id, data):
-    board = load_board(actor, board_id)
-    if not can_write_staff(actor, board):
-        raise Forbidden("Staff access required")
-    name = clean_name(data.get("name"))
-    current = repo.max_column_order(board.id)
-    col = repo.add_column(board.id, name, 0.0 if current is None else current + 1)
-    activity.add(to_uuid(actor.id), "column.created", "column", col.id, {"board_id": str(board.id), "name": name})
-    db.session.commit()
-    return col
-
-
 # ---- share links (V10, Decision K) -------------------------------------------------------------------
 
 def _share_manager(actor, board_id):
@@ -246,7 +250,7 @@ def _share_manager(actor, board_id):
 
 def _share_view(board):
     token = board.share_token
-    return {"enabled": token is not None, "token": token, "path": f"/shared/{token}" if token else None}
+    return {"enabled": token is not None, "token": token, "path": f"/app/shared/{token}" if token else None}
 
 
 def get_share(actor, board_id):

@@ -16,13 +16,19 @@ def get_column(column_id):
 
 
 def board_id_of_card(card):
-    return db.session.scalar(db.select(Column.board_id).where(Column.id == card.column_id))
+    """A Card keeps its Board for life, also when it has no Column (an archived Card, V17)."""
+    return card.board_id
 
 
 def max_order(column_id):
     return db.session.scalar(
         db.select(db.func.max(Card.order)).where(Card.column_id == column_id, Card.deleted_at.is_(None))
     )
+
+
+def first_column(board_id):
+    """The Board's first Column by `order`: where a restored Card lands (OQ47)."""
+    return db.session.scalars(db.select(Column).where(Column.board_id == board_id).order_by(Column.order, Column.id).limit(1)).first()
 
 
 def column_cards(column_id, exclude_id=None):
@@ -99,12 +105,34 @@ def get_detail(card_id):
     ).first()
 
 
-def list_for_board(board_id, filters):
-    """Cards of a board with subtasks and attachments: 3 queries whatever the card count."""
+def assigned_open(user_id):
+    """The Cards assigned to this user that are open (not Done, archived, or deleted, on a live Board), with Board and Category names: one query."""
+    from app.models import Board
+
+    return db.session.execute(
+        db.select(Card.id, Card.title, Card.board_id, Board.slug, Board.name.label("board_name"), Card.priority, Card.end_date, Category.id.label("category_id"), Category.name.label("category_name"), Category.color)
+        .select_from(Card)
+        .join(Column, Card.column_id == Column.id)
+        .join(Board, Board.id == Card.board_id)
+        .outerjoin(Category, Category.id == Card.category_id)
+        .where(Card.assignee_id == user_id, Card.deleted_at.is_(None), Card.archived_at.is_(None), Column.name != "Done", Board.deleted_at.is_(None))
+    ).all()
+
+
+def list_for_board(board_id, filters, archived=False):
+    """Cards of a board with subtasks and attachments: 3 queries whatever the card count.
+
+    The default is the Board's live Cards in Column order; `archived` lists the archived ones (they have no Column),
+    newest archive first (V17, Requirement 50).
+    """
     stmt = (
         db.select(Card)
-        .join(Column, Card.column_id == Column.id)
-        .where(Column.board_id == board_id, Card.deleted_at.is_(None))
+        .outerjoin(Column, Card.column_id == Column.id)
+        .where(
+            Card.board_id == board_id,
+            Card.deleted_at.is_(None),
+            Card.archived_at.isnot(None) if archived else Card.archived_at.is_(None),
+        )
     )
     if filters.get("search"):
         like = f"%{filters['search'].lower()}%"
@@ -115,5 +143,6 @@ def list_for_board(board_id, filters):
         stmt = stmt.where(Card.assignee_id == filters["assignee"])
     if filters.get("category"):
         stmt = stmt.where(Card.category_id == filters["category"])
-    stmt = _with_children(stmt).order_by(Column.order, Card.order).execution_options(populate_existing=True)
+    order = (Card.archived_at.desc(), Card.id) if archived else (Column.order, Card.order)
+    stmt = _with_children(stmt).order_by(*order).execution_options(populate_existing=True)
     return db.session.scalars(stmt).all()

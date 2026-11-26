@@ -1,4 +1,6 @@
 """Read-only view of a Board through its Share_Token (V10, Decision K). No Comment, Activity, owner, member or user contact data."""
+from flask import current_app
+
 from app.blueprints.boards import service as boards
 from app.blueprints.boards.dto import serialize_column
 from app.blueprints.cards import repository as cards_repo
@@ -8,6 +10,7 @@ from app.blueprints.categories import repository as categories_repo
 from app.blueprints.categories.service import serialize as serialize_category
 from app.blueprints.shared import repository as repo
 from app.common import clock
+from app.common.due import due_state
 from app.common.errors import NotFound
 from app.common.http import iso
 from app.common.ids import to_uuid
@@ -37,7 +40,7 @@ def _card(card, names, board):
     scope = share_scope(board.share_token)
     return {
         "id": str(card.id),
-        "column_id": str(card.column_id),
+        "column_id": str(card.column_id) if card.column_id else None,
         "category_id": str(card.category_id) if card.category_id else None,
         "assignee_id": str(card.assignee_id) if card.assignee_id else None,
         "assignee_name": names.get(card.assignee_id),
@@ -48,6 +51,7 @@ def _card(card, names, board):
         "end_date": iso(card.end_date),
         "order": card.order,
         "archived_at": iso(card.archived_at),
+        "due_state": due_state(card.end_date, {c.id: c.name for c in board.columns}.get(card.column_id), clock.today(current_app.config["APP_TIMEZONE"])),
         "subtasks": [serialize_subtask(s) for s in card.subtasks],
         **progress_fields(card.subtasks),
         "attachments": [serialize_attachment(a, now, scope) for a in card.attachments],

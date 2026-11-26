@@ -20,7 +20,7 @@ PRIVILEGED = boards.PRIVILEGED
 
 def _view(board):
     token = board.invite_token
-    return {"enabled": token is not None, "token": token, "path": f"/invite/{token}" if token else None}
+    return {"enabled": token is not None, "token": token, "path": f"/app/invite/{token}" if token else None}
 
 
 def _manage(actor, board_id):
@@ -80,7 +80,7 @@ def resolve(actor, token):
     else:
         state = "can_request"
     return {
-        "board": {"id": str(board.id), "name": board.name, "description": board.description},
+        "board": {"id": str(board.id), "slug": board.slug, "name": board.name, "description": board.description},
         "state": state,
         "request": {"id": str(pending.id), "status": pending.status} if pending is not None else None,
     }

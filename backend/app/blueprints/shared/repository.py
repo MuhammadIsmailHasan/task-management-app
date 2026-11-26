@@ -14,8 +14,7 @@ def card_in_board(board_id, card_id):
     card = cards_repo.get_detail(card_id)
     if card is None:
         return None
-    column = db.session.get(Column, card.column_id)
-    return card if column is not None and column.board_id == board_id else None
+    return card if card.board_id == board_id and card.archived_at is None else None
 
 
 def attachment_in_board(board_id, attachment_id):
@@ -25,8 +24,7 @@ def attachment_in_board(board_id, attachment_id):
     card = db.session.get(Card, att.card_id)
     if card is None or card.deleted_at is not None:
         return None
-    column = db.session.get(Column, card.column_id)
-    return att if column is not None and column.board_id == board_id else None
+    return att if card.board_id == board_id and card.archived_at is None else None
 
 
 def names_of(user_ids):

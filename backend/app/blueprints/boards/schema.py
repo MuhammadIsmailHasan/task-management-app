@@ -24,6 +24,8 @@ class UpdateBoardSchema(BaseSchema):
 
 class BoardMemberSchema(MemberSchema):
     is_owner = fields.Boolean()
+    is_active = fields.Boolean(metadata={"description": "False once an Admin deactivated the person; the Members view tags them"})
+    is_available = fields.Boolean(metadata={"description": "False while the person is marked unavailable"})
     role = fields.String(metadata={"description": "member or supervisor"})
 
 
@@ -49,6 +51,7 @@ class ColumnSchema(BaseSchema):
 class BoardSchema(BaseSchema):
     id = fields.UUID()
     name = fields.String()
+    slug = fields.String(metadata={"description": "Read-only, derived from the name (V17): lower-case a-z, 0-9 and hyphens; used in the app URL"})
     description = fields.String(allow_none=True)
     owner_id = fields.UUID(allow_none=True)
     card_count = fields.Integer(metadata={"description": "Cards not deleted and not archived (board list only)"})
@@ -61,6 +64,7 @@ class BoardSchema(BaseSchema):
 
 class MembersQuerySchema(BaseSchema):
     include = fields.String(validate=validate.OneOf(["email"]), metadata={"description": "`email` adds each member's email (board staff only)"})
+    assignable = fields.String(validate=validate.OneOf(["true", "false"]), metadata={"description": "`true` lists only members who are active and available (the assignee picker)"})
 
 
 class CandidateQuerySchema(BaseSchema):
@@ -78,4 +82,4 @@ class CandidateSchema(BaseSchema):
 class ShareSchema(BaseSchema):
     enabled = fields.Boolean()
     token = fields.String(allow_none=True, metadata={"description": "Secret; returned only by the share endpoints"})
-    path = fields.String(allow_none=True, metadata={"description": "/shared/<token> or null"})
+    path = fields.String(allow_none=True, metadata={"description": "/app/shared/<token> or null"})

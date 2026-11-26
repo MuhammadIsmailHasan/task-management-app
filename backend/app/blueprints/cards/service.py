@@ -1,6 +1,7 @@
 import mimetypes
 import os
 import uuid as uuidlib
+from datetime import date, timedelta
 
 from flask import current_app
 
@@ -12,7 +13,8 @@ from app.blueprints.cards import repository as repo
 from app.blueprints.cards.dto import check_dates, serialize_attachment, serialize_card, validate_card_fields
 from app.blueprints.notifications import repository as notif_repo
 from app.common import clock, ordering
-from app.common.errors import Forbidden, NotFound, ValidationError
+from app.common.due import due_state
+from app.common.errors import CardArchived, CardInDone, CardNotArchived, Forbidden, NotFound, ValidationError
 from app.common.identities import avatar_urls
 from app.common.ids import to_uuid
 from app.extensions import db
@@ -64,7 +66,9 @@ def present(card, actor):
     activity_rows = activity.serialize_many(activity.for_card(card.id, 20))
     detail = repo.get_detail(card.id)
     idents, urls = _assignee_context([detail])
-    return serialize_card(detail, actor, detail.subtasks, detail.attachments, comments, activity_rows, idents, urls)
+    column = repo.get_column(detail.column_id) if detail.column_id else None
+    due = due_state(detail.end_date, column.name if column else None, clock.today(current_app.config["APP_TIMEZONE"]))
+    return serialize_card(detail, actor, detail.subtasks, detail.attachments, comments, activity_rows, idents, urls, due)
 
 
 def _assignee_context(cards):
@@ -98,6 +102,7 @@ def create_card(actor, column_id, data):
     _apply_category(fields, data, board)
     current = repo.max_order(column.id)
     card = repo.add_card(
+        board_id=board.id,
         column_id=column.id,
         order=1.0 if current is None else current + 1,
         completed_at=completion_stamp(None, column.name, None, clock.now()),
@@ -133,6 +138,8 @@ def _assign(actor, card, assignee_id, board):
     user = users.get_by_id(uid) if uid else None
     if user is None:
         raise ValidationError("assignee_id must reference an existing user")
+    if card.assignee_id != user.id and not (user.is_active and user.is_available):
+        raise ValidationError("The user is not available to be assigned", details={"assignee_id": ["The user is inactive or unavailable"]})
     if not (board.owner_id == user.id or boards_repo.is_member(board.id, user.id)):
         raise ValidationError(
             "assignee_id must be the board owner or a board member",
@@ -202,16 +209,37 @@ def delete_card(actor, card_id):
     boards.require_staff(actor, board)
     card.deleted_at = clock.now()
     activity.add(_aid(actor), "card.deleted", "card", card.id, {"card_title": card.title})
+    notif_repo.notify_assignee(card, "assigned_card_changed", _aid(actor), "deleted")
     db.session.commit()
 
 
 def set_archived(actor, card_id, archived):
+    """Archive takes the Card out of its Column (an archived Card has none); restore puts it in the first Column."""
     card, board = load_card(actor, card_id)
     boards.require_staff(actor, board)
-    card.archived_at = clock.now() if archived else None
-    activity.add(
-        _aid(actor), "card.archived" if archived else "card.unarchived", "card", card.id, {"card_title": card.title}
-    )
+    if archived:
+        if card.archived_at is not None:
+            return card
+        column = repo.get_column(card.column_id)
+        if column is not None and column.name == DONE:
+            raise CardInDone("Move the card out of Done to archive it")
+        meta = {"card_title": card.title, "from_column": column.name if column is not None else None}
+        card.column_id = None
+        card.archived_at = clock.now()
+        activity.add(_aid(actor), "card.archived", "card", card.id, meta)
+        notif_repo.notify_assignee(card, "assigned_card_changed", _aid(actor), "archived")
+    else:
+        if card.archived_at is None:
+            raise CardNotArchived("The card is not archived")
+        target = repo.first_column(board.id)
+        if target is None:
+            raise NotFound("The board has no column to restore the card to")
+        current = repo.max_order(target.id)
+        card.column_id = target.id
+        card.order = 1.0 if current is None else current + 1
+        card.archived_at = None
+        card.completed_at = completion_stamp(None, target.name, None, clock.now())
+        activity.add(_aid(actor), "card.restored", "card", card.id, {"card_title": card.title, "to_column": target.name})
     db.session.commit()
     return card
 
@@ -219,6 +247,8 @@ def set_archived(actor, card_id, archived):
 def move_card(actor, card_id, data):
     card, board = load_card(actor, card_id)
     _require_edit(actor, card, board)
+    if card.archived_at is not None:
+        raise CardArchived("An archived card cannot be moved")
     col_id = to_uuid(data.get("column_id"))
     target = repo.get_column(col_id) if col_id else None
     if target is None:
@@ -263,6 +293,8 @@ def move_card(actor, card_id, data):
             "card_title": card.title,
         },
     )
+    if source != target.id:  # a reorder inside the same Column notifies nobody (NPF-04)
+        notif_repo.notify_assignee(card, "assigned_card_changed", _aid(actor), "moved")
     db.session.commit()
     return card
 
@@ -280,6 +312,7 @@ def add_subtask(actor, card_id, data):
     activity.add(
         _aid(actor), "card.subtask_added", "card", card.id, {"subtask_id": str(sub.id), "title": sub.title, "card_title": card.title}
     )
+    notif_repo.notify_assignee(card, "subtask_on_assigned", _aid(actor))
     db.session.commit()
     return sub
 
@@ -296,13 +329,16 @@ def _load_subtask(actor, subtask_id):
 
 def update_subtask(actor, subtask_id, data):
     sub, card = _load_subtask(actor, subtask_id)
+    changed = False  # a reorder alone does not notify (NPF-04)
     if "title" in data:
         if not isinstance(data["title"], str) or not data["title"].strip():
             raise ValidationError("title is required")
+        changed = changed or sub.title != data["title"].strip()
         sub.title = data["title"].strip()
     if "is_done" in data:
         if not isinstance(data["is_done"], bool):
             raise ValidationError("is_done must be a boolean")
+        changed = changed or sub.is_done != data["is_done"]
         sub.is_done = data["is_done"]
     if "order" in data:
         if isinstance(data["order"], bool) or not isinstance(data["order"], (int, float)):
@@ -317,6 +353,8 @@ def update_subtask(actor, subtask_id, data):
         card.id,
         {"subtask_id": str(sub.id), "title": sub.title, "is_done": sub.is_done, "card_title": card.title},
     )
+    if changed:
+        notif_repo.notify_assignee(card, "subtask_on_assigned", _aid(actor))
     db.session.commit()
     return sub
 
@@ -347,6 +385,7 @@ def delete_subtask(actor, subtask_id):
     activity.add(
         _aid(actor), "card.subtask_removed", "card", card.id, {"subtask_id": str(sub.id), "title": sub.title, "card_title": card.title}
     )
+    notif_repo.notify_assignee(card, "subtask_on_assigned", _aid(actor))
     db.session.commit()
 
 
@@ -431,11 +470,21 @@ def attachment_file_path(attachment_id, exp, sig, st=None):
 
 # ---- listing -----------------------------------------------------------------
 
+def parse_archived(args):
+    """`?archived=true` lists the archived Cards (V17); the default is false."""
+    raw = args.get("archived")
+    if raw is None:
+        return False
+    if raw not in ("true", "false"):
+        raise ValidationError("archived must be true or false")
+    return raw == "true"
+
+
 def parse_card_filters(args):
     """Search and filter[...] query values as the repository filter dict; 400 on a bad value or an unknown key."""
     priority = assignee = category = None
     for key, value in args.items():
-        if key == "search":
+        if key in ("search", "archived"):
             continue
         if key == "filter[priority]":
             if value not in ("high", "medium", "low"):
@@ -457,6 +506,60 @@ def parse_card_filters(args):
 
 def list_board_cards(actor, board_id, args):
     board = boards.load_board(actor, board_id)
-    cards = repo.list_for_board(board.id, parse_card_filters(args))
+    cards = repo.list_for_board(board.id, parse_card_filters(args), archived=parse_archived(args))
     idents, urls = _assignee_context(cards)
-    return [serialize_card(c, actor, c.subtasks, c.attachments, idents=idents, urls=urls) for c in cards]
+    names = {c.id: c.name for c in boards_repo.list_columns(board.id)}
+    today = clock.today(current_app.config["APP_TIMEZONE"])
+    return [serialize_card(c, actor, c.subtasks, c.attachments, idents=idents, urls=urls, due=due_state(c.end_date, names.get(c.column_id), today)) for c in cards]
+
+
+MY_GROUPS = ("overdue", "today", "tomorrow", "this_week", "later", "no_due")
+_PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+
+def group_key(end_date, today):
+    """One of MY_GROUPS for a Card's end date (TASK-02): This week runs to the Sunday of the current Monday-first week."""
+    if end_date is None:
+        return "no_due"
+    if end_date < today:
+        return "overdue"
+    if end_date == today:
+        return "today"
+    if end_date == today + timedelta(days=1):
+        return "tomorrow"
+    sunday = today + timedelta(days=6 - today.weekday())
+    return "this_week" if end_date <= sunday else "later"
+
+
+def my_cards(actor):
+    """The caller's open Cards in time groups, empty groups left out (Requirement 52). An Admin cannot be an assignee: empty."""
+    today = clock.today(current_app.config["APP_TIMEZONE"])
+    rows = repo.assigned_open(to_uuid(actor.id)) if actor.role != "admin" else []
+    buckets = {key: [] for key in MY_GROUPS}
+    for r in rows:
+        buckets[group_key(r.end_date, today)].append(r)
+    groups = []
+    for key in MY_GROUPS:
+        ordered = sorted(buckets[key], key=lambda r: (r.end_date or date.max, _PRIORITY_ORDER.get(r.priority, 3), str(r.id)))
+        if not ordered:
+            continue
+        groups.append(
+            {
+                "key": key,
+                "cards": [
+                    {
+                        "id": str(r.id),
+                        "title": r.title,
+                        "board_id": str(r.board_id),
+                        "board_slug": r.slug,
+                        "board_name": r.board_name,
+                        "priority": r.priority,
+                        "end_date": r.end_date.isoformat() if r.end_date else None,
+                        "due_state": due_state(r.end_date, None, today),
+                        "category": {"id": str(r.category_id), "name": r.category_name, "color": r.color} if r.category_id else None,
+                    }
+                    for r in ordered
+                ],
+            }
+        )
+    return {"today": today.isoformat(), "groups": groups}

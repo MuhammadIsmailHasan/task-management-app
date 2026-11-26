@@ -12,6 +12,7 @@ from app.blueprints.cards.schema import (
     CardSchema,
     CreateCardSchema,
     CreateSubtaskSchema,
+    MyCardsSchema,
     MoveCardSchema,
     SubtaskSchema,
     UpdateCardSchema,
@@ -88,7 +89,7 @@ def delete_card(card_id):
 
 
 @bp.route("/cards/<card_id>/archive", methods=["POST"])
-@endpoint(bp, "Archive a card", "Staff access.", errors=(401, 403, 404))
+@endpoint(bp, "Archive a card", "Staff access. The card leaves its column (an archived card has none). A card in Done cannot be archived: 409 CARD_IN_DONE.", errors=(401, 403, 404, 409))
 @require_role(*USERS)
 @bp.response(200, envelope(CardSchema))
 def archive(card_id):
@@ -97,12 +98,12 @@ def archive(card_id):
 
 
 @bp.route("/cards/<card_id>/unarchive", methods=["POST"])
-@endpoint(bp, "Unarchive a card", "Staff access.", errors=(401, 403, 404))
+@endpoint(bp, "Restore an archived card", "Staff access. The card returns to the board's first column, at the end. 409 CARD_NOT_ARCHIVED when it is not archived.", errors=(401, 403, 404, 409))
 @require_role(*USERS)
 @bp.response(200, envelope(CardSchema))
 def unarchive(card_id):
     actor = current_actor()
-    return ok(service.present(service.set_archived(actor, card_id, False), actor), "Card unarchived")
+    return ok(service.present(service.set_archived(actor, card_id, False), actor), "Card restored")
 
 
 @bp.route("/cards/<card_id>/move", methods=["PATCH"])
@@ -127,12 +128,20 @@ def card_activity(page, card_id):
 
 
 @bp.route("/boards/<board_id>/cards", methods=["GET"])
-@endpoint(bp, "Search and filter a board's cards", "Filters combine with AND; an unsupported filter[...] key returns 400. Soft-deleted cards are excluded.")
+@endpoint(bp, "Search and filter a board's cards", "Filters combine with AND; an unsupported filter[...] key returns 400. Soft-deleted cards are excluded. Archived cards are excluded unless `archived=true`, which lists only them.")
 @require_role(*USERS)
 @bp.arguments(BoardCardsQuerySchema, location="query")
 @bp.response(200, envelope(CardSchema, many=True))
 def board_cards(args, board_id):
     return ok(service.list_board_cards(current_actor(), board_id, request.args))
+
+
+@bp.route("/me/cards", methods=["GET"])
+@endpoint(bp, "My cards", "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. An Admin gets an empty list.", errors=(401,))
+@require_role(*USERS)
+@bp.response(200, envelope(MyCardsSchema))
+def my_cards():
+    return ok(service.my_cards(current_actor()))
 
 
 @bp.route("/cards/<card_id>/subtasks", methods=["POST"])

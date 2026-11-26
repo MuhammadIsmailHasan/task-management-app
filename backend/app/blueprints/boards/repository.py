@@ -12,6 +12,13 @@ def get_by_id(board_id, include_deleted=False):
     return board
 
 
+def get_by_slug(slug):
+    """Equality lookup on the unique slug index; a deleted Board counts as not found (SLUG-06)."""
+    if not slug:
+        return None
+    return db.session.scalars(db.select(Board).where(Board.slug == slug, Board.deleted_at.is_(None))).first()
+
+
 def get_by_share_token(token):
     """Equality lookup on the unique index; a deleted board counts as not found."""
     if not token:
@@ -119,7 +126,7 @@ def delete_member(member):
     db.session.delete(member)
 
 
-def list_members(board, with_owner=True):
+def list_members(board, with_owner=True, assignable=False):
     """The Board_Owner first (once, even when also a BoardMember), then every BoardMember by name: [(user, is_owner)]."""
     rows = (
         User.query.join(BoardMember, BoardMember.user_id == User.id)
@@ -133,13 +140,15 @@ def list_members(board, with_owner=True):
         if owner is not None:
             out.append((owner, True))
     out += [(u, False) for u in rows if not (with_owner and board.owner_id == u.id)]
+    if assignable:  # only people who are active and available can be picked (ADM-08)
+        out = [(u, owner) for u, owner in out if u.is_active and u.is_available]
     return out
 
 
 def candidates(board, search, limit):
     """Members and Supervisors who are neither the owner nor a BoardMember, matched on name or login, ordered by name."""
     member_ids = db.select(BoardMember.user_id).where(BoardMember.board_id == board.id)
-    query = User.query.filter(User.id.notin_(member_ids), User.role.in_(("member", "supervisor")))
+    query = User.query.filter(User.id.notin_(member_ids), User.role.in_(("member", "supervisor")), User.is_active.is_(True), User.is_available.is_(True))
     if board.owner_id is not None:
         query = query.filter(User.id != board.owner_id)
     text = (search or "").strip().lower()
@@ -158,9 +167,7 @@ def candidates(board, search, limit):
 def assigned_cards(board_id, user_id):
     """Live Cards of this Board assigned to this user."""
     return (
-        Card.query.join(Column, Card.column_id == Column.id)
-        .filter(Column.board_id == board_id, Card.assignee_id == user_id, Card.deleted_at.is_(None))
-        .all()
+        Card.query.filter(Card.board_id == board_id, Card.assignee_id == user_id, Card.deleted_at.is_(None)).all()
     )
 
 

@@ -26,6 +26,7 @@ class SharedCardSchema(BaseSchema):
     end_date = fields.String(allow_none=True)
     order = fields.Float()
     archived_at = fields.String(allow_none=True)
+    due_state = fields.String(allow_none=True)
     subtasks = fields.List(fields.Nested(SubtaskSchema))
     progress = fields.Integer(allow_none=True)
     subtask_done_count = fields.Integer()

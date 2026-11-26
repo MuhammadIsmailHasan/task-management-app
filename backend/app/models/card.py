@@ -1,3 +1,5 @@
+from sqlalchemy import event
+
 from app.extensions import db
 from app.models.base import TimestampMixin, uuid_fk, uuid_pk
 
@@ -25,7 +27,9 @@ class Card(TimestampMixin, db.Model):
     )
 
     id = uuid_pk()
-    column_id = uuid_fk("columns.id", nullable=False)
+    # An archived Card has no Column (V17, Requirement 49) but keeps its Board, so a Card reaches its Board without one.
+    board_id = uuid_fk("boards.id", nullable=False)
+    column_id = uuid_fk("columns.id", nullable=True)
     category_id = db.Column(
         db.UUID(as_uuid=True), db.ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
@@ -78,3 +82,15 @@ class Attachment(TimestampMixin, db.Model):
     mime_type = db.Column(db.String(255), nullable=True)
 
     card = db.relationship("Card", back_populates="attachments", lazy="raise")
+
+
+db.Index("ix_cards_board_id", Card.board_id)
+
+
+@event.listens_for(Card, "before_insert")
+def _set_board(mapper, connection, target):
+    """A Card made with a Column (the API, the seed, a test) takes that Column's Board without naming it."""
+    if target.board_id is None and target.column_id is not None:
+        from app.models.board import Column
+
+        target.board_id = connection.scalar(db.select(Column.board_id).where(Column.id == target.column_id))

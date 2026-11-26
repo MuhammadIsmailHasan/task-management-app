@@ -6,11 +6,12 @@ from app.common.fields import BaseSchema
 class InviteSchema(BaseSchema):
     enabled = fields.Boolean()
     token = fields.String(allow_none=True, metadata={"description": "Secret; returned only by the invite endpoints"})
-    path = fields.String(allow_none=True, metadata={"description": "/invite/<token> or null"})
+    path = fields.String(allow_none=True, metadata={"description": "/app/invite/<token> or null"})
 
 
 class InviteBoardSchema(BaseSchema):
     id = fields.UUID()
+    slug = fields.String()
     name = fields.String()
     description = fields.String(allow_none=True)
 

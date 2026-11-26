@@ -20,6 +20,8 @@ class _CardFields(BaseSchema):
     def _no_progress(self, data, original, **kwargs):
         if isinstance(original, dict) and "progress" in original:
             raise SchemaError({"progress": ["progress is derived from the subtasks and cannot be set"]})
+        if isinstance(original, dict) and "due_state" in original:
+            raise SchemaError({"due_state": ["due_state is computed by the server and cannot be set"]})
 
 
 class CreateCardSchema(_CardFields):
@@ -53,6 +55,35 @@ class BoardCardsQuerySchema(BaseSchema):
     filter_priority = fields.String(data_key="filter[priority]", validate=_priority)
     filter_assignee = fields.UUID(data_key="filter[assignee]")
     filter_category = fields.UUID(data_key="filter[category]")
+    archived = fields.String(validate=validate.OneOf(["true", "false"]), metadata={"description": "`true` lists the archived Cards (they have no Column); default false"})
+
+
+class MyCardCategorySchema(BaseSchema):
+    id = fields.UUID()
+    name = fields.String()
+    color = fields.String(allow_none=True)
+
+
+class MyCardSchema(BaseSchema):
+    id = fields.UUID()
+    title = fields.String()
+    board_id = fields.UUID()
+    board_slug = fields.String()
+    board_name = fields.String()
+    priority = fields.String()
+    end_date = fields.String(allow_none=True)
+    due_state = fields.String(allow_none=True)
+    category = fields.Nested(MyCardCategorySchema, allow_none=True)
+
+
+class MyCardGroupSchema(BaseSchema):
+    key = fields.String(metadata={"description": "overdue, today, tomorrow, this_week, later or no_due"})
+    cards = fields.List(fields.Nested(MyCardSchema))
+
+
+class MyCardsSchema(BaseSchema):
+    today = fields.String()
+    groups = fields.List(fields.Nested(MyCardGroupSchema), metadata={"description": "In the order overdue, today, tomorrow, this_week, later, no_due; empty groups are left out"})
 
 
 class SubtaskSchema(BaseSchema):
@@ -85,6 +116,8 @@ class CardSchema(BaseSchema):
     assignee_id = fields.UUID(allow_none=True)
     assignee_name = fields.String(allow_none=True)
     assignee_avatar_url = fields.String(allow_none=True, metadata={"description": "Signed avatar URL (15 minutes) or null"})
+    assignee_is_active = fields.Boolean(allow_none=True, metadata={"description": "False once an Admin deactivated the assignee; null without an assignee"})
+    assignee_is_available = fields.Boolean(allow_none=True, metadata={"description": "False while the assignee is marked unavailable; null without an assignee"})
     title = fields.String()
     description = fields.String(allow_none=True)
     priority = fields.String()
@@ -92,6 +125,7 @@ class CardSchema(BaseSchema):
     end_date = fields.String(allow_none=True)
     order = fields.Float()
     archived_at = fields.String(allow_none=True)
+    due_state = fields.String(allow_none=True, metadata={"description": "Read-only: overdue, due_tomorrow, or null (always null in Done or without an end date), in APP_TIMEZONE"})
     subtasks = fields.List(fields.Nested(SubtaskSchema))
     progress = fields.Integer(allow_none=True, metadata={"description": "Derived from the subtasks: 0 to 10, or null without subtasks"})
     subtask_done_count = fields.Integer()

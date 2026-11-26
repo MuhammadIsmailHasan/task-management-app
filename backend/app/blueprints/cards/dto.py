@@ -74,15 +74,18 @@ def serialize_attachment(a, now=None, scope=None):
     return data
 
 
-def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, activity=None, idents=None, urls=None):
+def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, activity=None, idents=None, urls=None, due=None):
     ident = (idents or {}).get(card.assignee_id) if card.assignee_id else None
     data = {
         "id": str(card.id),
-        "column_id": str(card.column_id),
+        "column_id": str(card.column_id) if card.column_id else None,
         "category_id": str(card.category_id) if card.category_id else None,
         "assignee_id": str(card.assignee_id) if card.assignee_id else None,
         "assignee_name": ident.full_name if ident else None,
         "assignee_avatar_url": (urls or {}).get(card.assignee_id) if card.assignee_id else None,
+        # an assignee who was deactivated or marked unavailable stays on the Card; the avatar says so (ADM-09)
+        "assignee_is_active": ident.is_active if ident else None,
+        "assignee_is_available": ident.is_available if ident else None,
         "title": card.title,
         "description": card.description,
         "priority": card.priority,
@@ -90,6 +93,7 @@ def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, act
         "end_date": iso(card.end_date),
         "order": card.order,
         "archived_at": iso(card.archived_at),
+        "due_state": due,
         "subtasks": [serialize_subtask(s) for s in subtasks],
         **progress_fields(subtasks),
         "attachments": [serialize_attachment(a) for a in attachments],
