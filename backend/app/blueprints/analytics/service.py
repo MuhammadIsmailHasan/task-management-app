@@ -83,3 +83,106 @@ def all_boards(actor):
         raise Forbidden("Manager only")
     today, week_ago = _args()
     return [_shape(r) for r in repo.summaries(today, week_ago)]
+
+
+# ---- Dashboard (V17, Requirement 51) ---------------------------------------------------------------------------
+
+DEFAULT_DAYS = 30
+MAX_DAYS = 182  # 26 weeks, the throughput limit (THR-07)
+LIST_LIMIT = 10
+TOP_LIMIT = 5
+
+
+def _tz():
+    return ZoneInfo(current_app.config["APP_TIMEZONE"])
+
+
+def _local_start(day):
+    return datetime.combine(day, time.min, tzinfo=_tz()).astimezone(timezone.utc)
+
+
+def _card(row):
+    from app.common.due import due_state
+
+    today = clock.today(current_app.config["APP_TIMEZONE"])
+    return {
+        "id": str(row.id),
+        "title": row.title,
+        "board_id": str(row.board_id),
+        "board_slug": row.slug,
+        "board_name": row.board_name,
+        "priority": row.priority,
+        "end_date": row.end_date.isoformat() if row.end_date else None,
+        "due_state": due_state(row.end_date, None, today),
+        "assignee_name": row.assignee_name,
+    }
+
+
+def _scope(actor, board_id):
+    """The Board ids this viewer may read under the Requirement 10 rules, or a 403/404."""
+    if actor.role not in ("supervisor", "manager"):
+        raise Forbidden("Analytics not available for this role")
+    if board_id is not None:
+        board = boards.load_board(actor, board_id)
+        if not (actor.role == "manager" or boards.is_owner(actor, board)):
+            raise Forbidden("Analytics not available for this role")
+        return [board.id]
+    owner = to_uuid(actor.id) if actor.role == "supervisor" else None
+    return [bid for bid, _ in repo.boards_in_scope(owner_id=owner)]
+
+
+def dashboard(actor, board_id, member, date_from, date_to, due_on):
+    from app.common.identities import Identity, avatar_urls
+    from app.common.errors import ValidationError
+
+    tz_name = current_app.config["APP_TIMEZONE"]
+    today = clock.today(tz_name)
+    date_to = date_to or today
+    date_from = date_from or (date_to - timedelta(days=DEFAULT_DAYS - 1))
+    if date_from > date_to or (date_to - date_from).days + 1 > MAX_DAYS:
+        raise ValidationError("The date range must be at most 26 weeks and start on or before its end", details={"from": ["invalid range"]})
+    due_on = due_on or today + timedelta(days=1)
+    ids = _scope(actor, to_uuid(board_id) if board_id else None)
+    if not ids:
+        ids = []
+    member_id = to_uuid(member) if member else None
+
+    empty = not ids
+    ov = repo.overview(ids, member_id, today) if not empty else [0, 0, 0, 0]
+    od_count, od_rows = repo.overdue_cards(ids, member_id, today, date_from, date_to, LIST_LIMIT) if not empty else (0, [])
+    dt_count, dt_rows = repo.due_on_cards(ids, member_id, due_on, LIST_LIMIT) if not empty else (0, [])
+    top = repo.top_priority(ids, member_id, TOP_LIMIT) if not empty else []
+
+    # weeks that touch the range, Monday first, in APP_TIMEZONE; completion in the range (local days, end inclusive)
+    first_monday = date_from - timedelta(days=date_from.weekday())
+    last_monday = date_to - timedelta(days=date_to.weekday())
+    n_weeks = (last_monday - first_monday).days // 7 + 1
+    starts = [first_monday + timedelta(days=7 * i) for i in range(n_weeks)]
+    boundaries = [_local_start(d) for d in starts] + [_local_start(last_monday + timedelta(days=7))]
+    done_by_week = repo.weekly_done(boundaries, ids, member_id) if not empty else {}
+    weeks = [{"week_start": d.isoformat(), "done": int(done_by_week.get(i, 0))} for i, d in enumerate(starts)]
+
+    on_time = overdue = 0
+    if not empty:
+        lo_dt, hi_dt = _local_start(date_from), _local_start(date_to + timedelta(days=1))
+        for completed_at, end_date in repo.finished_pairs(ids, member_id, lo_dt, hi_dt):
+            done_day = (completed_at if completed_at.tzinfo else completed_at.replace(tzinfo=timezone.utc)).astimezone(_tz()).date()
+            if done_day <= end_date:
+                on_time += 1
+            else:
+                overdue += 1
+
+    people = repo.people(ids) if not empty else []
+    idents = {p.id: Identity(p.full_name, p.avatar_path) for p in people}
+    urls = avatar_urls(idents, clock.now())
+    return {
+        "range": {"from": date_from.isoformat(), "to": date_to.isoformat()},
+        "today": today.isoformat(),
+        "overview": {"total": ov[0], "done": ov[1], "in_progress": ov[2], "overdue": ov[3]},
+        "throughput": {"weeks": weeks, "total": sum(w["done"] for w in weeks)},
+        "overdue": {"count": od_count, "cards": [_card(r) for r in od_rows]},
+        "due_tomorrow": {"count": dt_count, "due_on": due_on.isoformat(), "cards": [_card(r) for r in dt_rows]},
+        "top_priority": {"cards": [_card(r) for r in top]},
+        "finished": {"on_time": on_time, "overdue": overdue},
+        "members": [{"id": str(p.id), "full_name": p.full_name, "avatar_url": urls.get(p.id)} for p in people],
+    }

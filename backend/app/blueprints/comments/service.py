@@ -3,6 +3,7 @@ from app.blueprints.boards import repository as boards_repo
 from app.blueprints.boards import service as boards
 from app.blueprints.cards import repository as cards_repo
 from app.blueprints.comments import repository as repo
+from app.blueprints.notifications import repository as notifications
 from app.common import clock
 from app.common.errors import Forbidden, NotFound, ValidationError
 from app.common.identities import avatar_urls
@@ -41,6 +42,7 @@ def create_comment(actor, card_id, data):
     _require_commenter(actor)
     c = repo.add(card.id, to_uuid(actor.id), _content(data))
     activity.add(to_uuid(actor.id), "comment.added", "card", card.id, {"comment_id": str(c.id), "card_title": card.title})
+    notifications.notify_assignee(card, "comment_on_assigned", to_uuid(actor.id))
     db.session.commit()
     return c
 
@@ -57,6 +59,7 @@ def reply(actor, comment_id, data):
     c = repo.add(card.id, to_uuid(actor.id), _content(data), parent_id=parent.id)
     parent.reply_count = (parent.reply_count or 0) + 1
     activity.add(to_uuid(actor.id), "comment.replied", "card", card.id, {"comment_id": str(c.id)})
+    notifications.notify_assignee(card, "comment_on_assigned", to_uuid(actor.id))
     db.session.commit()
     return c
 

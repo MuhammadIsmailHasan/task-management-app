@@ -1,7 +1,7 @@
 from flask_smorest import Blueprint
 
 from app.blueprints.analytics import service
-from app.blueprints.analytics.schema import AnalyticsSchema, ThroughputQuerySchema, ThroughputSchema
+from app.blueprints.analytics.schema import AnalyticsSchema, DashboardQuerySchema, DashboardSchema, ThroughputQuerySchema, ThroughputSchema
 from app.common.auth import current_actor, require_role
 from app.common.docs import endpoint
 from app.common.envelope import envelope
@@ -42,3 +42,12 @@ def board_throughput(args, board_id):
 @bp.response(200, envelope(ThroughputSchema, many=True))
 def all_throughput(args):
     return ok(service.all_throughput(current_actor(), args["weeks"]))
+
+
+@bp.route("/analytics/dashboard", methods=["GET"])
+@endpoint(bp, "Dashboard", "Supervisor (the Boards it owns) and Manager (any Board). Member and Admin 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.", errors=(400, 401, 403, 404))
+@require_role("supervisor", "manager", "member", "admin")
+@bp.arguments(DashboardQuerySchema, location="query")
+@bp.response(200, envelope(DashboardSchema))
+def dashboard(args):
+    return ok(service.dashboard(current_actor(), args.get("board"), args.get("member"), args.get("date_from"), args.get("date_to"), args.get("due_on")))

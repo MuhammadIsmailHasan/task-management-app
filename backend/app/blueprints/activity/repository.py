@@ -37,7 +37,7 @@ def for_card(card_id, limit=None, before=None):
 
 def for_board(board_id, limit=None, before=None):
     column_ids = db.select(Column.id).where(Column.board_id == board_id)
-    card_ids = db.select(Card.id).join(Column, Card.column_id == Column.id).where(Column.board_id == board_id)
+    card_ids = db.select(Card.id).where(Card.board_id == board_id)
     cond = db.or_(
         db.and_(ActivityLog.target_type == "board", ActivityLog.target_id == board_id),
         db.and_(ActivityLog.target_type == "column", ActivityLog.target_id.in_(column_ids)),
