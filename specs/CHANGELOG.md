@@ -219,3 +219,65 @@ Versions match `.kiro/specs/CHANGELOG.md`. Each folder holds requirement domains
 - **Tests:** 177 existing Frontend tests kept (Sidebar tests moved to the new components, none deleted) plus `v16-host`, `v16-tokens`, `v16-shell`, `v16-dashboard`, `v16-landing`; Backend `test_throughput.py`.
 - **Not done:** the Playwright checks of V16-T07, T16, and T17 (no Playwright setup in the repository); the Admin users table layout, the Invite modal tabs, the Card modal's attribute-chip row, and the Inbox "All and Unread" switch are restyled but not rebuilt to the prototype layout; the Board toolbar's progress figures come from the live Card list, not the Board payload, so they follow a drag at once; the `brand/v2` logo files were byte-identical to the current ones, so BrandLogo was not changed.
 - **Breaking:** the Sidebar and its stored collapse key are gone; `done_delta` changed meaning (Open Question 42, default applied).
+
+## V17 - 2026-11-26 (draft, awaiting owner review)
+### Changes
+- **Specification:** `specs/v17/` holds `00-OVERVIEW` (Decisions AY to BJ, the supersession table, exclusions, phases, glossary, Open Questions 46 to 67) and one file per requirement group: `32-UI-FIXES` (Requirement 45), `33-PATHS-AND-NAVIGATION` (46, 47), `34-BOARD-SLUG-AND-404` (48), `35-COLUMNS-AND-BOARD-VIEWS` (49, 50), `36-DASHBOARD-AND-MY-TASKS` (51, 52), `37-USERS-AND-PROFILE` (53, 54), `38-SHARE-AND-CARD-MODAL` (55, 56), `39-NOTIFICATIONS` (57, 58), `40-ACCOUNT-ACTIVATION-EMAIL` (59), and `41-VERIFICATION` (the test plan and the owner's visual review checklist, `V17-T01` to `V17-T14`, not a numbered requirement). `.kiro/specs/requirements.md` gets Requirements 45 to 59, Decisions AY to BJ, the glossary terms, Open Questions 46 to 67, and "Superseded by ..., V17" notes in the places they replace (Requirements 1, 2, 3, 9, 19, 23, 24, 26, 29, 33, 39, 42, 43). Earlier text is kept.
+- **Design:** `design.md` gets the V17 section: data model changes for four migrations, endpoints and error codes, the one-origin topology and public prefix, navigation components, the dashboard query budget, notification and due-job design, the activation and mail design, the consistency table, risks, and Properties 69 to 80.
+- **Tasks:** `tasks.md` gets group 39 (39.1 to 39.52, ten phases, one commit each, every task unticked and linked to its requirement IDs) and dependency waves 121 to 154.
+- **Steering:** `frontend.md`, `backend.md`, `api-conventions.md`, and `data-model.md` get a V17 block of the rules that change (paths, navigation, `ConfirmDialog`, slugs, mail, new error details, the Card and Notification columns). `structure.md` and `tech.md` are synced later by task 39.51.
+- **Implementation:** none. No source, migration, test, or deploy file changed.
+- **Not changed:** the Flask routes outside those listed in the design; the roles and Decision B; the Public_Link and Invite_Link tokens; the V16 design system; everything in `specs/v1/` to `specs/v16/`.
+- **Breaking (when implemented):** every app URL moves under `/app` (old paths redirect with 308); the host split of V16 is removed; Column management is for the Board_Owner, Manager, and Admin (Supervisor BoardMembers lose it); a Card in `Done` cannot be archived; archived Cards lose their Column and the Card gains `board_id`; register returns no Token and sign-in needs a verified email; the daily `deadline` job is replaced by `notify-due`; the V12 card notification index is narrowed; the V16 Icon_Rail, Top_Nav, `BaseConfirm`, Invite and Public link buttons are removed.
+### Reason
+- The owner asked for a path-based topology, a new navigation, board slugs and a 404 page, Column CRUD and board views, a richer Dashboard and My Tasks, user deactivation, a social-style Profile, one Share modal, notification preferences and a due job, email activation, and fixes to seven UI defects (`specs/v17/KIRO-BRIEF.md`). The owner answered Open Questions 46 to 50 in the brief.
+### Impact
+- Requirements 45 to 59 added; criteria of Requirements 1, 2, 3, 9, 19, 23, 24, 26, 29, 33, 39, 42, and 43 superseded or amended as the supersession table lists; Open Questions 46 to 50 resolved by the owner and 51 to 67 added with defaults applied.
+- Design: topology, shell, slug, Columns and archived Cards, due state, dashboard, My Tasks, users and activation, mail, notifications.
+- Tasks: group 39.
+### Consistency findings (reported, defaults applied; the owner confirms in task 39.1)
+- **`cards.board_id` is missing from the brief's migration 2** (Open Question 53): without it an archived Card with a null `column_id` has no Board.
+- **The V12 card notification index would refuse a second event the same day** (Open Question 56): migration 4 narrows it.
+- **"Every filter applies to every widget" empties Due tomorrow under the default range** (Open Question 54).
+- **"Every create and delete" conflicts with the at-once saving of comments, Subtasks, and attachments** (Open Question 51).
+- **Column rights** (Open Question 55) resolved by the owner: Board_Owner, Manager, and Admin.
+- **Archiving versus THR-03** (Open Question 57, resolved: a Done Card cannot be archived), **status chip versus the V15 exclusion** (58), **deactivation versus "no revocation list"** (60), **slug 403 versus 404** (52).
+- **Two things added that the brief did not name:** a link to the Archived page on the Board toolbar, and `CANNOT_DEACTIVATE_SELF`. The brief's "root `CHANGELOG.md`" does not exist; the root changelog of the specs is `specs/CHANGELOG.md`, and it carries the same entry.
+
+### Round 2 within V17 - 2026-11-26 (owner answers to Open Questions; no new version)
+- **Open Question 51 (ConfirmDialog scope):** approved as written.
+- **Open Question 55 (Column rights):** the Board_Owner, a Manager, and an Admin create, rename, reorder, and delete Columns (COL-01, COL-11; Decision BC; tasks 39.20 and 39.21; Requirement 3 criteria 4 and 5 stay superseded). A Supervisor who is only a BoardMember cannot.
+- **Open Question 57 (archiving and `completed_at`):** a Card in `Done` cannot be archived; the new COL-14 refuses it with 409 `CARD_IN_DONE` and the Card modal disables Archive. COL-08, the design, and `data-model.md` are reworded; cards archived before V17 keep their `completed_at`.
+- **Open Questions 56, 58 to 65:** agreed as written (defaults stand).
+- **Open Questions 54 and 52:** the owner's answer ("make the atomic filter to the widget that use due tomorrow" for 52) does not match the question numbered 52 (slug 403 versus 404). It is read as an answer to the Due tomorrow widget (Open Question 54) but its meaning is not clear, so 54 and 52 stay open and unchanged until the owner clarifies.
+- **Open Questions 66 and 67:** no answer yet; defaults stand.
+
+### Round 2 within V17, continued - 2026-11-26
+- **Open Question 54 (Dashboard):** the Due tomorrow widget gets its own "Due on" date filter (default tomorrow, `due_on` query parameter), independent of the date range; DASH-12, DASH-15, DASH-19, and the design table are updated. The other widgets keep the table of DASH-12.
+- **Open Questions 52, 66, 67:** the defaults are confirmed (slug route 403 for no access; accented letters removed; `robots.txt` does not disallow `/app`).
+- **Open Questions 53 and 54:** confirmed ("oke"); the earlier "52. yes" is read as the answer to the Due tomorrow filter question.
+- Open Questions 46 to 67 are now all resolved or confirmed.
+
+### Round 3 within V17 - 2026-11-26 (owner review of the specs; no new version)
+- **ACT-12 (new):** `next` is kept through register, verification, and sign-in, so a signed-out invite visitor still reaches the Join_Request (Open Question 69; task 39.47).
+- **NAV-13 (new):** the Inbox gets an All and Unread switch, and `GET /api/notifications` gets `unread=true` (Open Question 70; new task 39.10a).
+- **NAV-01 and TASK-01:** an Admin does not see My Tasks and is redirected from `/app/my-tasks` (Open Question 71).
+- **Open Question 51:** confirmed. No ConfirmDialog for creating a comment, reply, Subtask, attachment, or Join_Request.
+- **Open Question 55:** confirmed. The Board_Owner, a Manager, and an Admin manage Columns.
+- **Open Questions 68, 72, 73 (new, resolved):** unverified accounts are not purged; `email_verified_at` and `is_active` stay two flags; the `Path=/app` cookie ends existing sessions at deploy.
+- **Confirmed as written:** COL-14 (a Card in `Done` cannot be archived) and Open Question 59 (`CANNOT_DEACTIVATE_SELF`).
+
+### Implementation of V17 - 2026-11-26 (all phases built; nothing committed; the owner's visual review, task 39.52, is open)
+- **Built:** ConfirmDialog and the form fixes (Phase 1); one origin under `/app`, the Sidebar and Top_Menu, the Share modal (Phase 2); board slugs and the 404 page, `API_PUBLIC_PREFIX` (Phase 3); Column CRUD, Column-less archived Cards, List, Calendar, Archived, `due_state` (Phase 4); the Card modal layout (Phase 5); user flags, deactivation rules, pickers, the Users table, the Profile page, mail and email tokens (Phase 6); the Dashboard endpoint and page, My Tasks (Phase 7); notification preferences, the five event types, `flask notify-due` (Phase 8); activation and the verify page (Phase 9). Migrations: `e5a9c3d7f104` slug, `f1b6d8a2c405` cards board and nullable column, `a3d8f1b7c629` users and email tokens, `b8e4c2a9d713` preferences and notification types. Tests: backend 280+ and frontend 339, `next build` and the four-width check (`frontend/e2e/widths.mjs`) pass.
+- **Where the build differs from the text (each is a decision for the owner to keep or reverse):**
+  1. **Link paths (PATH-04).** `path` of the Invite_Link and Public_Link is always `/app/invite/{token}` and `/app/shared/{token}` (the frontend routes); `API_PUBLIC_PREFIX` only changes the API base in signed file URLs (`/app/api/attachments/...`). A prefix that is empty in development would have given a path with no page.
+  2. **Mail backend in production (ACT-08).** `MAIL_BACKEND=console` is accepted in production when chosen on purpose (the smoke test and the setup scripts use it until SMTP is configured); `smtp` is the production default and stops the start-up when a setting is missing. Until SMTP is set, nobody receives an activation link: the link is only in the Backend log.
+  3. **Scheduler (DUE-06).** No cron entry. The existing `scheduler` service (Docker) and supervisord program (bare) run `flask run-scheduler`, which now runs `notify-due` every 15 minutes. `app/jobs/deadlines.py` is replaced by `app/jobs/due.py`.
+  4. **Board members payload (ADM-01, ADM-08).** `GET /api/boards/{id}/members` also returns `is_active` and `is_available`, because the Members view tags an inactive or unavailable person; no other member, comment, or candidate payload carries them.
+  5. **Restore route (VIEW-06).** `POST /api/cards/{id}/unarchive` is the one restore route (the task said to keep an existing reversal route, not add a second).
+  6. **404 inside the shell (SLUG-12).** An unknown path under `/app` and an unknown Board slug show the Not_Found_Page without the shell, signed in or not.
+  7. **Invite pages and the guard (PATH-05).** `/app/invite/{token}` stays guarded: a signed-out visitor is sent to `/app/login?next=...`, and `next` survives register, confirmation, and sign-in (ACT-12).
+  8. **No Board rename screen (SLUG-09).** The frontend has no control that renames a Board, so there is nothing to replace in the URL; the Backend rule (a rename moves the slug and the old one is 404) is built and tested.
+  9. **Unverified accounts.** A user with `email_verified_at` null and no Token never reaches a protected route; they are not purged (Open Question 68).
+  10. **Playwright (39.50).** The four-width check is a plain script on `playwright-core` and Chrome (`frontend/e2e/widths.mjs`, `shot.mjs`), not a `@playwright/test` suite.
+  11. **Card modal (CM-01).** The header (icon tile, Board, Column badge, auto-save state), the card title eyebrow, the chip row order, and the Description, Subtasks, Attachments order follow `04-card-modal-desktop.png`; the right pane keeps "Comments" and "Activity" headings. Further visual matching waits for the owner's review.

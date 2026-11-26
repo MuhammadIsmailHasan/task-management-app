@@ -1041,7 +1041,180 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
     - Full `pytest`, `tsc --noEmit`, `vitest run`, `next build`; the screenshots of V16-T17 beside the 13 reference renders in `design/reference/v2/` at 1440 and 390 pixels with the owner; record each decision in `specs/CHANGELOG.md`.
     - _Requirements: 44.14, 44.15, 44.16, 44.17, 38.25, 38.27_
 
+- [ ] 39. UI fixes, paths and navigation, slugs, Columns and views, users, profile, dashboard, notifications, activation (Decisions AY to BJ, V17)
+  - Built on 2026-11-26. A phase gate is ticked when its tests and `next build` pass; **no commit was made** (the owner said not to commit yet), so the whole of V17 is one uncommitted change. Only 39.52 (the owner's visual review) is open. Differences between the text and the build are listed in the changelog entry "Implementation of V17".
+  - Every task lists the files it changes, the tests it adds, and its requirement IDs. One commit per phase. Each phase gate (the last task of a phase) runs `pytest`, `vitest run`, `tsc --noEmit`, and `next build`, and regenerates `backend/openapi.json` and `backend/API.md` when the API changed. Nothing here is built until 39.1 is ticked.
+  - [x] 39.1 Owner review of V17
+    - Answered in round 2 within V17 (see the changelog); only the formal approval remains. The owner approves Requirements 45 to 59 and answers Open Questions 51 to 67 (in particular 51 ConfirmDialog scope, 52 slug 403 versus 404, 53 `cards.board_id`, 54 dashboard range, 55 Column rights, 56 the due job and cron, 57 `completed_at`, 58 status chip, 63 screens without a reference, 64 Gmail limits). No code changes before this is ticked.
+    - _Requirements: 45 to 59_
+  - **Phase 1: UI fixes (Requirement 45)**
+  - [x] 39.2 `ConfirmDialog` and its callers
+    - New `frontend/components/shared/ConfirmDialog.tsx` over `BaseModal`; replace every `BaseConfirm` use (card modal, subtasks, attachments, comments, members, links, avatar, Board and Column and Category actions); delete `BaseConfirm.tsx` when unused; confirm before the creates of FIX-07. Tests: `confirm-dialog.test.tsx` (names, Escape, Cancel, focus return, busy, error kept) and one request-after-confirm test per action; update `tests/shared-ui.test.tsx` and `tests/card-modal.test.tsx` without deleting cases.
+    - _Requirements: FIX-07, FIX-08, FIX-09, FIX-10, FIX-11_
+  - [x] 39.3 Sign-in and register fixes
+    - `components/AuthSplitLayout.tsx`, `components/AuthForm.tsx`, `lib/validation.ts`, `components/shared/BrandLogo.tsx`, `public/brand/*` (ask the owner for a transparent file if the PNG is opaque). Transparent logo, shared canvas tokens, clear a field's error on edit, validate every field on submit with focus on the first invalid one. Tests: `tests/auth.test.tsx` (cases for FIX-03 and FIX-04), `tests/branding.test.tsx` (alpha pixel check), a token-equality test for FIX-02.
+    - _Requirements: FIX-01, FIX-02, FIX-03, FIX-04_
+  - [x] 39.4 Option hover highlight
+    - `components/shared/BaseCombobox.tsx`, `BaseMenu.tsx`, and the `components/ui` primitives behind them: the highlight follows the pointer and clears on `pointerleave`; the keyboard highlight is unchanged. Tests: `tests/shared-ui.test.tsx` (pointer move, leave, then arrow keys).
+    - _Requirements: FIX-05_
+  - [x] 39.5 Members panel spacing
+    - `components/shell/TeamView.tsx`: `--space-4` between the header and the search input (the view is renamed in 39.11). Test: class assertion in `tests/v16-shell.test.tsx`.
+    - _Requirements: FIX-06_
+  - [x] 39.6 Phase 1 gate (the commit waits for the owner: "dont commit yet")
+    - Backend tests, frontend tests, `next build`. One commit: `feat(ui): V17 phase 1 UI fixes and ConfirmDialog`.
+    - _Requirements: V17-T08_
+  - **Phase 2: Path topology and navigation (Requirements 46 and 47)**
+  - [x] 39.7 Frontend path topology
+    - Move `app/(app)/*` and `app/(auth)/*`, `app/shared`, `app/session-expired` under `app/app/`; move the Landing_Page from `app/site/page.tsx` to `app/page.tsx`; delete `lib/host.ts`, `lib/origins.ts`, `app/site/`, and the host branch of `proxy.ts`; `proxy.ts` matcher `/app/:path*`, guard list, `X-Robots-Tag: noindex`, cookie `Path=/app`; new `lib/routes.ts`; the 308 table and `app/app/boards/[id]/page.tsx` redirect route; `next.config.ts` development rewrite; `robots.txt` and `sitemap.xml` for `/`; `NEXT_PUBLIC_API_URL`. Tests: replace `tests/origin.test.ts` and `v16-host` with `routes.test.ts`, `proxy.test.ts` (guard, `next` whitelist, legacy 308s with query), and the no-hand-written-route scan.
+    - _Requirements: PATH-01, PATH-02, PATH-05, PATH-06, PATH-07, PATH-08, PATH-09, PATH-10, PATH-12_
+  - [x] 39.8 Backend public prefix
+    - `app/config.py` (`API_PUBLIC_PREFIX`), `app/common/signing.py` and the schemas that build `file_url`, `avatar_url`, and the Invite and Public link `path`; `backend/.env.example`. Tests: `test_share.py`, `test_invites.py`, `test_avatar.py` assert the prefix in the paths and that an old signature still verifies after a prefix change.
+    - _Requirements: PATH-04_
+  - [x] 39.9 Deploy files for one origin
+    - `deploy/nginx/revoboard.conf`, `compose.yaml`, `deploy/bare/supervisor.conf`, `deploy/supervisor/revoboard.conf`, `deploy/deploy.sh`, `deploy/seed.sh`, `deploy/setup-server.sh`, `deploy/bare/*.sh`, `deploy/smoke.sh`, `deploy/smoke.mjs`, `deploy/README.md` (topology, 308 table, cookie path, rollback to V16). Does not touch the server; ask the owner before any server action.
+    - _Requirements: PATH-03, PATH-11, V17-T09, V17-T14_
+  - [x] 39.10 Sidebar, Top_Menu, and App_Header
+    - New `components/shell/Sidebar.tsx`, `TopMenu.tsx`, `useSidebarState.ts` (safe `localStorage` read); rewrite `navItems.ts` (`sidebarItems`, `topMenuItems`); `AppHeader.tsx`, `AppShell.tsx`, `NavDrawer.tsx` (the "This board" group); delete `IconRail.tsx` and `TopNav.tsx`; new tokens `--sidebar-w` and `--sidebar-w-collapsed` in `styles/tokens.css` and `styles/globals.css`; the bell stays the only way to the Inbox. Tests: `v17-nav.test.tsx` (items per role and Board state, no id in both lists, toggle state and tooltips, Nav_Drawer focus trap).
+    - _Requirements: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05, NAV-06, NAV-08, NAV-09, NAV-10, NAV-11, NAV-12_
+  - [x] 39.10a Inbox All and Unread switch
+    - Backend `notifications/routes.py`, `service.py`, `repository.py`, `schema.py`: `unread=true` filter on `GET /api/notifications`; frontend `InboxView.tsx` segmented switch, `lib/api.ts`; regenerate `openapi.json` and `API.md`. Tests: `test_notifications.py` (filter, paging, `unread_count` unchanged), `v17-inbox.test.tsx` (switch, keyboard, row stays until reload, empty state).
+    - _Requirements: NAV-13_
+  - [x] 39.11 Side_Panel views: Members and Categories
+    - `ShellContext.tsx` (`"inbox" | "activity" | "members" | "categories" | null`), `SidePanel.tsx`, rename `TeamView.tsx` to `MembersView.tsx`, new `CategoriesView.tsx` from `components/board/CategoriesScreen.tsx` (remove the Categories route), titles restored on close. Tests: update the Team and Categories tests; Escape and focus return.
+    - _Requirements: NAV-07, FIX-06_
+  - [x] 39.12 Update the existing tests that query the V16 navigation and the old popovers
+    - Every Playwright and `vitest` test that queries the Icon_Rail, Top_Nav, `BaseConfirm`, the Public link and Invite buttons, or the old routes now queries the new components and paths; none is deleted. AUTH-E2E-SO selectors move to the User_Menu on `/app` paths.
+    - _Requirements: NAV-08, PATH-08, CM-05_
+  - [x] 39.13 Phase 2 gate and commit
+    - Full test run, `next build`, a manual walk at 360 and 1280 pixels. Commit: `feat(shell): V17 phase 2 path topology and navigation`.
+    - _Requirements: V17-T08_
+  - **Phase 3: Board slug and 404 page (Requirement 48)**
+  - [x] 39.14 Migration 1, `slugify`, model
+    - New `backend/migrations/versions/<rev>_v17_board_slug.py` (reversible, backfill by `created_at`, `id`), `backend/app/models/board.py` (`slug`, unique index), new `backend/app/common/slug.py`. Tests: `test_slug.py` (unit and `hypothesis`, Property 69), migration test in `test_migrations.py`.
+    - _Requirements: SLUG-01, SLUG-02, SLUG-03, V17-T06_
+  - [x] 39.15 Slug in the API
+    - `boards/service.py` and `repository.py` (set on create, regenerate on rename in one transaction, retry on `IntegrityError`), `GET /api/boards/slug/{slug}` in `boards/routes.py` with `schema.py`, `slug` in the Board, Notification (`board_slug`), and invite payloads, `slug` rejected in bodies, OpenAPI and `API.md`. Tests: `test_api.py` (200, 401, 403, 404, old slug, rename), Property 69.
+    - _Requirements: SLUG-04, SLUG-05, SLUG-06, SLUG-07, SLUG-10, SLUG-14_
+  - [x] 39.16 Frontend Board route and rename
+    - `app/app/b/[slug]/page.tsx` (and later `list`, `calendar`, `archived`), `lib/api.ts` (`boards.bySlug`), `lib/routes.ts`, rename handler that replaces the URL and the document title, `hrefFor` in `lib/inbox.ts` with `board_slug`, Board_Switcher and Board tiles use the slug. Tests: `tests/route-titles.test.ts`, inbox tests, rename test.
+    - _Requirements: SLUG-08, SLUG-09, PATH-10_
+  - [x] 39.17 Not_Found_Page
+    - `app/not-found.tsx`, `components/shared/NotFound.tsx` (token-only illustration), used by `notFound()` calls and the `/app/boards/{id}` route. Tests: content, no slug shown, 404 status, noindex header, title.
+    - _Requirements: SLUG-11, SLUG-12, SLUG-13_
+  - [x] 39.18 Phase 3 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(boards): V17 phase 3 board slug and not found page`.
+    - _Requirements: V17-T08_
+  - **Phase 4: Column CRUD and board views (Requirements 49 and 50)**
+  - [x] 39.19 Migration 2, archive and restore
+    - New `<rev>_v17_cards_nullable_column.py` (`cards.board_id` added and backfilled, `column_id` nullable, archived Cards nulled, downgrade restores them to the first Column), `models/card.py`, `cards/service.py` and `repository.py` (archive nulls `column_id`, `POST /api/cards/{id}/restore`, `archived=true` list, `CARD_ARCHIVED`, `CARD_NOT_ARCHIVED`, `CARD_IN_DONE` on archiving a Done Card), `completion_stamp` update, every board query reads `Card.board_id` where it joined through the Column. Tests: migration test, `test_throughput.py` (archive keeps `completed_at`), Property 72.
+    - _Requirements: COL-07, COL-08, COL-09, COL-14, VIEW-05, VIEW-06, VIEW-07, VIEW-10, V17-T06_
+  - [x] 39.20 Column CRUD backend
+    - `columns/routes.py`, `service.py`, `repository.py`, `schema.py`; activity rows; Board_Owner, Manager, and Admin check; `COLUMN_NOT_EMPTY` and `COLUMN_LOCKED`; renumber on move; OpenAPI. Tests: `test_columns.py` (every role and code), Properties 70 and 71.
+    - _Requirements: COL-01, COL-02, COL-03, COL-04, COL-05, COL-06, COL-10_
+  - [x] 39.21 Column CRUD frontend
+    - `components/board/Board.tsx`, new `ColumnMenu.tsx`, `AddColumn.tsx`, `lib/api.ts`; the owner-only controls; ConfirmDialog for create and delete; locked Done tooltip. Tests: `tests/columns.test.tsx`.
+    - _Requirements: COL-11, COL-12, COL-13, COL-14_
+  - [x] 39.22 `due_state` on every Card payload
+    - `cards/schema.py`, `shared/schema.py`, new `app/common/due.py` (`due_state`), `lib/types.ts`, `CardTile.tsx`, `BaseBadge` tones. Tests: `test_due.py` (Property 79), tile test.
+    - _Requirements: VIEW-08, VIEW-09_
+  - [x] 39.23 List view
+    - `app/app/b/[slug]/list/page.tsx`, `components/board/ListView.tsx`, shared filter bar reuse. Tests: grouping, filters, stacked rows.
+    - _Requirements: VIEW-01, VIEW-02_
+  - [x] 39.24 Calendar view
+    - `app/app/b/[slug]/calendar/page.tsx`, `components/board/CalendarView.tsx` (month grid, "+N more" popover), `lib/dates.ts` month helpers. Tests: month grid, no `end_date` hidden, mobile layout.
+    - _Requirements: VIEW-03, VIEW-04_
+  - [x] 39.25 Archived page
+    - `app/app/b/[slug]/archived/page.tsx`, `components/board/ArchivedView.tsx`, the "Archived" toolbar link with count, Restore action. Tests: rows, restore, message.
+    - _Requirements: VIEW-05, VIEW-06, VIEW-07_
+  - [x] 39.26 Phase 4 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(boards): V17 phase 4 column CRUD, list, calendar, archived, due badges`.
+    - _Requirements: V17-T08_
+  - **Phase 5: Card modal and Share modal (Requirements 55 and 56)**
+  - [x] 39.27 Share modal
+    - New `components/board/ShareModal.tsx` replacing `InviteModal.tsx`, `InviteButton.tsx`, `PublicLinkButton.tsx`; the Share item opens it; `?invite=1`; ConfirmDialog for create, regenerate, disable. Tests: sections per role (owner, Manager, Admin), counts, links, focus return.
+    - _Requirements: SHR-01, SHR-02, SHR-03, SHR-04, SHR-05_
+  - [x] 39.28 Card modal rebuild
+    - `components/card/CardModal.tsx`, `CardAttributes.tsx` (chip row with the read-only status chip), layout to `04-card-modal-*`; no behaviour change. Tests: update `tests/card-modal.test.tsx` and `card-parts.test.tsx` without deleting cases; chip row order and the read-only status.
+    - _Requirements: CM-01, CM-02, CM-03, CM-04, CM-05_
+  - [x] 39.29 Phase 5 gate and commit
+    - Full test run. Commit: `feat(card): V17 phase 5 share modal and card modal`.
+    - _Requirements: V17-T08_
+  - **Phase 6: Users, availability, and profile (Requirements 53 and 54)**
+  - [x] 39.30 Migration 3 and the mail foundation
+    - New `<rev>_v17_users_activation.py` (`is_active`, `is_available`, `email_verified_at` backfilled, `pending_email`, `email_tokens`), `models/user.py`, new `app/common/mail.py` (smtp and console backends, bounded worker, outbox for tests), new `app/common/email_tokens.py` (create, hash, verify, invalidate), `app/config.py` mail settings, `backend/.env.example`. Built here because the email change (54) needs it; Phase 9 reuses it. Tests: `test_mail.py`, `test_email_tokens.py`, migration test.
+    - _Requirements: ADM-01, ACT-01, ACT-05, ACT-06, ACT-08, ACT-09, V17-T06_
+  - [x] 39.31 Backend users: flags, deactivation, pickers
+    - `users/service.py`, `repository.py`, `routes.py`, `schema.py` (no `DELETE`, `is_active` and `is_available` in `PATCH`, `USER_HAS_OPEN_WORK`, `CANNOT_DEACTIVATE_SELF`), `common/auth.py` (read `is_active` per request, `ACCOUNT_DISABLED`), `auth/service.py` login order, `boards` candidates and `members?assignable=true`, `cards` assignment check, `assignee_is_active` and `assignee_is_available` in the Card schema, `api-conventions` error details. Tests: `test_users.py`, Properties 73 and 74.
+    - _Requirements: ADM-03, ADM-05, ADM-06, ADM-07, ADM-08, ADM-09, ADM-10_
+  - [x] 39.32 Admin Users page
+    - `app/app/users/page.tsx`, `components/admin/UsersScreen.tsx` (table, staged changes, Update ConfirmDialog, New user, stacked cards), `BlockedModal` for `USER_HAS_OPEN_WORK`, `BaseAvatar` markers, remove any delete control. Tests: update `tests/admin.test.tsx`; the new cases of V17-T02.
+    - _Requirements: ADM-02, ADM-03, ADM-04, ADM-05, ADM-09_
+  - [x] 39.33 Profile backend
+    - `auth/routes.py`, `service.py`, `schema.py`: `PATCH /api/auth/me` (name, username, email, availability), `pending_email`, resend and cancel routes, `POST /api/auth/verify` for `change_email`, change-password mail, availability check excluding the caller. Tests: `test_profile.py`.
+    - _Requirements: PRF-02, PRF-03, PRF-04, PRF-05, PRF-08, PRF-09, PRF-10_
+  - [x] 39.34 Profile frontend and `BaseTabs`
+    - `components/shared/BaseTabs.tsx` (add `@radix-ui/react-tabs`, `components/ui/tabs.tsx`), `app/app/profile/page.tsx`, `components/profile/*` (cover band, About, Security, Notifications placeholder until 39.44), token `--size-avatar-xl`. Tests: tabs, pending-email state, password form.
+    - _Requirements: PRF-01, PRF-02, PRF-03, PRF-04, PRF-05, PRF-07_
+  - [x] 39.35 Phase 6 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(users): V17 phase 6 users, availability, profile`.
+    - _Requirements: V17-T08_
+  - **Phase 7: Dashboard and My Tasks (Requirements 51 and 52)**
+  - [x] 39.36 Dashboard backend
+    - `analytics/routes.py`, `service.py`, `repository.py`, `schema.py`: `GET /api/analytics/dashboard` (with `due_on`); reuse `due_state` and the throughput bucketing; constant query budget; OpenAPI. Tests: `test_dashboard.py` with an oracle over generated Cards (Property 78) and the query counter.
+    - _Requirements: DASH-12, DASH-17, DASH-19, DASH-20, DASH-21_
+  - [x] 39.37 Dashboard frontend
+    - `components/dashboard/*` (greeting, filters, the new widgets, stacked bar), `lib/dashboard.ts`, query-string state, states. Tests: `v16-dashboard` updated; greeting boundaries; filter note text.
+    - _Requirements: DASH-10, DASH-11, DASH-13, DASH-14, DASH-15, DASH-16, DASH-17, DASH-18, DASH-22_
+  - [x] 39.38 My Tasks backend
+    - `GET /api/me/cards` in the `cards` blueprint (design: no `me` blueprint), the grouping function in `app/common/due.py`. Tests: `test_my_cards.py`, Property 80.
+    - _Requirements: TASK-04_
+  - [x] 39.39 My Tasks page
+    - `app/app/my-tasks/page.tsx`, `components/tasks/MyTasks.tsx`. Tests: groups from the API, order, empty and error states.
+    - _Requirements: TASK-01, TASK-02, TASK-03, TASK-05_
+  - [x] 39.40 Phase 7 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(analytics): V17 phase 7 dashboard and my tasks`.
+    - _Requirements: V17-T08_
+  - **Phase 8: Notification preferences and the due job (Requirements 57 and 58)**
+  - [x] 39.41 Migration 4 and preference endpoints
+    - New `<rev>_v17_notification_preferences.py` (table, types, `action` column, narrowed `uq_notifications_card`), `models/activity.py`, `notifications/*` (`GET` and `PUT /api/me/notification-preferences`). Tests: `test_notification_prefs.py`, migration test (index replaced and restored).
+    - _Requirements: NPF-01, NPF-02, NPF-06, NPF-07, NPF-09, V17-T06_
+  - [x] 39.42 Event producers
+    - `comments/service.py`, `cards/service.py` (move, archive, delete), subtask functions: create the notification in the same transaction, respecting preferences, the actor, and an inactive recipient. Tests: `test_notification_events.py`, Property 75.
+    - _Requirements: NPF-03, NPF-04, NPF-05_
+  - [x] 39.43 `flask notify-due` and the schedule
+    - New `app/jobs/due.py` (replaces `deadlines.py`), registration, advisory lock, bulk insert; deploy: cron entry, supervisord loop, Compose `scheduler`, `deploy/README.md`. Tests: `test_due_job.py`, update `test_scheduler.py` (Property 76).
+    - _Requirements: DUE-01, DUE-02, DUE-03, DUE-04, DUE-05, DUE-06, DUE-07, V17-T07_
+  - [x] 39.44 Frontend: switches and Inbox rows
+    - `components/profile/NotificationPrefs.tsx`, `lib/inbox.ts` (`describeNotification`, `hrefFor`), `lib/types.ts`. Tests: switch save and rollback, row text and links for the five types.
+    - _Requirements: PRF-06, NPF-08_
+  - [x] 39.45 Phase 8 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(notifications): V17 phase 8 preferences and due job`.
+    - _Requirements: V17-T08_
+  - **Phase 9: Account activation and email (Requirement 59)**
+  - [x] 39.46 Activation backend
+    - `auth/routes.py`, `service.py`, `schema.py`: register with `token: null` and the verification mail, `POST /api/auth/verify`, `POST /api/auth/resend-verification` with the `resend_verification` limiter scope, login gating, `common/rate_limiter.py`, env settings. Tests: `test_activation.py`, Property 77.
+    - _Requirements: ACT-01, ACT-02, ACT-03, ACT-04, ACT-11_
+  - [x] 39.47 Activation frontend
+    - `app/app/verify/page.tsx`, `components/auth/VerifyView.tsx`, register redirect, `next` kept through register, verify, and login (`lib/return-path.ts`, the invite page links), login form handling of the two codes, `lib/api.ts`. Tests: the states of V17-T02.
+    - _Requirements: ACT-07, ACT-12_
+  - [x] 39.48 Admin-created users, seed, and deploy settings
+    - `POST /api/users` verified at creation, `seed.py`, `flask purge-email-tokens` (optional), `.env.example` files, `compose.yaml`, `deploy/bare/supervisor.conf`, server env template, `deploy/README.md`.
+    - _Requirements: ACT-05, ACT-10, PATH-11_
+  - [x] 39.49 Phase 9 gate and commit
+    - Full test run; regenerate OpenAPI. Commit: `feat(auth): V17 phase 9 account activation and email`.
+    - _Requirements: V17-T08_
+  - **Phase 10: Verification (all requirements)**
+  - [x] 39.50 Playwright setup and four-width checks
+    - `frontend/playwright.config.ts`, `frontend/e2e/*.spec.ts` for the pages of V17-T10 and the checks of V17-T11 and V17-T12; add the CI job. No `waitForTimeout`.
+    - _Requirements: V17-T10, V17-T11, V17-T12_
+  - [x] 39.51 Sync steering, guidelines, and API docs
+    - `.kiro/steering/frontend.md`, `backend.md`, `api-conventions.md`, `data-model.md`, `structure.md`, `tech.md`, and the guidelines: paths, navigation, `ConfirmDialog`, slugs, mail, new error details, `BaseTabs`.
+    - _Requirements: FIX-10, PATH-01, NAV-05_
+  - [ ] 39.52 Checkpoint: owner's visual review
+    - The side-by-side review of V17-T13 at 1440 and 390 pixels; record each decision in `specs/CHANGELOG.md`; ask the owner before any server action (V17-T14).
+    - _Requirements: V17-T13, V17-T14_
 ## Notes
+- Group 39 (V17) is a draft: nothing in it is built until 39.1 is ticked. Phases run in order and each ends with a gate and one commit. 39.7 to 39.9 are one move (frontend routes, backend prefix, deploy files) and must ship together. 39.30 (migration 3 and the mail module) comes in Phase 6 because the email change needs it; Phase 9 reuses it. 39.19 adds `cards.board_id` (Open Question 53), which 39.36 and 39.38 read. 39.22 (`due_state`) comes before 39.23 to 39.25 and 39.36 to 39.38. Group 39 reworks ticked tasks of groups 16 to 19, 27, 33, 35, and 38; their checkboxes stay ticked and each task names what it reworks.
 - Group 38 progress (2026-11-23): implemented and tested on a laptop except 38.16 (the Playwright pass at 360, 414, 960, and 1280 pixels; the repository has no Playwright setup yet, so the width checks were done by eye in Chrome) and 38.18 (the owner's side-by-side review, `V16-T15`, and the browser recipe test `V16-T16` and screenshot run `V16-T17`, which need Playwright). 38.14 changed the deployment files only; nothing was run on the server.
 - Group 38 (V16) is a draft: nothing in it is built until 38.1 is ticked. 38.2 comes first for the Frontend and 38.4 for the Backend; 38.3 needs 38.2; 38.5 needs 38.4; 38.6 needs 38.3; 38.7 needs 38.6; 38.8 to 38.10 need 38.3 and 38.7; 38.11 needs 38.5 and 38.7; 38.12 needs 38.2; 38.13 needs 38.3 and 38.12; 38.14 needs 38.13. Group 38 reworks ticked groups 16 to 19, 26 to 31, 35, and 36; their checkboxes stay ticked and each 38.x task names what it replaces. The tasks of V16 do not touch the API of Requirements 1 to 37 except `done_delta` (38.4) and the two new routes (38.5).
 - Group 37 (V14): the code fixes and the deployment files (Docker mode and bare mode) are done and tested on a laptop and in a simulated server; the first real deployment (37.13) and the steering sync (37.12) are open. 37.1 is resolved (bare mode on the current server); 37.13 comes last and touches production.
@@ -1190,7 +1363,41 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
     { "id": 117, "tasks": ["38.8", "38.10", "38.11"] },
     { "id": 118, "tasks": ["38.15", "38.16"] },
     { "id": 119, "tasks": ["38.17"] },
-    { "id": 120, "tasks": ["38.18"] }
+    { "id": 120, "tasks": ["38.18"] },
+    { "id": 121, "tasks": ["39.1"] },
+    { "id": 122, "tasks": ["39.2", "39.3", "39.4", "39.5"] },
+    { "id": 123, "tasks": ["39.6"] },
+    { "id": 124, "tasks": ["39.7", "39.8"] },
+    { "id": 125, "tasks": ["39.9", "39.10"] },
+    { "id": 126, "tasks": ["39.11"] },
+    { "id": 127, "tasks": ["39.12"] },
+    { "id": 128, "tasks": ["39.13"] },
+    { "id": 129, "tasks": ["39.14"] },
+    { "id": 130, "tasks": ["39.15"] },
+    { "id": 131, "tasks": ["39.16", "39.17"] },
+    { "id": 132, "tasks": ["39.18"] },
+    { "id": 133, "tasks": ["39.19"] },
+    { "id": 134, "tasks": ["39.20", "39.22"] },
+    { "id": 135, "tasks": ["39.21", "39.23", "39.24", "39.25"] },
+    { "id": 136, "tasks": ["39.26"] },
+    { "id": 137, "tasks": ["39.27", "39.28"] },
+    { "id": 138, "tasks": ["39.29"] },
+    { "id": 139, "tasks": ["39.30"] },
+    { "id": 140, "tasks": ["39.31", "39.33"] },
+    { "id": 141, "tasks": ["39.32", "39.34"] },
+    { "id": 142, "tasks": ["39.35"] },
+    { "id": 143, "tasks": ["39.36", "39.38"] },
+    { "id": 144, "tasks": ["39.37", "39.39"] },
+    { "id": 145, "tasks": ["39.40"] },
+    { "id": 146, "tasks": ["39.41"] },
+    { "id": 147, "tasks": ["39.42", "39.43"] },
+    { "id": 148, "tasks": ["39.44"] },
+    { "id": 149, "tasks": ["39.45"] },
+    { "id": 150, "tasks": ["39.46"] },
+    { "id": 151, "tasks": ["39.47", "39.48"] },
+    { "id": 152, "tasks": ["39.49"] },
+    { "id": 153, "tasks": ["39.50", "39.51"] },
+    { "id": 154, "tasks": ["39.52"] }
   ]
 }
 ```

@@ -381,3 +381,27 @@ overriding any looser prose description elsewhere.
   and `lib/origins.ts` reads `SITE_URL` and `APP_URL` at request time. The App_Host sends `X-Robots-Tag: noindex`.
 - **Rule:** the Dashboard (`/dashboard`, Supervisor and Manager) reads `GET /analytics/throughput` and the
   existing analytics; the throughput comes from `cards.completed_at`.
+
+## V17: paths, navigation, confirmation, slugs (draft until approved; specs/v17/)
+
+- **Rule:** One origin. The landing page is `app/page.tsx` at `/`; every other page lives under `app/app/` and is served at `/app/...`. The browser calls the API at `NEXT_PUBLIC_API_URL` (`/app/api` in production; nginx strips `/app`). `lib/host.ts`, `lib/origins.ts`, `SITE_URL`, and `APP_URL` are gone. The session cookie is `Path=/app`. Old paths (`/boards`, `/login`, ...) answer 308 to their `/app` equivalent.
+  **Rationale:** One domain, one certificate, one deploy; the landing page never receives the cookie.
+  **Example:** `/app/b/q3-launch-plan/list`.
+- **Rule:** Every internal link and `router.push` is built by a helper of `lib/routes.ts` (`boardPath(slug)`, `cardPath(slug, id)`, ...); no component writes `/app/...` by hand. The Board URL is `/app/b/{slug}`; after a rename the page replaces the URL with the new slug; an old slug is a 404, never a redirect.
+  **Rationale:** One place changes when a path changes.
+  **Example:** `hrefFor(n)` returns `cardPath(n.board_slug, n.card_id)`.
+- **Rule:** Navigation is a left **Sidebar** (global: Dashboard for Supervisor and Manager, My Tasks, Boards, Users for Admin; expanded by default, state kept per browser, read safely) and a board-only **Top_Menu** in the App_Header (Board, List, Calendar, Activity, Members, Categories, Share). Notifications open only from the bell. The Side_Panel shows `inbox | activity | members | categories`. Both lists come from `shell/navItems.ts`, and no item is in both. The V16 Icon_Rail and Top_Nav are removed. (V17 supersedes the V16 shell rule at the top of this file for the navigation items.)
+  **Rationale:** Global places and the open Board's places were mixed in one list.
+  **Example:** `sidebarItems` and `topMenuItems` have disjoint ids.
+- **Rule:** One `ConfirmDialog` (`components/shared/ConfirmDialog.tsx`, over `BaseModal`) asks before creating a Board, Column, Category, Card, user, Invite_Link, or Public_Link and before every delete, remove, disable, or regenerate. `BaseConfirm` is removed. Comments, replies, Subtasks, attachments, and Join_Requests are not confirmed.
+  **Rationale:** One component, one wording and focus behaviour.
+  **Example:** `<ConfirmDialog tone="danger" title="Delete column “Review”?" confirmLabel="Delete" />`.
+- **Rule:** Forms clear a field's error when that field changes, validate every field on submit, and show every error at once. Select options show the pointer highlight only while the pointer is over them.
+  **Rationale:** Stale errors and sticky highlights read as bugs.
+  **Example:** typing in a failed email field removes its error at once.
+- **Rule:** Due state ("Overdue", "Due tomorrow") comes from the API's `due_state`, never from the browser date. Dashboard greeting and Calendar "today" use the browser's local time.
+  **Rationale:** `APP_TIMEZONE` is the one source of "today" for data.
+  **Example:** `<BaseBadge tone="danger">Overdue</BaseBadge>` only when `card.due_state === "overdue"`.
+- **Rule:** The Share modal is the one place for the Invite_Link, pending Join_Requests, and the Public_Link; the Public link section shows to a Manager and an Admin only. The Profile has About, Security, and Notifications tabs (`BaseTabs`, adds `@radix-ui/react-tabs`). A 404 uses `app/not-found.tsx` and shows no slug.
+  **Rationale:** One entry per feature.
+  **Example:** `?invite=1` opens the Share modal.

@@ -218,3 +218,24 @@ inclusion: always
   method under `/api/shared` is `405`).
   **Example:** `GET /api/shared/{token}/cards/{card_id}` returns `404` when the
   card is on another board.
+
+## V17: slugs, Columns, users, notifications, mail (draft until approved; specs/v17/)
+
+- **Rule:** `Board.slug` is derived from the name by `slugify` (lower-case, words joined by `-`, characters outside `a-z0-9` removed, `board` when empty, lowest free `-n` suffix), unique over every row, regenerated on rename, never accepted from a client, and never kept after a rename. `GET /api/boards/slug/{slug}` has the role rules of `GET /api/boards/{id}`; every other endpoint keeps the UUID. When `API_PUBLIC_PREFIX` is set (`/app/api` in production) every absolute path the Backend writes into a response (signed file URLs, link `path`) uses it; the signature does not cover the prefix.
+  **Rationale:** Readable URLs; one origin behind nginx.
+  **Example:** "Design & Dev" gives `design-dev`, a second one `design-dev-2`.
+- **Rule:** The Board_Owner, a Manager, and an Admin create, rename, reorder, and delete Columns. The `Done` Column cannot be renamed or deleted and no other Column can be named `Done` (`COLUMN_LOCKED`). A Column with active Cards cannot be deleted (`COLUMN_NOT_EMPTY`, `details.count`). A Card in `Done` cannot be archived (`CARD_IN_DONE`). Archiving a Card sets `column_id` to null; a Card has its own `board_id`; restoring places it last in the Board's first Column.
+  **Rationale:** The owner controls the workflow; finished work is never lost to a delete.
+  **Example:** `DELETE /api/columns/{id}` on a Column with 3 open Cards returns 409 `COLUMN_NOT_EMPTY`.
+- **Rule:** `due_state` (`overdue`, `due_tomorrow`, or null), the My Tasks groups, and the Dashboard dates are computed on the server in `APP_TIMEZONE` by the functions of `common/due.py` and `common/clock.py`; none is recomputed per endpoint. The dashboard and My Tasks run a constant number of queries.
+  **Rationale:** One definition of "overdue" for every screen.
+  **Example:** `due_state(end_date, column_name, today)`.
+- **Rule:** A user has `is_active`, `is_available`, and `email_verified_at`. There is no user delete. Deactivation is refused with `USER_HAS_OPEN_WORK` while the user has Open_Cards or owns a Board with Open_Cards. Every authenticated request reads `is_active` (`ACCOUNT_DISABLED`, 403); sign-in checks the password first, then `is_active`, then `email_verified_at` (`ACCOUNT_NOT_ACTIVATED`, 403), so neither code reveals an account. Only active and available users appear in the member and assignee pickers and can be assigned. (This is not a revocation list: the flag is read from the user row.)
+  **Rationale:** History and assignments stay; deactivation is immediate.
+  **Example:** a wrong password for a disabled account is the usual 401.
+- **Rule:** Notification preferences are rows `(user_id, type, enabled)`, a missing row means enabled, for `comment_on_assigned`, `due_today`, `due_tomorrow`, `assigned_card_changed`, and `subtask_on_assigned`. A notification of those types is created in the action's transaction only for an assignee who is active, is not the actor, and has the type enabled. `flask notify-due` (every 15 minutes, `APP_TIMEZONE`) creates `due_today` and `due_tomorrow` idempotently on `(user_id, card_id, type, notify_date)` and replaces the daily `deadline` job.
+  **Rationale:** Assignees choose what reaches them; reruns insert nothing.
+  **Example:** a second run on the same date inserts 0 rows.
+- **Rule:** Mail goes through `app/common/mail.py` (`smtp` with Gmail, or `console`), is sent after the commit from a bounded worker, and a failed send is logged (no address, no token) and never fails the request. Email tokens (verify, change email) are stored as SHA-256 hashes in `email_tokens`, single use, 24 hours, and appear only in the email. Credentials are environment variables, empty in `.env.example`. Register returns `token: null`.
+  **Rationale:** No credential or token in code, logs, or responses.
+  **Example:** `POST /api/auth/verify { "token": "..." }` returns `TOKEN_INVALID` the second time.

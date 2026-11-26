@@ -148,3 +148,12 @@ inclusion: always
   without changing what existing clients read.
   **Example:** `GET /api/boards/{id}/activity?limit=20&before=<activity id>`.
 
+
+## V17 additions (draft until approved; specs/v17/)
+
+- **Rule:** `error.details` is also allowed for `COLUMN_NOT_EMPTY` (`{ "count" }`) and `USER_HAS_OPEN_WORK` (`{ "cards", "boards", "cards_total", "boards_total" }`, 50 entries at most each). New error codes: `COLUMN_NOT_EMPTY`, `COLUMN_LOCKED`, `CARD_ARCHIVED`, `CARD_NOT_ARCHIVED`, `CARD_IN_DONE`, `USER_HAS_OPEN_WORK`, `CANNOT_DEACTIVATE_SELF` (409); `ACCOUNT_DISABLED`, `ACCOUNT_NOT_ACTIVATED` (403); `TOKEN_INVALID`, `TOKEN_EXPIRED` (400).
+  **Rationale:** The frontend must list what blocks a delete or a deactivation.
+  **Example:** `409 { "status": false, "message": "...", "error": { "code": "COLUMN_NOT_EMPTY", "details": { "count": 3 } } }`.
+- **Rule:** New endpoints: `GET /api/boards/slug/{slug}`, `PATCH /api/columns/{id}`, `PATCH /api/columns/{id}/move`, `DELETE /api/columns/{id}`, `POST /api/cards/{id}/restore`, `GET /api/boards/{id}/cards?archived=true`, `GET /api/analytics/dashboard?board=&member=&from=&to=`, `GET /api/me/cards`, `GET|PUT /api/me/notification-preferences`, `POST /api/auth/verify`, `POST /api/auth/resend-verification`, `POST /api/auth/me/email/resend`, `DELETE /api/auth/me/email/pending`. `DELETE /api/users/{id}` is 405. Card payloads carry `due_state`, `assignee_is_active`, and `assignee_is_available`; Board payloads carry `slug`; notifications carry `board_slug` and `action`; `POST /api/auth/register` returns `{ user, token: null }` (this amends the shared register and login shape above).
+  **Rationale:** One list of the V17 contract.
+  **Example:** `GET /api/boards/slug/design-dev`.

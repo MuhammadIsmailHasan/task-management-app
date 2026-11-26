@@ -209,3 +209,12 @@ inclusion: always
   board, and derived counts stored as columns would drift.
   **Example:** `Board(id, name, description, owner_id, share_token, invite_token, created_at, updated_at, deleted_at, archived_at)`.
 
+
+## V17 additions (draft until approved; specs/v17/)
+
+- **Rule:** `Board.slug` (text, not null, unique over all rows). `Card.board_id` (UUID, not null, indexed) is set at creation and never changes; `Card.column_id` is nullable and null exactly for an archived Card. `User` gains `is_active`, `is_available` (default true), `email_verified_at` (nullable), and `pending_email` (nullable, unique when set). New tables `email_tokens` (`id, user_id, purpose, token_hash unique, expires_at, used_at, created_at`) and `notification_preferences` (`id, user_id, type, enabled, created_at, updated_at`, unique `(user_id, type)`). `Notification` gains five types and a nullable `action`; the `uq_notifications_card` partial index applies only to `assigned`, `deadline`, `due_today`, and `due_tomorrow`. `RateLimitAttempt.scope` gains `resend_verification`.
+  **Rationale:** An archived Card must still belong to a Board; event notifications must be allowed to repeat.
+  **Example:** `Index("uq_notifications_card", ..., postgresql_where=text("card_id IS NOT NULL AND type IN ('assigned','deadline','due_today','due_tomorrow')"))`.
+- **Rule:** `completed_at` is null for every Card archived from V17 on (a Done Card cannot be archived) and is recomputed when a Card is restored (treated as entering the first Column). A Column delete hard-deletes the Column row only; Boards and Cards stay soft-deleted.
+  **Rationale:** Throughput still counts archived finished work.
+  **Example:** archive a `Review` Card: `column_id` null; archive a `Done` Card: 409 `CARD_IN_DONE`.

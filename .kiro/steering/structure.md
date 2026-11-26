@@ -16,7 +16,7 @@ inclusion: always
   `card_repository.get_by_id(...)`; `schema.py` defines the marshmallow `CardCreateSchema` and `CardSchema`.
 
 - **Rule:** Shared, reusable frontend primitives live only in
-  `components/shared/` (`BaseButton`, `BaseBadge`, `BaseModal`, `BasePopover`, `BaseCalendar`, `BaseTooltip`, `BaseCombobox`, `BaseMenu`, `BaseConfirm` (variants `popover` and `modal`, V12), `BrandLogo`), implemented as
+  `components/shared/` (`BaseButton`, `BaseBadge`, `BaseModal`, `BasePopover`, `BaseCalendar`, `BaseTooltip`, `BaseCombobox`, `BaseMenu`, `ConfirmDialog` (V17, replaces `BaseConfirm`), `BaseTabs`, `BaseSwitch`, `BaseSegmented`, `BrandLogo`), implemented as
   thin wrappers over the shadcn/ui primitives in `components/ui/`; feature pages
   import the `Base*` components and never `components/ui/` directly, and never
   define their own buttons/badges/modals.

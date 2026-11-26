@@ -2007,3 +2007,129 @@ Properties 63 to 68 below, with the tests of Requirement 44. The styling check k
 - **Property 66: Completion stamp follows the Column.** For any sequence of creates and moves of a Card, `completed_at` is not null exactly when the Card's Column is named `Done`; entering `Done` sets it once, a reorder inside `Done` keeps it, and leaving clears it. **Validates: Requirements 43.2, 43.3**
 - **Property 67: Contrast.** For every text and surface pair of Requirement 38 criterion 7, the computed contrast ratio meets its minimum. **Validates: Requirements 38.7**
 - **Property 68: Preview agrees with the app.** For the landing sample data, every count, ratio, and percentage the product preview shows equals the value the app's own progress and count functions return for that data. **Validates: Requirements 41.6**
+## V17 Revision Notes (Decisions AY to BJ; draft, not implemented)
+V17 moves the product to one origin (`/` landing, `/app/...` app, `/app/api/...` API), replaces the V16 rail and top nav with a Sidebar and a board-only Top_Menu, and adds board slugs, Column CRUD, List, Calendar, and Archived views, due badges, a richer Dashboard, My Tasks, user active and availability flags, a new Profile, one Share modal, notification preferences with a 15 minute due job, and email activation. The versioned detail is in `specs/v17/`; this section records how the pieces fit together. Nothing here is built until task 39.1 is ticked.
+### Data model changes
+| Table | Change | Migration |
+|---|---|---|
+| `boards` | `slug` text not null, unique index over every row (archived and soft-deleted included); backfilled from `name` in `created_at`, `id` order | 1 |
+| `cards` | `board_id` UUID not null, foreign key to `boards.id`, indexed, backfilled from the Column; `column_id` nullable; archived Cards get `column_id = NULL` | 2 |
+| `users` | `is_active` bool not null default true; `is_available` bool not null default true; `email_verified_at` timestamptz null, backfilled to the migration time; `pending_email` string null (unique among non-null values, lower-cased) | 3 |
+| `email_tokens` (new) | `id`, `user_id`, `purpose` (`verify_email` or `change_email`), `token_hash` (unique, SHA-256 hex), `expires_at`, `used_at` null, `created_at` | 3 |
+| `notification_preferences` (new) | `id`, `user_id`, `type`, `enabled`, `created_at`, `updated_at`; unique `(user_id, type)` | 4 |
+| `notifications` | `type` gains `comment_on_assigned`, `due_today`, `due_tomorrow`, `assigned_card_changed`, `subtask_on_assigned`; new nullable `action` (`moved`, `archived`, `deleted`); `uq_notifications_card` narrowed to `WHERE card_id IS NOT NULL AND type IN ('assigned','deadline','due_today','due_tomorrow')` | 4 |
+| `rate_limit_attempts` | `scope` gains `resend_verification` (no schema change if `scope` is a string; a check constraint is extended if present) | 4 |
+- **`cards.board_id` (Open Question 53).** A Card reached its Board only through its Column. With `column_id` null (COL-07) an archived Card would be unreachable, so V17 stores the Board on the Card. It is set on create from the Column, never changes, and is the join column for the Archived list, My Tasks, the Dashboard, and `due_state` lookups. Every query that joined `columns` to find a Board is reviewed in task 39.19; the Board payload still reads Cards through their Column.
+- **Migration 2 downgrade.** Archived Cards are given their Board's first Column (lowest `order`) before `column_id` is made NOT NULL again, then `board_id` is dropped. A Board with no Column cannot exist (five Default_Columns), but the downgrade creates a Column named `Todo` if one does, so the statement cannot fail.
+- **Migration 4 and the dedupe index.** The V12 index covered every card notification type, so any second event row the same day (a second comment) would violate it. Narrowing it to the four reminder-like types keeps the V12 guarantees (`assigned`, `deadline` once a day) and lets the five event types repeat. The downgrade drops the narrower index, deletes the new-type rows, and recreates the V12 index.
+- **`completed_at`.** Unchanged column. THR-03 is amended in COL-08: a Done Card cannot be archived, and an older archived Card keeps its value. `completion_stamp(previous_column_name, target_column_name, current, now)` gains the cases `previous=None` (restore) and `target=None` (archive: return `current`).
+- **Slug.** `slugify(name)` is a pure function in `app/common/slug.py`; `unique_slug(name, taken, own_slug)` returns the first free candidate. The repository exposes `slug_exists(slug, excluding_id)`. The unique index is the final guard; two concurrent creates retry up to 5 times.
+### Endpoints added or changed
+| Endpoint | Change |
+|---|---|
+| `GET /api/boards/slug/{slug}` | new; same payload and roles as `GET /api/boards/{id}`; 404 for an unknown, old, or malformed slug |
+| `GET /api/boards`, `GET|PATCH|POST /api/boards...` | `slug` added to the payload; a `slug` in a body is 400 |
+| `POST /api/boards/{id}/columns` | Board_Owner, Manager, Admin; `COLUMN_LOCKED` for `Done` |
+| `PATCH /api/columns/{id}`, `PATCH /api/columns/{id}/move`, `DELETE /api/columns/{id}` | new; Board_Owner, Manager, Admin; `COLUMN_NOT_EMPTY`, `COLUMN_LOCKED` |
+| `GET /api/boards/{id}/cards?archived=true` | new query value; default false |
+| `POST /api/cards/{id}/restore` | new; `CARD_NOT_ARCHIVED` (or the existing reversal route, one only) |
+| Card payloads | `due_state`, `assignee_is_active`, `assignee_is_available` added (read-only) |
+| `GET /api/analytics/dashboard` | new; roles of Requirement 10 |
+| `GET /api/me/cards` | new; any signed-in user |
+| `GET /api/boards/{id}/members?assignable=true`, `GET /api/boards/{id}/candidates` | filter to active and available users |
+| `PATCH /api/users/{id}` | accepts `is_active`, `is_available`; `DELETE /api/users/{id}` is 405 |
+| `PATCH /api/auth/me` | accepts `full_name`, `username`, `email`, `is_available`; email goes to `pending_email` |
+| `POST /api/auth/me/email/resend`, `DELETE /api/auth/me/email/pending` | new |
+| `POST /api/auth/register` | returns `{ user, token: null }` and sends mail |
+| `POST /api/auth/verify`, `POST /api/auth/resend-verification` | new, no Token |
+| `POST /api/auth/login` | new refusals `ACCOUNT_DISABLED`, `ACCOUNT_NOT_ACTIVATED` |
+| `POST /api/auth/change-password` | sends the notice mail after commit |
+| `GET`, `PUT /api/me/notification-preferences` | new |
+| `GET /api/boards/{id}/invite`, `/share`, `GET /api/invite/{token}` | `path` is `/app/invite/{token}` and `/app/shared/{token}`; invite `board` carries `slug` |
+| Notification payload | `board_slug`, `action` |
+`/api/me/cards` and `/api/me/notification-preferences` live in two places: `me/cards` is a route in the `cards` blueprint (it reads Cards), and `me/notification-preferences` in the `notifications` blueprint; no `me` blueprint is added (`structure.md` lists the blueprints). The dashboard route is in `analytics`. Column routes are in `columns`, restore in `cards`.
+### Error codes added
+| Code | Status | When | `error.details` |
+|---|---|---|---|
+| `COLUMN_NOT_EMPTY` | 409 | Delete a Column with active Cards | `{ "count": n }` |
+| `COLUMN_LOCKED` | 409 | Rename or delete the Done_Column; rename to or create `Done` | none |
+| `CARD_ARCHIVED` | 409 | Move or edit-order of an archived Card | none |
+| `CARD_NOT_ARCHIVED` | 409 | Restore a Card that is not archived | none |
+| `CARD_IN_DONE` | 409 | Archive a Card that is in the Done_Column | none |
+| `USER_HAS_OPEN_WORK` | 409 | Deactivate a user with Open_Cards or an owned Board with Open_Cards | `{ cards, boards, cards_total, boards_total }` (50 each at most) |
+| `CANNOT_DEACTIVATE_SELF` | 409 | An Admin deactivates themselves | none |
+| `ACCOUNT_DISABLED` | 403 | Sign-in or any request of an inactive user | none |
+| `ACCOUNT_NOT_ACTIVATED` | 403 | Sign-in with an unverified email, after a correct password | none |
+| `TOKEN_INVALID`, `TOKEN_EXPIRED` | 400 | Verify with an unknown or used token; with an expired token | none |
+`api-conventions.md` allowed `details` only for `VALIDATION_ERROR`, a registration or email `CONFLICT`, and `RATE_LIMITED`. V17 adds `COLUMN_NOT_EMPTY` and `USER_HAS_OPEN_WORK`; task 39.51 amends that rule.
+### Public prefix and topology
+- **Browser to Backend.** `NEXT_PUBLIC_API_URL=/app/api`. nginx: `location /app/api/ { proxy_pass http://127.0.0.1:5001/api/; }` (trailing slash, so `/app/api/boards` becomes `/api/boards`), `location /api/ { return 404; }`, `location / { proxy_pass http://127.0.0.1:3000; }`. The Flask app is unchanged except that the paths it writes into responses use `API_PUBLIC_PREFIX`. The signature of a Signed_File_URL does not cover the prefix, so deploying the prefix does not invalidate a valid URL.
+- **Next.js.** `app/page.tsx` is the Landing_Page; everything else is under `app/app/` (route folders, not `basePath`, because `basePath` would also move the Landing_Page). The route group `(app)` becomes `app/app/(protected)/` and `(auth)` becomes `app/app/(auth)/`. `/app/api` is never handled by Next.js in production (nginx takes it first); in development `next.config.ts` rewrites it to the Backend.
+- **Cookie.** `kanban_token` is set with `Path=/app`, no `Domain`, `Secure` under TLS, so the Landing_Page and the public paths never receive it. `proxy.ts` reads it only under `/app`.
+- **Old paths.** `proxy.ts` returns 308 for the table of PATH-08. `/boards/{id}` goes through `/app/boards/{id}`, a Server Component that calls `GET /api/boards/{id}` and redirects to `/app/b/{slug}` (Open Question 65).
+- **Rollback.** `deploy/README.md` records how to return to the V16 two-host files (git revert of the phase 2 commit plus the previous nginx file); the V17 migrations are additive and are not rolled back by a revert.
+### Navigation and shell components
+- **New.** `Sidebar`, `TopMenu`, `useSidebarState`, `MembersView` (the renamed `TeamView`), `CategoriesView`, `ConfirmDialog`, `BaseTabs`, `NotFound`, `ShareModal`, `ColumnMenu`, `AddColumn`, `ListView`, `CalendarView`, `ArchivedView`, `MyTasks`, `BlockedModal`, `NotificationPrefs`, `VerifyView`.
+- **Removed.** `IconRail`, `TopNav`, `BaseConfirm`, `InviteModal`, `InviteButton`, `PublicLinkButton`, `CategoriesScreen` (moved into `CategoriesView`), `lib/host.ts`, `lib/origins.ts`, `app/site/`.
+- **One list.** `navItems.ts` exports `sidebarItems` and `topMenuItems`; each item has `id`, `label`, `icon`, `isVisible({ role, boardOpen, isOwner })`, and an `action` of `{ route }`, `{ panel }`, or `{ modal: "share" }`. A test asserts the two id sets are disjoint.
+- **Sidebar state.** One `localStorage` key `revoboard.sidebar` with `"expanded" | "collapsed"`; `parseSidebarState(raw)` returns expanded for anything else. The server render always draws expanded, and a mounted effect applies a stored `collapsed` (a one-frame change that the CSS transition hides).
+- **Tokens added.** `--sidebar-w`, `--sidebar-w-collapsed`, `--size-avatar-xl`; their Tailwind aliases (`w-sidebar`, `w-sidebar-collapsed`, `size-avatar-xl`). No other token is added; the styling test (`tests/styling.test.ts`) and the contrast test cover them.
+- **Archived link.** The Top_Menu of the brief has no Archived item, so the Board toolbar carries an "Archived" link with the count (VIEW-05). This is a small addition the brief did not name.
+- **Dependency.** `@radix-ui/react-tabs` (shadcn/ui `Tabs`, behind `BaseTabs`) is added for the Profile. It is the one new dependency; `tech.md` gets one line in task 39.51.
+### Archived Cards, Columns, and counts
+- `card_count`, `done_count`, `overdue_count`, and every analytics query already exclude archived Cards; with `column_id` null they now do so by `archived_at IS NULL` and by the inner join to `columns`. A query that used an outer join is reviewed in task 39.19.
+- The Column delete service counts `WHERE column_id = :id AND archived_at IS NULL AND deleted_at IS NULL`, nulls `column_id` of soft-deleted Cards in it, and deletes the Column in one transaction under `SELECT ... FOR UPDATE` on the Column row, so a concurrent Card create cannot slip in between the count and the delete (a Card create takes a shared lock on its Column row, `FOR KEY SHARE`, through the foreign key).
+- Archiving a Card in the Done_Column is refused (`CARD_IN_DONE`, COL-14), so an archived Card never has a `completed_at` from V17 on. Moving and restoring use the ordering rules of Requirement 6. Restore places the Card at `max_order + 1` of the first Column.
+### Dashboard query budget
+`GET /api/analytics/dashboard` runs at most 10 queries, none per Board or Card: (1) the Boards in scope, (2) the members in scope, (3) the overview counts grouped by state, (4) the throughput by week (the V16 grouped query), (5) the overdue count and (6) its first 10 rows, (7) the Due-on count and rows for `due_on` (default tomorrow, independent of `from` and `to`) (count and rows in one query using a window `COUNT(*) OVER ()`), (8) the top 5, (9) the on-time and overdue counts in one grouped query. The test counts queries for 10 and 200 Cards. `today` and the date arithmetic come from `app/common/clock.py` and `APP_TIMEZONE` (the same function as the throughput weeks).
+### My Tasks grouping
+`group_for(end_date, today)` returns `overdue`, `today`, `tomorrow`, `this_week`, `later`, or `none`; `this_week` covers the days after tomorrow up to the Sunday of the Monday-first week of `today`, so it is empty on Saturday and Sunday. It is a pure function in `app/common/due.py` next to `due_state`, and its frontend mirror in `lib/tasks.ts` is used only in tests (the page reads groups from the API, TASK-05).
+### Notifications and the due job
+- **Producers.** `comment_service.create`, `card_service.move_card`, `archive_card`, `delete_card`, and the three subtask functions call `notification_service.emit(type, recipient, card, actor, action=None)` inside their transaction. `emit` returns without a row when the recipient is the actor, is inactive, has no row or `enabled = true` is false, or the Card has no assignee. A preference read is one query per request (the assignee only), not per row.
+- **Inbox noise.** A Card with many Subtask toggles by others can create many rows. V17 does not coalesce them; a person who finds this noisy turns `subtask_on_assigned` off. Coalescing is a possible later change.
+- **Due job.** `app/jobs/due.py` selects candidates in one query (`end_date` in `{today, tomorrow}`, joined to Column name, assignee, and the preference row), builds the rows in Python, and inserts them with one `INSERT ... ON CONFLICT DO NOTHING` (PostgreSQL) or an existence check (SQLite). `pg_try_advisory_lock(<constant>)` guards overlapping runs. It replaces `deadlines.py`; the scheduler entry in `supervisord`, Compose, and the tests is replaced by the cron entry or the 900 second loop (DUE-06).
+### Users, activation, and mail
+- **Per-request flag check.** `common/auth.py` already loads the user to check the role; it also checks `is_active` and returns `ACCOUNT_DISABLED`. No cache is added, so deactivation is immediate. A frontend 403 `ACCOUNT_DISABLED` goes to `/app/session-expired`.
+- **Login order.** (1) rate-limit check, (2) find the user and check the password (failure: 401 and a failure row), (3) `is_active` false: 403 `ACCOUNT_DISABLED`, (4) `email_verified_at` null: 403 `ACCOUNT_NOT_ACTIVATED`, (5) issue the Token. A wrong password never reaches (3) and (4), so neither code reveals that an account exists.
+- **Deactivation query.** One query for assigned Open_Cards (join to Column name and Board), one for owned Boards with an Open_Card count; both `LIMIT 50` plus a count query each.
+- **Email change.** `PATCH /api/auth/me` with a different `email` sets `pending_email`, invalidates earlier `change_email` tokens, creates one token, and queues the mail to the new address. `POST /api/auth/verify` with that token swaps the address inside one transaction that re-checks uniqueness under the unique index; a violation is `409 CONFLICT`.
+- **Mail.** `mail.py` exposes `send(to, subject, text, html)` and `send_after_commit(...)`, which registers the message on the session's `after_commit` event and hands it to a `ThreadPoolExecutor(max_workers=2)` with an SMTP timeout of 10 seconds and one retry. In testing the outbox is a list on the app. The token is part of the body only. Gmail needs an app password; the transport is replaceable (Open Question 64).
+- **Rate limiter.** `RateLimitAttempt.scope` gains `resend_verification`; key hashes use the existing keyed hash (`ratelimit:resend:` prefix); the thresholds are environment variables listed in `.env.example`.
+### Testing additions
+Properties 69 to 80 below, with the tests of `specs/v17/41-VERIFICATION.md`. The new files join the styling scan. A Playwright project is added (none exists, V16 note) for the four-width checks.
+### V17 consistency check: contradictions found and how they are reported
+The change-management and development-workflow rules ask for a consistency check after a change. These conflicts were found while writing V17. Each has a default applied and is an Open Question (51 to 67) for the owner to confirm; none was silently resolved.
+| Conflict | Found between | Default applied |
+|---|---|---|
+| "Every create and delete" asks for a dialog, but Requirement 25 saves comments, Subtasks, and attachments at once | FIX-07 and Requirement 25 and 26 | Open Question 51 |
+| Slug route returns 403 for no access, so a name can be probed | SLUG-06 and Requirement 22 | Open Question 52 |
+| `column_id` null orphans archived Cards from their Board | COL-07 and the Card model | `cards.board_id`, Open Question 53 |
+| "Every filter applies to every widget" empties Due tomorrow under the default range | DASH-11 and DASH-15 | Open Question 54 |
+| Column rights versus Requirement 3 criteria 4 and 5 and Requirement 2 criterion 6 | COL-01 | Superseded (owner, Manager, Admin); Open Question 55, resolved |
+| The daily `deadline` job versus `due_today`, and a card notification index that refuses a second event the same day | Requirement 9 and NPF-06 | Open Question 56 |
+| Archiving versus THR-03 | COL-08 and THR-03 | A Done Card cannot be archived (COL-14); Open Question 57, resolved |
+| A card `status` chip versus the V15 exclusion of a status dropdown | CM-02 | Read-only chip; Open Question 58 |
+| Deactivation ends sessions at once versus "no revocation list" | ADM-07 and Requirement 1 | Per-request flag; Open Question 60 |
+| Admin's Team went to `/admin/users` | SHELL-21 and NAV-07 | Open Question 61 |
+| The register response shape of the API conventions returns a Token | ACT-02 and `api-conventions.md` | `token: null`; the rule is amended in 39.51 |
+| `details` allowed only for four codes | `api-conventions.md` and COL-05, ADM-05 | Rule amended in 39.51 |
+| Register in V10 round 2 was "not rate limited" | Requirement 20 and ACT-04 | Only the resend route is limited; register stays unlimited |
+### V17 risks
+- **Largest change set so far.** Ten phases touch routing, the Card model, the notification index, and every nav test. The phase gates and one commit per phase keep each step revertable.
+- **Moving every route under `/app`** changes every link, cookie path, and test selector at once (39.7 to 39.9 ship together).
+- **Gmail** limits and the app-password setup are outside the code (Open Question 64).
+- **Cron** may not run in the unprivileged server container; the supervisord loop is the fallback (DUE-06, Open Question 56).
+- **Three screens and the Users table at 360 pixels** have no reference image; they depend on the owner's review (Open Question 63).
+### Properties (V17)
+- **Property 69: Board slugs.** For any sequence of Board creates, renames, and soft-deletes with arbitrary names, every Board has a slug that equals `slugify(name)` or `slugify(name)` plus `-n` with the lowest free `n` of at least 2, all slugs are distinct and made of `a-z`, `0-9`, and `-`, a rename gives the slug of the new name (the same slug when nothing changes), and a request for a slug that no Board currently holds, including a former slug, returns 404. **Validates: Requirements 48.1 to 48.6**
+- **Property 70: The Done_Column is locked.** For any Board and any sequence of Column creates, renames, reorders, and deletes by the Board_Owner, a Manager, or an Admin, the Column named `Done` is never renamed or deleted, no other Column is ever named `Done` in any letter case, and every such attempt returns `COLUMN_LOCKED` and changes nothing. **Validates: Requirements 49.10**
+- **Property 71: A Column with active Cards is never deleted.** For any Board, any Column, and any set of Cards in it (active, archived, soft-deleted), a delete succeeds exactly when the Column holds no Card that is both non-archived and non-deleted; a refused delete reports that count and changes nothing; soft-deleted Cards of a deleted Column end with a null `column_id`. **Validates: Requirements 49.5, 49.6**
+- **Property 72: Archived Cards have no Column.** For any sequence of creates, moves, archives, and restores, an archive of a Card in the Done_Column is refused with `CARD_IN_DONE` and changes nothing, and a Card has `archived_at` set exactly when its `column_id` is null (soft-deleted Cards aside), keeps its `board_id`, lands in the Board's first Column on restore, and `completed_at` follows COL-08. **Validates: Requirements 49.7, 49.8, 49.9, 50.7**
+- **Property 73: Pickers list assignable people only.** For any set of users with any `is_active` and `is_available` values, the candidate list and the assignable member list contain exactly the users who are both active and available (and otherwise eligible), and an assignment or a direct member add of any other user is refused. **Validates: Requirements 53.8**
+- **Property 74: Open work blocks deactivation.** For any user, any set of assigned and owned Cards, and any Columns, a deactivation succeeds exactly when the user has no Open_Card assigned and owns no Board with an Open_Card; a refusal lists exactly the blocking Cards and Boards (up to 50 each, exact totals) and changes nothing. **Validates: Requirements 53.5**
+- **Property 75: Preferences and the actor.** For any set of users, preferences, assignees, actors, and events, a notification of a preference type is created exactly when the Card has an assignee who is active, who is not the actor, and whose preference for that type is enabled or absent. **Validates: Requirements 57.3, 57.4**
+- **Property 76: The due job is idempotent.** For any set of Cards, assignees, preferences, and dates, running `notify-due` twice at times on the same local date creates the same set of rows as running it once, no row exists for a Done, archived, deleted, or unassigned Card, and a disabled type creates none. **Validates: Requirements 58.2, 58.3**
+- **Property 77: No Token without activation.** For any user with `email_verified_at` null or `is_active` false, any sequence of register, login, resend, verify with an invalid or expired value, and requests with a forged Token, no valid Token is returned and no protected route answers 200; the codes follow the order of the login rules, and a wrong password never returns `ACCOUNT_DISABLED` or `ACCOUNT_NOT_ACTIVATED`. **Validates: Requirements 59.1, 59.2, 59.3, 53.7**
+- **Property 78: Dashboard figures equal the rows.** For any set of Boards, Cards, completion times, and any `board`, `member`, `from`, and `to`, every figure of the dashboard response equals the figure computed directly from the Card rows by the rules of DASH-12 to DASH-17, and the query count is the same for every data size. **Validates: Requirements 51.3 to 51.12**
+- **Property 79: Due state.** For any `end_date`, Column name, and `today`, `due_state` is `overdue` exactly when `end_date < today` and the Column is not `Done`, `due_tomorrow` exactly when `end_date = today + 1` and the Column is not `Done`, and null otherwise, and it agrees with the Overdue_Card count of Requirement 10. **Validates: Requirements 50.8, 50.9**
+- **Property 80: My Tasks groups partition.** For any set of assigned Cards and any `today`, every Card falls in exactly one group, the groups follow the boundaries of TASK-02, Done and archived Cards appear in none, and the groups keep their order. **Validates: Requirements 52.2, 52.4**
