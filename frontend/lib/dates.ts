@@ -44,3 +44,26 @@ export function withStart(range: Range, start: string): Range & { cleared: boole
 export function minSelectable(range: Range): string | undefined {
   return range.start && !range.end ? range.start : undefined;
 }
+
+/** The first day of a month, as an ISO string: `monthStart(2026, 10)` is "2026-11-01" (month is 0-based). */
+export const monthStart = (year: number, month: number) => toIso(new Date(year, month, 1));
+
+/**
+ * The cells of a month grid, Monday first (the same week as the throughput weeks, THR-05): whole weeks from the Monday on
+ * or before the 1st to the Sunday on or after the last day. Every entry is an ISO date; `inMonth` marks the month's own days.
+ */
+export function monthGrid(year: number, month: number): { iso: string; inMonth: boolean }[] {
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const lead = (first.getDay() + 6) % 7; // Monday = 0
+  const trail = 6 - ((last.getDay() + 6) % 7);
+  const cells: { iso: string; inMonth: boolean }[] = [];
+  for (let i = -lead; i < last.getDate() + trail; i++) {
+    const d = new Date(year, month, 1 + i);
+    cells.push({ iso: toIso(d), inMonth: d.getMonth() === month });
+  }
+  return cells;
+}
+
+/** "November 2026" for the month heading. */
+export const monthLabel = (year: number, month: number) => new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });

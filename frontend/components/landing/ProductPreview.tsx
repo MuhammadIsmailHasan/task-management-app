@@ -54,7 +54,7 @@ export function ProductPreview() {
                 <BaseBadge tone="count">{f.perColumn.find((p) => p.name === col.name)?.count}</BaseBadge>
               </div>
               {SAMPLE_CARDS.filter((s) => s.card.column_id === col.id).map((s) => (
-                <CardTile key={s.card.id} card={s.card} category={SAMPLE_CATEGORIES.find((c) => c.id === s.card.category_id)} overdue={s.overdue} draggable={false} />
+                <CardTile key={s.card.id} card={s.card} category={SAMPLE_CATEGORIES.find((c) => c.id === s.card.category_id)} dueState={s.card.due_state ?? null} draggable={false} />
               ))}
             </div>
           ))}

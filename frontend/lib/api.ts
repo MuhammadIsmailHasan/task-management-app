@@ -1,5 +1,6 @@
 /** Typed client used by Client Components. Components never call fetch directly. */
-import { ApiError, request, type RequestOptions } from "./http";
+import { ACCOUNT_DISABLED, ApiError, request, type RequestOptions } from "./http";
+import { routes } from "./routes";
 import { clearSession, getToken } from "./session";
 import type {
   ActivityEntry,
@@ -15,7 +16,10 @@ import type {
   InviteLookup,
   InviteState,
   JoinRequest,
+  DashboardData,
+  MyCards,
   Notification,
+  NotificationPreference,
   Priority,
   Member,
   SharedBoard,
@@ -32,7 +36,12 @@ async function call<T>(method: string, path: string, opts: RequestOptions = {}):
     if (err instanceof ApiError && err.httpStatus === 401 && typeof window !== "undefined" && getToken()) {
       // an expired or invalid Token: drop it and go to login (never loop on the login call itself)
       clearSession();
-      window.location.assign("/login");
+      window.location.assign(routes.login);
+    }
+    if (err instanceof ApiError && err.code === ACCOUNT_DISABLED && typeof window !== "undefined") {
+      // an Admin turned the account off: it is a lost session (ADM-07)
+      clearSession();
+      window.location.assign(routes.sessionExpired);
     }
     throw err;
   }
@@ -70,11 +79,28 @@ export interface ShareState {
   path: string | null;
 }
 
+export interface DashboardQuery {
+  board?: string;
+  member?: string;
+  from?: string;
+  to?: string;
+  dueOn?: string;
+}
+
 export interface CardFilters {
+  /** `true` lists the archived Cards only; they have no Column (V17). */
+  archived?: boolean;
   search?: string;
   priority?: string;
   assignee?: string;
   category?: string;
+}
+
+export interface ProfilePatch {
+  full_name?: string;
+  username?: string;
+  email?: string;
+  is_available?: boolean;
 }
 
 export const api = {
@@ -85,7 +111,11 @@ export const api = {
     availability: (q: { username?: string; email?: string }) =>
       request<{ username?: { available: boolean }; email?: { available: boolean } }>("GET", "/auth/availability", { query: q }),
     me: () => get<User>("/auth/me"),
-    updateMe: (body: { full_name: string }) => patch<User>("/auth/me", body),
+    updateMe: (body: ProfilePatch) => patch<User>("/auth/me", body),
+    resendEmailChange: () => post<User>("/auth/me/email/resend"),
+    cancelEmailChange: () => del<User>("/auth/me/email/pending"),
+    verify: (token: string) => request<{ purpose: "verify_email" | "change_email" }>("POST", "/auth/verify", { body: { token } }),
+    resendVerification: (email: string) => request<{ message: string }>("POST", "/auth/resend-verification", { body: { email } }),
     changePassword: (body: { current_password: string; new_password: string }) => post<null>("/auth/change-password", body),
     uploadAvatar: (file: File) => {
       const form = new FormData();
@@ -101,7 +131,7 @@ export const api = {
         /* the Token is discarded on the client either way */
       }
       clearSession();
-      if (typeof window !== "undefined") window.location.assign("/login");
+      if (typeof window !== "undefined") window.location.assign(routes.login);
     },
   },
   shared: {
@@ -118,7 +148,8 @@ export const api = {
     create: (body: { name: string; description?: string }) => post<Board>("/boards", body),
     update: (id: string, body: { name?: string; description?: string; owner_id?: string | null }) =>
       patch<Board>(`/boards/${id}`, body),
-    members: (id: string, withEmail = false) => get<Member[]>(`/boards/${id}/members`, { include: withEmail ? "email" : undefined }),
+    members: (id: string, withEmail = false, assignable = false) =>
+      get<Member[]>(`/boards/${id}/members`, { include: withEmail ? "email" : undefined, assignable: assignable ? "true" : undefined }),
     addMember: (id: string, userId: string) => post<Member>(`/boards/${id}/members`, { user_id: userId }),
     removeMember: (id: string, userId: string) => del<null>(`/boards/${id}/members/${userId}`),
     activity: (id: string, page: PageQuery = {}) => get<ActivityEntry[]>(`/boards/${id}/activity`, pageQuery(page)),
@@ -146,6 +177,7 @@ export const api = {
         "filter[priority]": f.priority,
         "filter[assignee]": f.assignee,
         "filter[category]": f.category,
+        archived: f.archived ? "true" : undefined,
       }),
     get: (id: string) => get<Card>(`/cards/${id}`),
     activity: (id: string, page: PageQuery = {}) => get<ActivityEntry[]>(`/cards/${id}/activity`, pageQuery(page)),
@@ -154,7 +186,15 @@ export const api = {
     move: (id: string, body: { column_id: string; prev?: string | null; next?: string | null }) =>
       patch<Card>(`/cards/${id}/move`, body),
     archive: (id: string) => post<Card>(`/cards/${id}/archive`),
+    /** Puts an archived Card back at the end of the Board's first Column. */
+    restore: (id: string) => post<Card>(`/cards/${id}/unarchive`),
     remove: (id: string) => del<null>(`/cards/${id}`),
+  },
+  columns: {
+    create: (boardId: string, name: string) => post<Column>(`/boards/${boardId}/columns`, { name }),
+    rename: (id: string, name: string) => patch<Column>(`/columns/${id}`, { name }),
+    move: (id: string, position: number) => patch<Column>(`/columns/${id}/move`, { position }),
+    remove: (id: string) => del<null>(`/columns/${id}`),
   },
   subtasks: {
     create: (cardId: string, title: string) => post<Subtask>(`/cards/${cardId}/subtasks`, { title }),
@@ -188,7 +228,9 @@ export const api = {
     remove: (id: string) => del<{ deleted: number }>(`/comments/${id}`),
   },
   notifications: {
-    inbox: (page: PageQuery = {}) => get<Inbox>("/notifications", pageQuery(page)),
+    inbox: (page: PageQuery & { unread?: boolean } = {}) => get<Inbox>("/notifications", { ...pageQuery(page), unread: page.unread ? "true" : undefined }),
+    preferences: () => get<{ preferences: NotificationPreference[] }>("/me/notification-preferences"),
+    savePreferences: (preferences: NotificationPreference[]) => call<{ preferences: NotificationPreference[] }>("PUT", "/me/notification-preferences", { body: { preferences } }),
     markRead: (id: string) => patch<Notification>(`/notifications/${id}/read`),
     readAll: () => patch<null>("/notifications/read-all"),
   },
@@ -196,13 +238,18 @@ export const api = {
     board: (id: string) => get<Analytics>(`/boards/${id}/analytics`),
     all: () => get<Analytics[]>("/analytics/boards"),
     throughput: (id: string, weeks = 8) => get<Throughput>(`/boards/${id}/analytics/throughput`, { weeks: String(weeks) }),
+    dashboard: (q: DashboardQuery = {}) =>
+      get<DashboardData>("/analytics/dashboard", { board: q.board, member: q.member, from: q.from, to: q.to, due_on: q.dueOn }),
     allThroughput: (weeks = 8) => get<Throughput[]>("/analytics/throughput", { weeks: String(weeks) }),
+  },
+  me: {
+    cards: () => get<MyCards>("/me/cards"),
   },
   users: {
     list: () => get<(User & { role: string })[]>("/users"),
     create: (body: { full_name: string; username: string; email: string; password: string; role: string }) =>
       post<User>("/users", body),
-    update: (id: string, body: { full_name?: string; username?: string; email?: string; role?: string }) =>
+    update: (id: string, body: { full_name?: string; username?: string; email?: string; role?: string; is_active?: boolean; is_available?: boolean }) =>
       patch<User>(`/users/${id}`, body),
   },
 };

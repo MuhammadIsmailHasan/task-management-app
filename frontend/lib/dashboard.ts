@@ -42,3 +42,45 @@ export function barShares(weeks: ThroughputWeek[]): number[] {
 }
 
 export const percentDone = (t: Pick<Totals, "total" | "done">) => (t.total ? Math.round((t.done / t.total) * 100) : 0);
+
+/** "Good morning", "Good afternoon", or "Good evening" by the hour of `date`, then the first name ("there" when empty) (DASH-10). */
+export function greeting(date: Date, fullName: string | null | undefined): string {
+  const h = date.getHours();
+  const word = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  const first = (fullName ?? "").trim().split(/\s+/)[0];
+  return `${word}, ${first || "there"}`;
+}
+
+/** Percentages and bar shares of "Finished on time / overdue"; both zero gives null so the widget says there is nothing (DASH-17). */
+export function finishedShares(f: { on_time: number; overdue: number }): { onTime: number; overdue: number; percent: number } | null {
+  const total = f.on_time + f.overdue;
+  if (total === 0) return null;
+  const percent = Math.round((f.on_time / total) * 100);
+  return { onTime: percent, overdue: 100 - percent, percent };
+}
+
+/** The filters as a query string and back; only the ones that are set, in a fixed order, so a link reproduces the view (DASH-11). */
+export interface DashboardFilters {
+  board: string;
+  member: string;
+  from: string;
+  to: string;
+  dueOn: string;
+}
+
+export const EMPTY_FILTERS: DashboardFilters = { board: "", member: "", from: "", to: "", dueOn: "" };
+
+export function filtersToQuery(f: DashboardFilters): string {
+  const p = new URLSearchParams();
+  if (f.board) p.set("board", f.board);
+  if (f.member) p.set("member", f.member);
+  if (f.from) p.set("from", f.from);
+  if (f.to) p.set("to", f.to);
+  if (f.dueOn) p.set("due_on", f.dueOn);
+  const s = p.toString();
+  return s ? `?${s}` : "";
+}
+
+export function filtersFromParams(get: (key: string) => string | null): DashboardFilters {
+  return { board: get("board") ?? "", member: get("member") ?? "", from: get("from") ?? "", to: get("to") ?? "", dueOn: get("due_on") ?? "" };
+}

@@ -61,8 +61,8 @@
   --surface-sunken: #ebedff; /* hover and active fill, tags, progress track */
   --surface-strong: #dce1ff; /* count badges, disabled fill, skeleton */
 
-  --sidebar-w: 304px;
-  --rail-w: 64px;
+  --sidebar-w: 240px; /* expanded: a 44px hit area, an icon, and a label */
+  --sidebar-w-collapsed: 72px; /* collapsed: the 44px hit area with the panel padding */
 }
 
 /* ---- Extension tokens: sizes the reference implied but did not name ---- */
@@ -108,6 +108,8 @@
   --size-icon-flag: 13px;
   --size-avatar-sm: 24px;
   --size-avatar-md: 32px;
+  --size-avatar-xl: 96px;
+  --size-cover: 160px;
   --size-dot: 6px;
   --size-dot-md: 8px;
   --size-accent-bar: 3px;
@@ -132,6 +134,12 @@
   --size-cell: 40px;
   --size-tooltip-gap: 8px;
   --size-column-min: 120px;
+  --size-calendar-cell: 112px;
+  --size-switch-w: 40px;
+  --size-switch-h: 24px;
+  --size-switch-thumb: 18px;
+  --switch-off: 3px;
+  --switch-on: 19px;
   --size-popover-list: 240px;
   --size-date-label: 88px;
   --size-checkbox: 18px;

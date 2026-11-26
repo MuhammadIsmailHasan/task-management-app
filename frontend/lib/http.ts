@@ -22,6 +22,10 @@ export function apiAsset(path: string): string {
 
 export type Details = Record<string, string[]>;
 
+/** The two refusals of sign-in after a right password, and of every request from a deactivated account (ACT-01, ADM-07). */
+export const ACCOUNT_NOT_ACTIVATED = "ACCOUNT_NOT_ACTIVATED";
+export const ACCOUNT_DISABLED = "ACCOUNT_DISABLED";
+
 export class ApiError extends Error {
   constructor(
     public httpStatus: number,

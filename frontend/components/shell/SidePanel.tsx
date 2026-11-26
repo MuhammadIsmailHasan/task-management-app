@@ -1,22 +1,23 @@
 "use client";
 
-import { Bell, History, Users, X } from "lucide-react";
+import { Bell, History, Tags, Users, X } from "lucide-react";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { cn } from "@/lib/utils";
 import { ActivityView } from "./ActivityView";
 import { InboxView } from "./InboxView";
 import type { PanelView } from "./ShellContext";
-import { TeamView } from "./TeamView";
+import { CategoriesView } from "./CategoriesView";
+import { MembersView } from "./MembersView";
 
 interface SidePanelProps {
   view: PanelView | null;
   onClose: () => void;
 }
 
-const TITLE: Record<PanelView, string> = { inbox: "Inbox", activity: "Activity", team: "Team" };
-const ICON = { inbox: Bell, activity: History, team: Users } as const;
+const TITLE: Record<PanelView, string> = { inbox: "Inbox", activity: "Activity", members: "Members", categories: "Categories" };
+const ICON = { inbox: Bell, activity: History, members: Users, categories: Tags } as const;
 
-/** A floating panel on the right, inset from the viewport; one panel hosts Inbox, Activity, and Team (SHELL-26). */
+/** A floating panel on the right, inset from the viewport; one panel hosts Inbox, Activity, Members, and Categories (SHELL-26, NAV-07). */
 export function SidePanel({ view, onClose }: SidePanelProps) {
   const shown = view ?? "inbox";
   const Icon = ICON[shown];
@@ -47,7 +48,8 @@ export function SidePanel({ view, onClose }: SidePanelProps) {
         <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 pb-4">
           {view === "inbox" && <InboxView />}
           {view === "activity" && <ActivityView />}
-          {view === "team" && <TeamView />}
+          {view === "members" && <MembersView />}
+          {view === "categories" && <CategoriesView />}
         </div>
       </aside>
     </>

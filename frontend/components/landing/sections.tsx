@@ -2,6 +2,7 @@ import { ArrowRight, History, KeyRound, Link2, ListChecks, LockKeyhole, Rocket, 
 import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseLinkButton } from "@/components/shared/BaseLinkButton";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { routes } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { ProductPreview } from "./ProductPreview";
 
@@ -18,13 +19,13 @@ function SectionHead({ eyebrowText, title, children }: { eyebrowText: string; ti
 }
 
 /** Announcement bar, hero, and product preview (LAND-05, LAND-06). */
-export function Hero({ appUrl }: { appUrl: string }) {
+export function Hero() {
   return (
     <>
       <div className="flex min-h-control flex-wrap items-center justify-center gap-3 bg-brand px-page py-2 text-sm text-on-brand">
         <BaseBadge tone="accent">RevoBoard</BaseBadge>
         <span>Drag-and-drop boards with roles, share links, and join requests.</span>
-        <a href={`${appUrl}/register`} className="inline-flex items-center gap-1 font-semibold text-accent-tint no-underline">
+        <a href={routes.register} className="inline-flex items-center gap-1 font-semibold text-accent-tint no-underline">
           Get started <ArrowRight className="size-icon-sm" aria-hidden="true" />
         </a>
       </div>
@@ -32,7 +33,7 @@ export function Hero({ appUrl }: { appUrl: string }) {
         <h1 className="font-heading text-display">
           Your workflow, your way. <span className="block text-accent lg:inline">Master tasks effortlessly.</span>
         </h1>
-        <BaseLinkButton variant="dark" size="lg" href={`${appUrl}/register`}>
+        <BaseLinkButton variant="dark" size="lg" href={routes.register}>
           Get started <ArrowRight aria-hidden="true" />
         </BaseLinkButton>
         <div className="w-full">
@@ -194,13 +195,13 @@ export function Faq() {
   );
 }
 
-export function ClosingCta({ appUrl }: { appUrl: string }) {
+export function ClosingCta() {
   return (
     <>
       <section aria-label="Get started" className="mx-auto max-w-site px-page py-8">
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-card bg-gradient-cta p-8 text-on-brand shadow-popover">
           <h2 className="font-heading text-xl">Ready to organize your team?</h2>
-          <a href={`${appUrl}/register`} className="inline-flex min-h-button items-center rounded-full bg-accent-tint px-6 py-2 text-sm font-medium text-on-accent-tint no-underline">
+          <a href={routes.register} className="inline-flex min-h-button items-center rounded-full bg-accent-tint px-6 py-2 text-sm font-medium text-on-accent-tint no-underline">
             Get started
           </a>
         </div>
@@ -212,10 +213,10 @@ export function ClosingCta({ appUrl }: { appUrl: string }) {
         <h2 className="font-heading text-xl">Ready to master your workflow?</h2>
         <p className="text-base text-ink-muted">Create an account and open your first board in a minute.</p>
         <div className="flex flex-wrap justify-center gap-3">
-          <BaseLinkButton variant="dark" size="lg" href={`${appUrl}/register`}>
+          <BaseLinkButton variant="dark" size="lg" href={routes.register}>
             Get started
           </BaseLinkButton>
-          <BaseLinkButton variant="secondary" size="lg" href={`${appUrl}/login`}>
+          <BaseLinkButton variant="secondary" size="lg" href={routes.login}>
             Sign in
           </BaseLinkButton>
         </div>
@@ -224,7 +225,7 @@ export function ClosingCta({ appUrl }: { appUrl: string }) {
   );
 }
 
-export function LandingFooter({ appUrl }: { appUrl: string }) {
+export function LandingFooter() {
   const year = new Date().getFullYear();
   const col = "m-0 flex list-none flex-col gap-2 p-0 text-sm";
   return (
@@ -253,8 +254,8 @@ export function LandingFooter({ appUrl }: { appUrl: string }) {
         <nav aria-label="Account">
           <h3 className="mb-3 text-2xs text-ink-muted uppercase">Account</h3>
           <ul className={col}>
-            <li><a href={`${appUrl}/login`}>Sign in</a></li>
-            <li><a href={`${appUrl}/register`}>Create account</a></li>
+            <li><a href={routes.login}>Sign in</a></li>
+            <li><a href={routes.register}>Create account</a></li>
           </ul>
         </nav>
       </div>

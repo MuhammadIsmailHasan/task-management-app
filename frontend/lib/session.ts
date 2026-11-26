@@ -26,7 +26,8 @@ export function decodeToken(token: string): { sub: string; role: Role; exp: numb
 export function setSession(token: string, user?: User): void {
   const claims = decodeToken(token);
   const maxAge = claims ? Math.max(claims.exp - Math.floor(Date.now() / 1000), 0) : 86400;
-  document.cookie = `${TOKEN_COOKIE}=${token}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+  // Path=/app: the Landing_Page and every other path never receive the cookie (PATH-06)
+  document.cookie = `${TOKEN_COOKIE}=${token}; Path=/app; Max-Age=${maxAge}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
   if (user) {
     try {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -67,7 +68,8 @@ export function getStoredUser(): User | null {
 }
 
 export function clearSession(): void {
-  document.cookie = `${TOKEN_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  document.cookie = `${TOKEN_COOKIE}=; Path=/app; Max-Age=0; SameSite=Lax`;
+  document.cookie = `${TOKEN_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`; // a V16 cookie, set on the whole site
   try {
     localStorage.removeItem(USER_KEY);
   } catch {

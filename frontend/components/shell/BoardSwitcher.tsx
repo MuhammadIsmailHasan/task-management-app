@@ -11,6 +11,7 @@ import type { Board } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { NewBoardModal } from "./NewBoardModal";
 import { useShell } from "./ShellContext";
+import { boardPath } from "@/lib/routes";
 
 const SEARCH_FROM = 6;
 
@@ -54,7 +55,7 @@ export function BoardSwitcher({ board }: { board: Board }) {
             {shown.map((b) => (
               <li key={b.id}>
                 <Link
-                  href={`/boards/${b.id}`}
+                  href={boardPath(b.slug)}
                   aria-current={b.id === board.id ? "true" : undefined}
                   onClick={() => setOpen(false)}
                   className={cn("flex flex-col gap-1 rounded-card px-3 py-2 text-ink no-underline transition-colors duration-fast hover:bg-surface-sunken focus-ring", b.id === board.id && "bg-surface")}

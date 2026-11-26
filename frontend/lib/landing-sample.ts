@@ -51,6 +51,7 @@ export const SAMPLE_CARDS: SampleCard[] = SPECS.map((s, i) => {
       end_date: s.overdue ? "2000-01-01" : null,
       order: i + 1,
       archived_at: null,
+      due_state: s.overdue ? "overdue" : null,
       subtasks,
       progress: deriveProgress(done, total),
       subtask_done_count: done,

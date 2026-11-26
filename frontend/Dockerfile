@@ -4,7 +4,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ENV NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=/app/api
 RUN npm run build
 
 FROM node:24-slim

@@ -8,16 +8,18 @@ import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseAlert, BaseField, BaseInput } from "@/components/shared/BaseField";
 import { formatCountdown, useCountdown } from "@/hooks/useCountdown";
 import { api } from "@/lib/api";
-import { ApiError } from "@/lib/http";
+import { ACCOUNT_DISABLED, ACCOUNT_NOT_ACTIVATED, ApiError } from "@/lib/http";
 import { safeReturnPath } from "@/lib/return-path";
+import { loginPath, registerPath, routes } from "@/lib/routes";
+import { rememberPending } from "@/components/auth/VerifyView";
 import { setSession } from "@/lib/session";
-import { classifyIdentifier, isEmail, isUsername } from "@/lib/validation";
+import { AUTH_FIELD_ORDER, isEmail, isUsername, validateAuth } from "@/lib/validation";
 
 type Mode = "login" | "register";
 
 const COPY = {
-  login: { title: "Welcome back", sub: "Log in to your boards.", cta: "Log in", other: "No account yet?", link: "/register", linkText: "Register" },
-  register: { title: "Create your account", sub: "It takes a minute.", cta: "Register", other: "Already registered?", link: "/login", linkText: "Log in" },
+  login: { title: "Welcome back", sub: "Log in to your boards.", cta: "Log in", other: "No account yet?", link: routes.register, linkText: "Register" },
+  register: { title: "Create your account", sub: "It takes a minute.", cta: "Register", other: "Already registered?", link: routes.login, linkText: "Log in" },
 } as const;
 
 const ICON: Record<keyof Values, typeof User> = { full_name: User, identifier: AtSign, username: AtSign, email: Mail, password: Lock };
@@ -35,12 +37,21 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
   const [busy, setBusy] = useState(false);
   const [wait, setWait] = useState<number | null>(null);
   const [reveal, setReveal] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const left = useCountdown(wait);
   const blocked = left > 0;
   // A blocked availability check stops the on-blur checks until the wait ends (Req 20.16).
   const availabilityPausedUntil = useRef(0);
 
-  const set = (key: keyof Values) => (e: ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
+  // Editing a field clears that field's error at once, and only that field's (FIX-03).
+  const set = (key: keyof Values) => (e: ChangeEvent<HTMLInputElement>) => {
+    setValues((v) => ({ ...v, [key]: e.target.value }));
+    setErrors((cur) => {
+      if (!cur[key]) return cur;
+      const { [key]: _gone, ...rest } = cur;
+      return rest;
+    });
+  };
 
   async function checkAvailability(field: "username" | "email") {
     const value = values[field].trim();
@@ -61,17 +72,14 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
     e.preventDefault();
     setErrors({});
     setFormError(null);
-    if (mode === "login") {
-      // No request is sent for a value that is neither a Username nor an Email (Req 1.39, 1.40).
-      if (!classifyIdentifier(values.identifier)) {
-        const message = values.identifier.includes("@") ? "Enter a valid email address." : "Enter a valid username or email.";
-        setErrors({ identifier: [message] });
-        return;
-      }
-      if (!values.password) {
-        setErrors({ password: ["password is required"] });
-        return;
-      }
+    setUnconfirmed(false);
+    // Validate every field before any request, show every error, and focus the first invalid field (FIX-04).
+    const found = validateAuth(mode, values);
+    const first = AUTH_FIELD_ORDER.find((id) => found[id]);
+    if (first) {
+      setErrors(found);
+      document.getElementById(first)?.focus();
+      return;
     }
     setBusy(true);
     try {
@@ -84,6 +92,12 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
               email: values.email.trim(),
               password: values.password,
             });
+      if (mode === "register" || !result.token) {
+        // no Token before the email is confirmed (ACT-02): the address and the page to come back to wait in sessionStorage, not the URL
+        rememberPending(values.email.trim(), next);
+        router.push(routes.verify);
+        return;
+      }
       setSession(result.token, result.user);
       router.push(safeReturnPath(next));
       router.refresh();
@@ -92,9 +106,18 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         setWait(err.retryAfter ?? 60);
       } else if (err instanceof ApiError && mode === "login" && err.httpStatus === 401) {
         setFormError(GENERIC_LOGIN_ERROR);
+      } else if (err instanceof ApiError && err.code === ACCOUNT_NOT_ACTIVATED) {
+        setFormError(err.message);
+        setUnconfirmed(true);
+      } else if (err instanceof ApiError && err.code === ACCOUNT_DISABLED) {
+        setFormError(err.message); // no resend: an Admin turned the account off
       } else if (err instanceof ApiError) {
         // field errors come from error.details; anything else is a form-level message
-        if (err.details && Object.keys(err.details).length) setErrors(err.details);
+        if (err.details && Object.keys(err.details).length) {
+          setErrors(err.details);
+          const firstServer = AUTH_FIELD_ORDER.find((id) => err.details?.[id]);
+          if (firstServer) document.getElementById(firstServer)?.focus();
+        }
         else setFormError(err.message);
       } else {
         setFormError("Something went wrong. Try again.");
@@ -136,10 +159,10 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
   return (
     <>
       <nav aria-label="Sign in or create an account" className="mb-8 flex w-fit gap-1 rounded-field bg-surface p-1 text-sm font-medium">
-        <Link href="/login" aria-current={mode === "login" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "login" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+        <Link href={loginPath(next)} aria-current={mode === "login" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "login" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
           Sign in
         </Link>
-        <Link href="/register" aria-current={mode === "register" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "register" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
+        <Link href={registerPath(next)} aria-current={mode === "register" ? "page" : undefined} className={`rounded-sm px-4 py-2 no-underline ${mode === "register" ? "bg-surface-raised text-ink shadow-card" : "text-ink-muted"}`}>
           Create account
         </Link>
       </nav>
@@ -147,6 +170,11 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
       <p className="mt-1 mb-6 text-sm text-ink-muted">{copy.sub}</p>
       <form method="post" className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
         {formError && <BaseAlert>{formError}</BaseAlert>}
+        {unconfirmed && (
+          <Link href={routes.verify} className="-mt-2 text-sm font-semibold">
+            Resend confirmation email
+          </Link>
+        )}
         {blocked && <BaseAlert>Too many attempts. Try again in {formatCountdown(left)}.</BaseAlert>}
         {mode === "register" && field("full_name", "Full name", { autoComplete: "name" })}
         {mode === "login" && field("identifier", "Username or email", { autoComplete: "username" })}

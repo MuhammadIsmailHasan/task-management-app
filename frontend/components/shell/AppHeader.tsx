@@ -6,8 +6,9 @@ import { BaseButton } from "@/components/shared/BaseButton";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import type { Board } from "@/lib/types";
 import { useShell } from "./ShellContext";
-import { TopNav } from "./TopNav";
+import { TopMenu } from "./TopMenu";
 import { UserMenu } from "./UserMenu";
+import { routes } from "@/lib/routes";
 
 interface AppHeaderProps {
   /** The Board the page shows, if any: below 960 pixels its name stands where the wordmark would. */
@@ -16,7 +17,7 @@ interface AppHeaderProps {
   onToggleDrawer: () => void;
 }
 
-/** The one header on every protected page, inside the app frame: logo, Top_Nav, bell, User_Menu (SHELL-09). */
+/** The one header on every protected page, inside the app frame: logo, Top_Menu (on a Board), bell, User_Menu (NAV-10). */
 export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps) {
   const { session, user, inbox, toggleSidePanel } = useShell();
 
@@ -29,7 +30,7 @@ export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps)
         {board ? (
           <h1 className="min-w-0 font-heading text-page-title break-words lg:hidden">{board.name}</h1>
         ) : null}
-        <Link href="/boards" className={board ? "hidden lg:inline-flex" : "inline-flex"} aria-label="RevoBoard home">
+        <Link href={routes.boards} className={board ? "hidden lg:inline-flex" : "inline-flex"} aria-label="RevoBoard home">
           <BrandLogo variant="full" size="sm" decorative className="hidden lg:block" />
           <span className="inline-flex items-center gap-2 font-heading text-page-title text-ink lg:hidden">
             <BrandLogo variant="mark" size="sm" decorative />
@@ -37,8 +38,8 @@ export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps)
           </span>
         </Link>
       </div>
-      <div className="flex flex-1 justify-center">
-        <TopNav />
+      <div className="flex flex-1 justify-start lg:pl-4">
+        <TopMenu />
       </div>
       {session && (
         <div className="ml-auto flex items-center gap-2 lg:ml-0">

@@ -114,7 +114,7 @@
   --spacing-control-sm: var(--size-control-sm);
   --spacing-icon: var(--size-icon);
   --spacing-sidebar: var(--sidebar-w);
-  --spacing-rail: var(--rail-w);
+  --spacing-sidebar-collapsed: var(--sidebar-w-collapsed);
   --spacing-progress-track: var(--size-progress-track);
   --spacing-progress-meter: var(--size-progress-meter);
   --spacing-search: var(--size-search);
@@ -123,6 +123,12 @@
   --spacing-cell: var(--size-cell);
   --spacing-tooltip-gap: var(--size-tooltip-gap);
   --spacing-column-min: var(--size-column-min);
+  --spacing-calendar-cell: var(--size-calendar-cell);
+  --spacing-switch: var(--size-switch-w);
+  --spacing-switch-h: var(--size-switch-h);
+  --spacing-switch-thumb: var(--size-switch-thumb);
+  --spacing-switch-off: var(--switch-off);
+  --spacing-switch-on: var(--switch-on);
   --spacing-popover-list: var(--size-popover-list);
   --spacing-dropzone: var(--size-dropzone);
   --spacing-column: var(--column-w);
@@ -130,6 +136,8 @@
   --spacing-panel-sm: var(--panel-w-sm);
   --spacing-avatar-sm: var(--size-avatar-sm);
   --spacing-avatar-md: var(--size-avatar-md);
+  --spacing-avatar-xl: var(--size-avatar-xl);
+  --spacing-cover: var(--size-cover);
   --spacing-dot: var(--size-dot);
   --spacing-dot-md: var(--size-dot-md);
   --spacing-icon-sm: var(--size-icon-sm);
