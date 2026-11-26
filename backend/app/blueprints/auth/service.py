@@ -5,9 +5,9 @@ from sqlalchemy.exc import IntegrityError
 from app.blueprints.activity import repository as activity
 from app.blueprints.auth import repository as repo
 from app.blueprints.auth.dto import serialize_user
-from app.common import rate_limiter
+from app.common import clock, email_tokens, mail, rate_limiter
 from app.common.auth import issue_token
-from app.common.errors import Conflict, NotFound, Unauthorized, ValidationError
+from app.common.errors import AccountDisabled, AccountNotActivated, Conflict, NotFound, Unauthorized, ValidationError
 from app.common.ids import to_uuid
 from app.common.validation import classify_identifier, is_email_shape, is_username, normalize_email, normalize_username
 from app.extensions import db
@@ -29,24 +29,29 @@ def duplicate_details(username, email, exclude_id=None):
     return details
 
 
-def create_account(full_name, username, email, password, role="member"):
-    """Insert a user or raise Conflict whose details name each duplicate field. The caller commits."""
+def create_account(full_name, username, email, password, role="member", verified=False):
+    """Insert a user or raise Conflict whose details name each duplicate field. The caller commits.
+
+    `verified` is true for an account an Admin makes and for the seed; a visitor's account confirms its email first (ACT-05)."""
     username, email = normalize_username(username), normalize_email(email)
     details = duplicate_details(username, email)
     if details:
         raise Conflict("Username or email already registered", details=details)
     try:
         with db.session.begin_nested():
-            return repo.create_user(full_name, username, email, _hasher.hash(password), role)
+            return repo.create_user(full_name, username, email, _hasher.hash(password), role, verified)
     except IntegrityError:
         # A race lost to a concurrent insert: the unique indexes are the final guard.
         raise Conflict("Username or email already registered", details=duplicate_details(username, email) or None)
 
 
 def register(data):
+    """Create the account unverified and mail the link; no Token is issued before the email is confirmed (ACT-02)."""
     user = create_account(data["full_name"], data["username"], data["email"], data["password"], "member")
+    raw = email_tokens.create(user, "verify_email")
     db.session.commit()
-    return {"user": serialize_user(user), "token": issue_token(user.id, user.role)}
+    mail.send(mail.verification_email(user, raw))
+    return {"user": serialize_user(user), "token": None}
 
 
 def login(data, client_ip=None):
@@ -61,6 +66,11 @@ def login(data, client_ip=None):
     if user is None:
         rate_limiter.record_login_failure(value, client_ip)
         raise Unauthorized("Invalid credentials")
+    # The password matched, so these two answers reveal nothing an attacker lacked; neither adds a failure row (ACT-01).
+    if not user.is_active:
+        raise AccountDisabled("This account is disabled")
+    if user.email_verified_at is None:
+        raise AccountNotActivated("Confirm your email address first")
     rate_limiter.reset_pair(value, client_ip)
     return {"user": serialize_user(user), "token": issue_token(user.id, user.role)}
 
@@ -100,11 +110,105 @@ def get_me(actor):
 
 
 def update_me(actor, data):
+    """full_name, username, email (a request: `email` changes only when the link is confirmed) and is_available (PRF-02 to PRF-04)."""
     user = _me(actor)
-    user.full_name = data["full_name"]
-    activity.add(user.id, "user.profile_updated", "user", user.id, {"fields": ["full_name"]})
+    changed, send_to = [], None
+    if "full_name" in data:
+        user.full_name = data["full_name"]
+        changed.append("full_name")
+    if "username" in data:
+        username = normalize_username(data["username"])
+        other = repo.get_by_username(username)
+        if other is not None and other.id != user.id:
+            raise Conflict("Username already taken", details={"username": ["username is already taken"]})
+        if username != user.username:
+            user.username = username
+            changed.append("username")
+    if "is_available" in data:
+        user.is_available = bool(data["is_available"])
+        changed.append("is_available")
+    if "email" in data:
+        send_to = _request_email_change(user, normalize_email(data["email"]))
+        if send_to:
+            changed.append("email")
+    if changed:
+        activity.add(user.id, "user.profile_updated", "user", user.id, {"fields": changed})
+    db.session.commit()
+    if send_to:
+        mail.send(mail.change_email_email(user, send_to))
+    return serialize_user(user)
+
+
+def _request_email_change(user, email):
+    """Store the new address as pending and return the raw token to mail; None when nothing changes (PRF-03)."""
+    if email == user.email:
+        user.pending_email = None  # asking for the address already in use cancels a pending change
+        email_tokens.invalidate(user.id, "change_email")
+        return None
+    other = repo.get_by_email(email)
+    pending_elsewhere = db.session.scalar(db.select(db.func.count()).select_from(repo.User).where(db.func.lower(repo.User.pending_email) == email, repo.User.id != user.id))
+    if (other is not None and other.id != user.id) or pending_elsewhere:
+        raise Conflict("Email already registered", details={"email": ["email is already registered"]})
+    email_tokens.invalidate(user.id, "change_email")
+    user.pending_email = email
+    return email_tokens.create(user, "change_email")
+
+
+def resend_email_change(actor):
+    user = _me(actor)
+    if not user.pending_email:
+        raise NotFound("No email change is waiting")
+    rate_limiter.hit_resend(user.id, None)
+    email_tokens.invalidate(user.id, "change_email")
+    raw = email_tokens.create(user, "change_email")
+    db.session.commit()
+    mail.send(mail.change_email_email(user, raw))
+    return serialize_user(user)
+
+
+def cancel_email_change(actor):
+    user = _me(actor)
+    user.pending_email = None
+    email_tokens.invalidate(user.id, "change_email")
     db.session.commit()
     return serialize_user(user)
+
+
+def verify(data):
+    """Confirm an emailed link: the account's address, or its new address (ACT-03). It never signs anyone in."""
+    row = email_tokens.consume(data["token"])
+    user = repo.get_by_id(row.user_id)
+    if user is None:
+        raise NotFound("User not found")
+    if row.purpose == "verify_email":
+        user.email_verified_at = clock.now()
+    else:
+        new = user.pending_email
+        if not new:
+            raise Conflict("This email change was cancelled")
+        other = repo.get_by_email(new)
+        if other is not None and other.id != user.id:
+            db.session.rollback()
+            raise Conflict("Email already registered", details={"email": ["email is already registered"]})
+        user.email, user.pending_email = new, None
+    db.session.commit()
+    return {"purpose": row.purpose}
+
+
+RESEND_MESSAGE = "If that address needs confirming, a new link was sent"
+
+
+def resend_verification(email, client_ip=None):
+    """Always the same answer, whether or not the address exists or is already verified (ACT-04)."""
+    address = normalize_email(email)
+    rate_limiter.hit_resend(address, client_ip)
+    user = repo.get_by_email(address)
+    if user is not None and user.email_verified_at is None:
+        email_tokens.invalidate(user.id, "verify_email")
+        raw = email_tokens.create(user, "verify_email")
+        db.session.commit()
+        mail.send(mail.verification_email(user, raw))
+    return {"message": RESEND_MESSAGE}
 
 
 def change_password(actor, data):
@@ -121,3 +225,4 @@ def change_password(actor, data):
     activity.add(user.id, "user.password_changed", "user", user.id, {})
     rate_limiter.reset_change_password(user.id)
     db.session.commit()
+    mail.send(mail.password_changed_email(user, clock.now()))

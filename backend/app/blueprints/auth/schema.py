@@ -1,4 +1,5 @@
-from marshmallow import RAISE, fields
+from marshmallow import RAISE, fields, validates_schema
+from marshmallow import ValidationError as SchemaError
 
 from app.common.fields import BaseSchema, Email, Text, Username
 
@@ -16,12 +17,21 @@ class LoginSchema(BaseSchema):
 
 
 class UpdateMeSchema(BaseSchema):
-    """Only full_name; any other field (username, email, role, avatar_url, ...) is a 400."""
+    """full_name, username, email, and is_available (V17, PRF-09); any other field (role, is_active, pending_email,
+    email_verified_at, avatar_url, ...) is a 400. At least one must be sent."""
 
     class Meta:
         unknown = RAISE
 
-    full_name = Text(required=True, max_length=255)
+    full_name = Text(max_length=255)
+    username = Username()
+    email = Email()
+    is_available = fields.Boolean(truthy={True}, falsy={False})
+
+    @validates_schema
+    def _one_field(self, data, **kwargs):
+        if not data:
+            raise SchemaError({"full_name": ["send at least one field to change"]})
 
 
 class ChangePasswordSchema(BaseSchema):
@@ -49,6 +59,9 @@ class UserSchema(BaseSchema):
     username = fields.String()
     email = fields.String()
     avatar_url = fields.String(allow_none=True)
+    is_active = fields.Boolean()
+    is_available = fields.Boolean()
+    pending_email = fields.String(allow_none=True, metadata={"description": "A new address waiting for its confirmation link; visible to its owner and an Admin only"})
 
 
 class MemberSchema(BaseSchema):
@@ -68,4 +81,20 @@ class AdminUserSchema(UserSchema):
 
 class AuthSchema(BaseSchema):
     user = fields.Nested(UserSchema)
-    token = fields.String(metadata={"description": "JWT, valid 24 hours"})
+    token = fields.String(allow_none=True, metadata={"description": "JWT, valid 24 hours. Null after register: the email must be confirmed first (V17)"})
+
+
+class VerifySchema(BaseSchema):
+    token = Text(required=True, max_length=200, strip=True, metadata={"description": "The value from the emailed link"})
+
+
+class VerifyResultSchema(BaseSchema):
+    purpose = fields.String(metadata={"description": "verify_email or change_email"})
+
+
+class ResendVerificationSchema(BaseSchema):
+    email = Email(required=True)
+
+
+class MessageSchema(BaseSchema):
+    message = fields.String()

@@ -7,7 +7,7 @@ from app.blueprints.auth import repository as auth_repo
 from app.blueprints.auth import service as auth_service
 from app.blueprints.users import repository as repo
 from app.blueprints.users.dto import ROLES
-from app.common.errors import Conflict, Forbidden, NotFound, ValidationError
+from app.common.errors import CannotDeactivateSelf, Conflict, Forbidden, NotFound, UserHasOpenWork, ValidationError
 from app.common.ids import to_uuid
 from app.common.validation import normalize_email, normalize_username
 from app.common import clock
@@ -29,7 +29,7 @@ def _role(value):
 
 def create_user(actor, data):
     role = _role(data.get("role", "member"))
-    user = auth_service.create_account(data["full_name"], data["username"], data["email"], data["password"], role)
+    user = auth_service.create_account(data["full_name"], data["username"], data["email"], data["password"], role, verified=True)
     activity.add(to_uuid(actor.id), "user.created", "user", user.id, {"role": role})
     db.session.commit()
     return user
@@ -58,6 +58,11 @@ def update_user(actor, user_id, data):
                 changed.append(field)
     if changed:
         activity.add(to_uuid(actor.id), "user.updated", "user", user.id, {"fields": changed})
+    if "is_available" in data and bool(data["is_available"]) != user.is_available:
+        user.is_available = bool(data["is_available"])
+        activity.add(to_uuid(actor.id), "user.updated", "user", user.id, {"fields": ["is_available"], "is_available": user.is_available})
+    if "is_active" in data and bool(data["is_active"]) != user.is_active:
+        _set_active(actor, user, bool(data["is_active"]))
     if "role" in data:
         role = _role(data["role"])
         if role != user.role:
@@ -69,6 +74,27 @@ def update_user(actor, user_id, data):
                 _drop_board_access(actor, user)
     db.session.commit()
     return user
+
+
+def _set_active(actor, user, active):
+    """Turn an account on or off (ADM-05 to ADM-07). Off is refused for oneself and while the user has open work."""
+    if not active:
+        if str(user.id) == actor.id:
+            raise CannotDeactivateSelf("You cannot deactivate your own account")
+        cards_total, cards = repo.open_assigned(user.id)
+        boards_total, boards = repo.open_owned_boards(user.id)
+        if cards_total or boards_total:
+            raise UserHasOpenWork(
+                "Reassign or finish this work first.",
+                details={
+                    "cards": [{"id": str(c.id), "title": c.title, "board_id": str(c.board_id), "board_slug": c.slug, "board_name": c.name} for c in cards],
+                    "boards": [{"id": str(b.id), "slug": b.slug, "name": b.name, "open_card_count": int(b.open)} for b in boards],
+                    "cards_total": cards_total,
+                    "boards_total": boards_total,
+                },
+            )
+    user.is_active = active
+    activity.add(to_uuid(actor.id), "user.activated" if active else "user.deactivated", "user", user.id, {})
 
 
 def _drop_board_access(actor, user):

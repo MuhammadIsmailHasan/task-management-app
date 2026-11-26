@@ -22,3 +22,5 @@ class UpdateUserSchema(BaseSchema):
     username = Username()
     email = Email()
     role = fields.String(validate=_role)
+    is_active = fields.Boolean(truthy={True}, falsy={False}, metadata={"description": "Admin only. false is refused while the user has open work (409 USER_HAS_OPEN_WORK)"})
+    is_available = fields.Boolean(truthy={True}, falsy={False})
