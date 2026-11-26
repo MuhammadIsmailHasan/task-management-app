@@ -4,13 +4,16 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 [ ! -e /srv/revoboard/.env ] || { echo "This looks like the server; refusing"; exit 1; }
 TMP=$(mktemp -d)
-export SITE_URL=http://revoboard.belajardeploy.web.id:8082 APP_URL=http://app.revoboard.belajardeploy.web.id:8082
+export PUBLIC_BASE_URL=http://revoboard.belajardeploy.web.id:8082
 export TAG=smoke ENV_FILE="$TMP/env" UPLOADS="$TMP/uploads" COMPOSE_PROJECT_NAME=revoboard-smoke
 mkdir -m 777 "$UPLOADS"
 PASSWORD=$(openssl rand -hex 12)
 cat > "$ENV_FILE" <<EOF
 DATABASE_URL=postgresql+psycopg://revou:$PASSWORD@127.0.0.1:5432/revoboard_db
-ALLOWED_ORIGINS=http://app.revoboard.belajardeploy.web.id:8082
+ALLOWED_ORIGINS=http://revoboard.belajardeploy.web.id:8082
+API_PUBLIC_PREFIX=/app/api
+MAIL_BACKEND=console
+PUBLIC_BASE_URL=http://revoboard.belajardeploy.web.id:8082
 JWT_SECRET=$(openssl rand -hex 32)
 FILE_URL_SECRET=$(openssl rand -hex 32)
 APP_TIMEZONE=Asia/Jakarta

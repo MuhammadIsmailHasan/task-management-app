@@ -10,8 +10,8 @@ flock 9
 TAG=$(git rev-parse HEAD)
 PREVIOUS=$(cat "$STATE/current" 2>/dev/null || true)
 export TAG
-# SITE_URL and APP_URL live in the server env file; compose hands them to the Frontend only (Requirement 42).
-for v in SITE_URL APP_URL; do val=$(sed -n "s/^$v=//p" "$STATE/.env" 2>/dev/null || true); [ -z "$val" ] || export "$v=$val"; done
+# PUBLIC_BASE_URL lives in the server env file; compose hands it to the Frontend (Requirement 46).
+for v in PUBLIC_BASE_URL; do val=$(sed -n "s/^$v=//p" "$STATE/.env" 2>/dev/null || true); [ -z "$val" ] || export "$v=$val"; done
 
 echo "== backup"
 DUMP="$BACKUPS/$(date -u +%Y%m%dT%H%M%SZ).dump"

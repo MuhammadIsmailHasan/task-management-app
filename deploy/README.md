@@ -45,7 +45,7 @@ Everything except the scripts in `deploy/bare/` carries over. On Ubuntu with sys
 
 ## Docker mode
 
-Nginx (port 80, published as 8082) proxies `/api/` to Gunicorn on `127.0.0.1:5001` and everything else to Next.js on `127.0.0.1:3000`. Both run in Docker Compose on the host network, next to a scheduler, and use the server's PostgreSQL.
+Nginx (port 80, published as 8082) proxies `/app/api/` (as `/api/`) to Gunicorn on `127.0.0.1:5001` and everything else to Next.js on `127.0.0.1:3000`. Both run in Docker Compose on the host network, next to a scheduler, and use the server's PostgreSQL.
 
 On Docker mode the server must be able to run containers: `docker run --rm --network host hello-world` has to work. A running `dockerd` is not enough; an unprivileged container fails with `mount ... operation not permitted` and has to be recreated by its provider (privileged or Sysbox).
 
@@ -82,24 +82,38 @@ The key belongs to a user in the `docker` group, so it is equivalent to root on 
 | Docker log | `sudo tail -n 50 /var/log/dockerd.log` |
 | Manual rollback | `cd /srv/revoboard/app && TAG=<older sha> SKIP_MIGRATIONS=1 docker compose up -d --no-build` |
 | Restore a backup | `sudo -u postgres pg_restore --clean --if-exists -d revoboard_db < /var/backups/revoboard/<file>.dump` |
-| Boot check | Restart the server, do not log in, then open `/api/health` |
+| Boot check | Restart the server, do not log in, then open `/app/api/health` |
 
 A migration must stay compatible with the previous release, because a rollback does not downgrade the schema.
 
-## Two hosts: landing page and app (V16)
+## One origin: landing page, app, and API (V17)
 
-One Next.js process serves both. The **Site_Host** (`revoboard.belajardeploy.web.id`) shows the landing page and sends every other path to the **App_Host** (`app.revoboard.belajardeploy.web.id`), which is the app and `/api`. Anything else (the server IP and port 8082, `localhost`) is the app too, so the IP keeps working before the domain exists.
+One Next.js process serves the landing page at `/` and every app page under `/app`. The API is `/app/api/...`: Nginx replaces that prefix with the Backend's own `/api/`. The bare `/api/` answers 404 on the public side, so the Backend is reachable at one path only. The server IP and port 8082 work like any host name.
 
-1. DNS: an address record for each name, pointing at the server.
-2. Nginx: `deploy/nginx/revoboard.conf` already names both hosts and returns 404 for `/api/` on the Site_Host. Change the names there if the domain changes, then reload Nginx.
-3. Environment: put `SITE_URL=https://revoboard.belajardeploy.web.id` and `APP_URL=https://app.revoboard.belajardeploy.web.id` in `/srv/revoboard/.env` (or run the setup script with them in the environment). Both or neither; the Frontend refuses to start with only one. Only the Frontend reads them (bare mode through `run.sh`, Docker mode through `compose.yaml`). `ALLOWED_ORIGINS` is the App_Host origin only.
-4. Cookie: the session cookie stays host-only on the App_Host (no `Domain`), so the landing page never sees it.
-5. Restart: `sudo supervisorctl restart revoboard:` (bare) or deploy again (Docker).
+| Path | Goes to |
+|---|---|
+| `/` | Frontend: the landing page |
+| `/app/...` | Frontend: the app, the sign-in pages, the shared view |
+| `/app/api/...` | Backend, as `/api/...` |
+| `/api/...` | 404 |
+| `/boards`, `/dashboard`, `/admin/users`, `/profile`, `/login`, `/register`, `/invite/...`, `/shared/...`, `/session-expired` | Frontend answers 308 to the same page under `/app` (`/admin/users` becomes `/app/users`) |
+
+1. Nginx: `deploy/nginx/revoboard.conf` is one server block. Change `server_name` if the domain changes, then reload Nginx.
+2. Environment (`/srv/revoboard/.env`): `ALLOWED_ORIGINS` and `PUBLIC_BASE_URL` are the one public origin; `API_PUBLIC_PREFIX=/app/api` makes the Backend write `/app/api/...` in signed file URLs. The setup scripts write all three. The Frontend is built with `NEXT_PUBLIC_API_URL=/app/api` (the `Dockerfile` and `deploy/bare/deploy.sh` set it).
+3. Cookie: the session cookie is host-only and `Path=/app`, so the landing page and every other path never receive it. **Every existing session ends at this release**: a V16 cookie was set on `/` and the app now reads the new one, so everyone signs in again.
+4. Restart: `sudo supervisorctl restart revoboard:` (bare) or deploy again (Docker).
+5. Rollback to V16 needs the V16 nginx file and the V16 `.env` (it needs `SITE_URL` and `APP_URL`); the database schema stays, because a migration never goes back.
 
 ## Domain and TLS, later
 
-Have ports 80 and 443 published and add one certificate that covers both names (two names or a wildcard) to Nginx, redirect plain HTTP to HTTPS on both, add `Secure` to the session cookie in `frontend/lib/session.ts`, switch `SITE_URL`, `APP_URL`, and `ALLOWED_ORIGINS` to `https://` values, then run `setup-server.sh https://<app host>` and deploy again. Setup overwrites the Nginx site, so put the TLS change in `deploy/nginx/revoboard.conf`.
+Publish ports 80 and 443, add one certificate to Nginx and redirect plain HTTP to HTTPS, switch `ALLOWED_ORIGINS` and `PUBLIC_BASE_URL` to the `https://` origin (the session cookie turns `Secure` by itself on an `https:` page), then run `setup-server.sh https://<host>` and deploy again. Setup overwrites the Nginx site, so put the TLS change in `deploy/nginx/revoboard.conf`.
 
 ## Smoke test
 
 `bash deploy/smoke.sh` runs the whole stack against a throwaway database. CI runs it before every deploy.
+
+## Mail and the due-date reminders (V17)
+
+- **Mail.** Registration, an email change, and a password change send mail through `MAIL_BACKEND`. `smtp` sends through Gmail (`SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD` = an app password from an account with 2-step verification, `MAIL_FROM`); `console` only writes the message to the Backend log. The setup scripts write `MAIL_BACKEND=console` until you set the SMTP values and run them again, so the Backend starts, but **nobody receives an activation link then**: a new user can only be confirmed from the log until SMTP is configured. A personal Gmail account sends about 500 messages a day, which is enough for a demo.
+- **Existing accounts.** The V17 migration marks every existing user as confirmed, so nobody is locked out.
+- **Due-date reminders.** `flask notify-due` creates the day's `due_today` and `due_tomorrow` notifications. The existing `scheduler` service (Docker) and `revoboard-scheduler` program (bare, supervisord) now run it every 15 minutes with `flask run-scheduler`; no cron entry is needed, and a second run on the same date creates nothing. Run it by hand with `docker compose run --rm --no-deps backend notify-due` or `flask notify-due`.

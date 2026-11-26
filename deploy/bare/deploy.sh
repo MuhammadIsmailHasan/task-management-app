@@ -25,7 +25,7 @@ git archive "$SHA" backend | tar -x -C "$TMP"
 (
   cd frontend
   npm ci --no-audit --no-fund --loglevel=error
-  NEXT_PUBLIC_API_URL=/api NEXT_TELEMETRY_DISABLED=1 npm run build
+  NEXT_PUBLIC_API_URL=/app/api NEXT_TELEMETRY_DISABLED=1 npm run build
 )
 mkdir -p "$TMP/frontend"
 cp -R frontend/.next/standalone/. "$TMP/frontend/"
@@ -49,7 +49,7 @@ sudo supervisorctl restart revoboard: >/dev/null || true
 healthy() {
   for _ in $(seq 1 45); do
     curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:5001/api/health &&
-      curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:3000/login && return 0
+      curl -fsS -o /dev/null --max-time 5 http://127.0.0.1:3000/app/login && return 0
     sleep 2
   done
   return 1

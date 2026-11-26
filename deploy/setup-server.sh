@@ -25,11 +25,20 @@ umask 077
 ENCODED=$(printf %s "$DB_PASSWORD" | python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read(),safe=""))')
 old() { sed -n "s/^$1=//p" "$HOME_DIR/.env" 2>/dev/null || true; }
 JWT=$(old JWT_SECRET); FILES=$(old FILE_URL_SECRET)
+MAIL_MODE=${MAIL_BACKEND:-$(old MAIL_BACKEND)}; MAIL_MODE=${MAIL_MODE:-console} # console until SMTP is configured, so the Backend can start
 cat > "$HOME_DIR/.env" <<EOF
 DATABASE_URL=postgresql+psycopg://revou:$ENCODED@127.0.0.1:5432/revoboard_db
-ALLOWED_ORIGINS=${APP_URL:-$PUBLIC_URL}
-SITE_URL=${SITE_URL:-$(old SITE_URL)}
-APP_URL=${APP_URL:-$(old APP_URL)}
+ALLOWED_ORIGINS=$PUBLIC_URL
+PUBLIC_BASE_URL=$PUBLIC_URL
+API_PUBLIC_PREFIX=/app/api
+# Mail (V17): `console` only logs a message, so an activation link would live in the log; set the five SMTP values and MAIL_BACKEND=smtp for real mail (Gmail: 2-step verification and an app password).
+MAIL_BACKEND=$MAIL_MODE
+SMTP_HOST=${SMTP_HOST:-$(old SMTP_HOST)}
+SMTP_PORT=${SMTP_PORT:-$(old SMTP_PORT)}
+SMTP_USER=${SMTP_USER:-$(old SMTP_USER)}
+SMTP_PASSWORD=${SMTP_PASSWORD:-$(old SMTP_PASSWORD)}
+MAIL_FROM=${MAIL_FROM:-$(old MAIL_FROM)}
+RATE_LIMIT_RESEND_VERIFICATION_MAX=${RATE_LIMIT_RESEND_VERIFICATION_MAX:-$(old RATE_LIMIT_RESEND_VERIFICATION_MAX)}
 JWT_SECRET=${JWT:-$(python3 -c 'import secrets; print(secrets.token_hex(32))')}
 FILE_URL_SECRET=${FILES:-$(python3 -c 'import secrets; print(secrets.token_hex(32))')}
 APP_TIMEZONE=Asia/Jakarta
