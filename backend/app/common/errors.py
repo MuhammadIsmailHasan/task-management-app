@@ -33,6 +33,50 @@ class Conflict(AppError):
     code = "CONFLICT"
 
 
+class ColumnNotEmpty(Conflict):
+    code = "COLUMN_NOT_EMPTY"
+
+
+class ColumnLocked(Conflict):
+    code = "COLUMN_LOCKED"
+
+
+class CardArchived(Conflict):
+    code = "CARD_ARCHIVED"
+
+
+class CardNotArchived(Conflict):
+    code = "CARD_NOT_ARCHIVED"
+
+
+class CardInDone(Conflict):
+    code = "CARD_IN_DONE"
+
+
+class AccountDisabled(Forbidden):
+    code = "ACCOUNT_DISABLED"
+
+
+class AccountNotActivated(Forbidden):
+    code = "ACCOUNT_NOT_ACTIVATED"
+
+
+class TokenInvalid(ValidationError):
+    code = "TOKEN_INVALID"
+
+
+class TokenExpired(ValidationError):
+    code = "TOKEN_EXPIRED"
+
+
+class UserHasOpenWork(Conflict):
+    code = "USER_HAS_OPEN_WORK"
+
+
+class CannotDeactivateSelf(Conflict):
+    code = "CANNOT_DEACTIVATE_SELF"
+
+
 class ServiceUnavailable(AppError):
     status = 503
     code = "SERVICE_UNAVAILABLE"

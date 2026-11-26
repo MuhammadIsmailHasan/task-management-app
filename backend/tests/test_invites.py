@@ -26,7 +26,7 @@ def test_invite_management_roles_and_lifecycle(client):
     assert client.post(f"/api/boards/{env.bid}/invite").status_code == 401
     assert _invite(client, env, "owner", "get").get_json()["data"] == {"enabled": False, "token": None, "path": None}
     on = _invite(client, env, "owner").get_json()["data"]
-    assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/invite/{on['token']}"
+    assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/app/invite/{on['token']}"
     assert _invite(client, env, "manager").get_json()["data"]["token"] == on["token"]  # idempotent, no second row
     new = _invite(client, env, "admin", suffix="/regenerate").get_json()["data"]
     assert new["token"] != on["token"]

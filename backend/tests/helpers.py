@@ -1,5 +1,6 @@
 """Shared builders for the property-based tests."""
 import itertools
+from datetime import datetime, timezone
 
 from argon2 import PasswordHasher
 from hypothesis import HealthCheck, settings
@@ -24,7 +25,7 @@ def reset_db():
 
 def mkuser(role):
     n = next(_n)
-    u = User(full_name=role, username=f"{role}{n}", email=f"{role}{n}@t.test", password_hash=_hash, role=role)
+    u = User(full_name=role, username=f"{role}{n}", email=f"{role}{n}@t.test", password_hash=_hash, role=role, email_verified_at=datetime.now(timezone.utc))
     db.session.add(u)
     db.session.commit()
     return u
@@ -91,3 +92,22 @@ class Env:
 
     def uid(self, who):
         return str(self.users[who].id)
+
+
+def last_mail_token(to=None):
+    """The raw token in the newest outbox message (to `to`, when given); the link carries it as `?token=...`."""
+    import re
+
+    from app.common import mail
+
+    for msg in reversed(mail.outbox):
+        if to is None or msg.to == to:
+            found = re.search(r"token=([\w-]+)", msg.text)
+            if found:
+                return found.group(1)
+    raise AssertionError("no mail with a token in the outbox")
+
+
+def verify_email(client, to=None):
+    """Confirm the newest link the way a visitor does: POST the token to /api/auth/verify."""
+    return client.post("/api/auth/verify", json={"token": last_mail_token(to)})

@@ -19,7 +19,7 @@ def test_share_lifecycle_and_roles(client):
     off = _share(client, env, "manager", "get").get_json()["data"]
     assert off == {"enabled": False, "token": None, "path": None}
     on = _share(client, env, "manager").get_json()["data"]
-    assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/shared/{on['token']}"
+    assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/app/shared/{on['token']}"
     assert _share(client, env, "manager").get_json()["data"]["token"] == on["token"]  # idempotent
     new = _share(client, env, "admin", suffix="/regenerate").get_json()["data"]
     assert new["token"] != on["token"]

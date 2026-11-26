@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from conftest import TEST_PASSWORD
+from tests.helpers import verify_email
 
 from app.common import clock
 from app.extensions import db
@@ -40,7 +41,11 @@ def test_register_login_roundtrip(client):
     r = client.post("/api/auth/register", json={"full_name": " Ann ", "username": " Ann_1 ", "email": " Ann@X.com ", "password": TEST_PASSWORD})
     assert r.status_code == 201
     d = r.get_json()["data"]
-    assert d["user"]["full_name"] == "Ann" and d["user"]["username"] == "ann_1" and d["user"]["email"] == "ann@x.com" and d["token"]
+    assert d["user"]["full_name"] == "Ann" and d["user"]["username"] == "ann_1" and d["user"]["email"] == "ann@x.com" and d["token"] is None
+    # no sign-in until the emailed link is confirmed (V17, ACT-01)
+    refused = client.post("/api/auth/login", json={"identifier": "ann@x.com", "password": TEST_PASSWORD})
+    assert refused.status_code == 403 and refused.get_json()["error"]["code"] == "ACCOUNT_NOT_ACTIVATED"
+    assert verify_email(client, "ann@x.com").status_code == 200
     for ident in ("ann@x.COM", "ANN_1", " ann_1 "):
         assert client.post("/api/auth/login", json={"identifier": ident, "password": TEST_PASSWORD}).status_code == 200
     assert client.post("/api/auth/login", json={"identifier": "ann@x.com", "password": "bad"}).status_code == 401
@@ -490,18 +495,19 @@ def test_analytics(world):
     assert c.get("/api/analytics/boards", headers=world.h["supervisor"]).status_code == 403
 
 
-def test_deadline_job_once_in_timezone(world, app):
-    from app.jobs.deadlines import run
+def test_due_job_once_in_timezone(world, app):
+    from app.jobs.due import run
 
     app.config["APP_TIMEZONE"] = "Asia/Jakarta"
     card = mkcard(world, end_date="2026-03-02", assignee_id=str(world.users["member"].id))
     mkcard(world, "unassigned", end_date="2026-03-02")
     # 2026-03-01 18:00 UTC is already 03-02 01:00 in Jakarta
     now = datetime(2026, 3, 1, 18, 0, tzinfo=timezone.utc)
-    assert run(now) == 1
-    assert run(now) == 1
-    assert Notification.query.filter_by(type="deadline").count() == 1
-    assert run(datetime(2026, 3, 1, 10, 0, tzinfo=timezone.utc)) == 0
+    assert run(now) == (1, 0, 0)
+    assert run(now) == (0, 0, 1)  # the same local date again inserts nothing
+    assert Notification.query.filter_by(type="due_today").count() == 1
+    # earlier the same UTC day it is still 03-01 in Jakarta: the Card is due tomorrow, not today
+    assert run(datetime(2026, 3, 1, 10, 0, tzinfo=timezone.utc)) == (0, 1, 0)
 
 
 def test_user_admin(world):
@@ -523,7 +529,7 @@ def test_user_admin(world):
 # ---- cross-cutting ----
 def test_mutating_routes_401_without_token_and_403_for_member(app, world):
     """Sweep: every mutating route rejects no-token (401) unless public/signature-gated or per-resource."""
-    public = {"auth.register", "auth.login", "auth.logout", "comments.create", "comments.reply"}
+    public = {"auth.register", "auth.login", "auth.logout", "auth.verify", "auth.resend_verification", "comments.create", "comments.reply"}
     c = world.client
     for rule in app.url_map.iter_rules():
         methods = rule.methods & {"POST", "PATCH", "PUT", "DELETE"}
@@ -577,3 +583,23 @@ def test_no_query_outside_repository_and_env_not_tracked():
         assert var + "=" in example
     tracked = subprocess.run(["git", "ls-files", "--", ".env", "backend/.env"], cwd=root, capture_output=True, text=True).stdout
     assert tracked.strip() == ""
+
+
+def test_inbox_unread_filter(world):
+    """NAV-13 (V17): `unread=true` lists only unread rows, pages from a row that has since been read, and keeps unread_count."""
+    member = world.users["member"]
+    for n in range(3):
+        mkcard(world, title=f"n{n}", assignee_id=str(member.id))
+    url, h = "/api/notifications", world.h["member"]
+    allrows = world.client.get(url, headers=h).get_json()["data"]
+    rows = allrows["items"]
+    assert allrows["unread_count"] == len(rows) >= 4  # three assignments and the board_added of the fixture
+    world.client.patch(f"/api/notifications/{rows[1]['id']}/read", headers=h)
+    only = world.client.get(url, headers=h, query_string={"unread": "true"}).get_json()["data"]
+    assert [i["id"] for i in only["items"]] == [r["id"] for i, r in enumerate(rows) if i != 1]
+    assert only["unread_count"] == len(rows) - 1
+    assert all(not i["is_read"] for i in only["items"])
+    # paging from a row that was read after it was shown still works
+    after = world.client.get(url, headers=h, query_string={"unread": "true", "limit": 1, "before": rows[1]["id"]})
+    assert after.status_code == 200 and [i["id"] for i in after.get_json()["data"]["items"]] == [rows[2]["id"]]
+    assert world.client.get(url, headers=h, query_string={"unread": "maybe"}).status_code == 400

@@ -45,14 +45,24 @@ The message text appears once, at the top level; `error` holds only the machine-
 | 403 | `FORBIDDEN` | Valid Token but role, board access or ownership is not enough; bad file signature |
 | 404 | `NOT_FOUND` | Unknown or soft-deleted resource, unknown route |
 | 405 | `METHOD_NOT_ALLOWED` | Wrong HTTP method |
-| 409 | `CONFLICT` | Duplicate username or email (`error.details` names each field), board member or category name |
+| 409 | `CONFLICT` | Duplicate username or email (`error.details` names each field), board member, category or column name |
+| 409 | `COLUMN_NOT_EMPTY` | Deleting a column that holds cards which are not archived (`error.details.count`) |
+| 409 | `COLUMN_LOCKED` | Renaming or deleting the `Done` column, or naming another column `Done` |
+| 409 | `CARD_ARCHIVED` | Moving an archived card |
+| 409 | `CARD_NOT_ARCHIVED` | Restoring a card that is not archived |
+| 409 | `CARD_IN_DONE` | Archiving a card that is in `Done` |
+| 409 | `USER_HAS_OPEN_WORK` | Deactivating a user who has open cards assigned or owns a board with open cards (`error.details`: `cards`, `boards`, `cards_total`, `boards_total`) |
+| 409 | `CANNOT_DEACTIVATE_SELF` | An Admin deactivating their own account |
+| 403 | `ACCOUNT_DISABLED` | An Admin turned the account off: sign-in and every request with its Token |
+| 403 | `ACCOUNT_NOT_ACTIVATED` | Sign-in with the right password before the email is confirmed |
+| 400 | `TOKEN_INVALID` / `TOKEN_EXPIRED` | An emailed link that is unknown or used / older than 24 hours |
 | 429 | `RATE_LIMITED` | Too many failed logins, wrong current passwords or availability checks. Body `error.details.retry_after` and header `Retry-After` hold the seconds to wait |
 | 500 | `INTERNAL_ERROR` | Unhandled error; generic message, details only in server logs |
 | 503 | `SERVICE_UNAVAILABLE` | `GET /api/health` only: the database does not answer |
 
 ## Authentication
 
-`POST /api/auth/register` and `POST /api/auth/login` return `{ user, token }`. Send the Token on every other call:
+`POST /api/auth/login` returns `{ user, token }`; `POST /api/auth/register` returns `{ user, token: null }` and mails a confirmation link (V17): the account signs in after `POST /api/auth/verify`. Send the Token on every other call:
 
 ```
 Authorization: Bearer <token>
@@ -70,7 +80,8 @@ Roles: `guest` (no Token), `member`, `supervisor`, `manager`, `admin`. Admin is 
 |---|---|---|---|---|---|
 | Read a board, cards, categories, search | no (401) | if owner or member of it | if owner or member of it | yes | yes |
 | Read comments and activity | no (401) | yes | yes | yes | yes |
-| Create, delete, archive card; add column; manage categories | no | no | board owner or member | yes | yes |
+| Create, delete, archive card; manage categories | no | no | board owner or member | yes | yes |
+| Create, rename, reorder, delete column (V17) | no | no | board owner only | yes | yes |
 | Edit or move a card | no | only when assigned | board owner or member | yes | yes |
 | Comment, reply | no | yes | yes | yes | no |
 | Toggle comment priority | no | no | no | yes | no |
@@ -93,6 +104,9 @@ Every board is private (V12): it is visible only to its owner, its members, Mana
 
 ## Behaviours worth knowing
 
+- **Users (V17).** `is_active` (an Admin turns an account off; it is refused while the user has open cards or owns a board with open cards) and `is_available` (a user or an Admin marks someone unavailable) are on every `user` payload. Only people who are both active and available appear in the member picker and the assignee picker (`GET /api/boards/{id}/members?assignable=true`); a card keeps an assignee who later becomes inactive or unavailable and carries `assignee_is_active` and `assignee_is_available`. A deactivated user's Token stops working at once (403 `ACCOUNT_DISABLED`). There is no user delete.
+- **Mail (V17).** Registration, an email change and a password change send mail after the commit through `MAIL_BACKEND` (`smtp` for Gmail, `console` in development). Links carry a single-use token that expires after 24 hours and is stored only as a hash.
+- **Archived cards (V17).** Archiving sets `archived_at` and clears `column_id`: an archived card has no column but keeps its board. `GET /api/boards/{id}/cards` hides archived cards unless `archived=true`, which lists only them. A card in `Done` cannot be archived. Restoring puts the card at the end of the board's first column. Every card payload carries a read-only `due_state` (`overdue`, `due_tomorrow` or `null`, in `APP_TIMEZONE`; always `null` in `Done`).
 - **Soft delete.** Deleting a board or card sets `deleted_at`; the row stays and is hidden (404). Archive sets `archived_at`.
 - **Ordering and move.** `PATCH /api/cards/{id}/move` takes `column_id` plus the neighbour ids `prev` and `next`. The server computes `order` (empty column `1.0`, first `min - 1`, last `max + 1`, otherwise the average) and ignores any client `order`. When two neighbours are closer than `1e-6` the column is renumbered `1.0, 2.0, …` in the same transaction. Moving to a column of another board returns 400. Subtasks reorder with `prev`/`next` or an explicit `order` on `PATCH /api/subtasks/{id}`.
 - **Attachments.** Add a link (`{ "url": "https://…" }`) or upload a PDF, Word or RAR file as multipart `file`. Uploaded files are stored privately. A card response carries a fresh signed `file_url` (valid 15 minutes) per uploaded attachment; request a new one with `GET /api/attachments/{id}/url`. `GET /api/attachments/{id}/file?exp=&sig=` needs no Token and returns 403 for a missing, altered or expired signature.
@@ -103,7 +117,8 @@ Every board is private (V12): it is visible only to its owner, its members, Mana
 - **Board members.** `GET /api/boards/{id}/members` lists the owner first (`is_owner`), once. Adding a member and `GET …/candidates` are Manager and Admin only and accept Member and Supervisor accounts only. A card assignee must be the owner or a board member (400 `details.assignee_id`). Removing a member clears that user's assignments on the board.
 - **Derived progress.** Every card carries `progress` (0 to 10, or null), `subtask_done_count` and `subtask_total_count`, computed from its subtasks; a posted `progress` is 400.
 - **Deleting a comment.** `DELETE /api/comments/{id}` (author only) returns `{ "deleted": n }`; a top-level comment takes its replies with it, the parent's `reply_count` follows, and the activity row `comment.deleted` keeps no text.
-- **Notifications.** Created server-side only: `assigned` when a card is assigned, `deadline` from the daily `flask notify-deadlines` job (dates in `APP_TIMEZONE`), and board types `board_join_requested`, `board_added`, `board_join_rejected` (no card). Each row carries `board_id`, `board_name`, `card_id`, `card_title`, `actor_name`; never an Email.
+- **Board slug (V17).** Every Board has a read-only `slug` derived from its name (lower-case `a-z`, `0-9`, hyphens; a clash adds `-2`, `-3`). A rename moves the slug and the old one returns 404. The app URL is `/app/b/{slug}`; every other endpoint keeps the Board id. A `slug` in a request body is a 400.
+- **Notifications.** Created server-side only: `assigned` when a card is assigned; five types each user can switch off (V17): `comment_on_assigned`, `due_today`, `due_tomorrow`, `assigned_card_changed` (with `action` `moved`, `archived` or `deleted`) and `subtask_on_assigned`, created only for an active assignee who is not the actor and has the type on (a missing switch means on); `due_today` and `due_tomorrow` come from `flask notify-due`, run every 15 minutes in `APP_TIMEZONE` (idempotent); the old `deadline` type is no longer created but old rows still show. Board types `board_join_requested`, `board_added`, `board_join_rejected` (no card). Each row carries `board_id`, `board_slug`, `board_name`, `card_id`, `card_title`, `actor_name`; never an Email.
 - **Search.** `GET /api/boards/{id}/cards?search=&filter[priority]=&filter[assignee]=&filter[category]=`. Filters combine with AND; an unsupported `filter[...]` key returns 400.
 - **Comments.** `sort=latest|popular`; priority comments first; replies nested oldest first; replies to replies return 400. `can_create_card` is true when the viewer is a Supervisor, Manager or Admin and the author is a Manager. Every comment and reply carries `author_name`, and every activity row carries `actor_name` (the user's display name), so a client needs no user lookup.
 - **Activity metadata.** New activity rows keep the names and changes in `metadata`, so a row reads without a lookup: `card_title` on every card event; `changes` on `card.updated` (`{field: {from, to}}` for `title`, `priority`, `start_date`, `end_date`, and `category` by name; a changed `description` is `{}`); `from_column_name` and `to_column_name` on `card.moved`; `assignee_name` on `card.assigned`; `title` on `card.subtask_*` events; `name` on `card.attachment_*` events; a `PATCH` that changes nothing writes no row. Rows written earlier keep their older keys.
@@ -117,11 +132,15 @@ Register, log in, log out.
 
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
-| POST | `/api/auth/register` | Public | 201 | 400, 409, 422 | Register an account |
-| POST | `/api/auth/login` | Public | 200 | 400, 401, 422 | Log in (`identifier` is a username or an email) |
+| POST | `/api/auth/register` | Public | 201 | 400, 409, 422 | Register an account (no Token; a link is mailed) |
+| POST | `/api/auth/verify` | Public | 200 | 400, 409, 422 | Confirm an emailed link (account email or a waiting email change) |
+| POST | `/api/auth/resend-verification` | Public | 200 | 400, 422, 429 | Send a new confirmation link (same answer for any address) |
+| POST | `/api/auth/login` | Public | 200 | 400, 401, 403, 422, 429 | Log in (`identifier` is a username or an email) |
 | GET | `/api/auth/availability` | Public | 200 | 400 | Check whether a `username` or `email` is free |
 | GET | `/api/auth/me` | Token | 200 | 401 | The signed-in user |
-| PATCH | `/api/auth/me` | Token | 200 | 400, 401 | Update `full_name` (any other field is a 400) |
+| PATCH | `/api/auth/me` | Token | 200 | 400, 401, 409 | Update `full_name`, `username`, `email` (waits as `pending_email` until its link is confirmed) and `is_available`; any other field is a 400 |
+| POST | `/api/auth/me/email/resend` | Token | 200 | 401, 404, 429 | Send the email-change link again |
+| DELETE | `/api/auth/me/email/pending` | Token | 200 | 401 | Cancel a waiting email change |
 | POST | `/api/auth/change-password` | Token | 200 | 400, 401, 429 | Change the password (wrong current password is a 400) |
 | POST | `/api/auth/logout` | Public | 200 | - | Log out |
 
@@ -134,6 +153,7 @@ Boards, archive, members, public link and the board activity feed.
 | POST | `/api/boards` | Token | 201 | 400, 401, 403, 422 | Create a board |
 | GET | `/api/boards` | Token | 200 | 401 | List visible boards, each with `card_count`, `done_count`, `overdue_count`, `member_count` |
 | GET | `/api/boards/{board_id}` | Token | 200 | 400, 401, 403, 404 | Get a board with its columns |
+| GET | `/api/boards/slug/{slug}` | Token | 200 | 401, 403, 404 | Get a board by its slug |
 | PATCH | `/api/boards/{board_id}` | Token | 200 | 400, 401, 403, 404, 422 | Update name, description or owner |
 | DELETE | `/api/boards/{board_id}` | Token | 200 | 401, 403, 404 | Soft-delete a board |
 | POST | `/api/boards/{board_id}/archive` | Token | 200 | 401, 403, 404 | Archive a board |
@@ -158,11 +178,14 @@ Boards, archive, members, public link and the board activity feed.
 
 ### columns
 
-Add a column to a board.
+The board owner, a Manager and an Admin manage a board's columns (V17). A name is unique on the board ignoring case and is never `Done`; the `Done` column cannot be renamed or deleted, but it can be moved. A column that holds cards which are not archived cannot be deleted (409 `COLUMN_NOT_EMPTY`).
 
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
-| POST | `/api/boards/{board_id}/columns` | Token | 201 | 400, 401, 403, 404, 422 | Add a column |
+| POST | `/api/boards/{board_id}/columns` | Token | 201 | 400, 401, 403, 404, 409, 422 | Add a column |
+| PATCH | `/api/columns/{column_id}` | Token | 200 | 400, 401, 403, 404, 409, 422 | Rename a column |
+| PATCH | `/api/columns/{column_id}/move` | Token | 200 | 400, 401, 403, 404, 422 | Reorder a column |
+| DELETE | `/api/columns/{column_id}` | Token | 200 | 401, 403, 404, 409 | Delete a column |
 
 ### cards
 
@@ -172,10 +195,11 @@ Cards, move, subtasks, attachments, signed file URLs, card activity, search and 
 |---|---|---|---|---|---|
 | POST | `/api/columns/{column_id}/cards` | Token | 201 | 400, 401, 403, 404, 422 | Create a card |
 | GET | `/api/cards/{card_id}` | Token | 200 | 400, 401, 403, 404 | Get a card |
+| GET | `/api/me/cards` | Token | 200 | 401 | My open cards in time groups (overdue, today, tomorrow, this week, later, no due date) |
 | PATCH | `/api/cards/{card_id}` | Token | 200 | 400, 401, 403, 404, 422 | Update a card |
 | DELETE | `/api/cards/{card_id}` | Token | 200 | 401, 403, 404 | Soft-delete a card |
-| POST | `/api/cards/{card_id}/archive` | Token | 200 | 401, 403, 404 | Archive a card |
-| POST | `/api/cards/{card_id}/unarchive` | Token | 200 | 401, 403, 404 | Unarchive a card |
+| POST | `/api/cards/{card_id}/archive` | Token | 200 | 401, 403, 404, 409 | Archive a card (it leaves its column) |
+| POST | `/api/cards/{card_id}/unarchive` | Token | 200 | 401, 403, 404, 409 | Restore an archived card to the first column |
 | PATCH | `/api/cards/{card_id}/move` | Token | 200 | 400, 401, 403, 404, 422 | Move or reorder a card |
 | GET | `/api/cards/{card_id}/activity` | Token | 200 | 400, 401, 403, 404 | Card activity (paged) |
 | GET | `/api/boards/{board_id}/cards` | Token | 200 | 400, 401, 403, 404, 422 | Search and filter a board's cards |
@@ -216,7 +240,9 @@ The caller's inbox.
 
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
-| GET | `/api/notifications` | Token | 200 | 400, 401 | List my notifications (paged) |
+| GET | `/api/notifications` | Token | 200 | 400, 401 | List my notifications (paged; `unread=true` lists unread rows only) |
+| GET | `/api/me/notification-preferences` | Token | 200 | 401 | My five notification switches |
+| PUT | `/api/me/notification-preferences` | Token | 200 | 400, 401, 422 | Save notification switches |
 | PATCH | `/api/notifications/read-all` | Token | 200 | 401 | Mark all my notifications read |
 | PATCH | `/api/notifications/{notification_id}/read` | Token | 200 | 401, 404 | Mark one notification read |
 
@@ -228,6 +254,7 @@ Board and cross-board summaries.
 |---|---|---|---|---|---|
 | GET | `/api/boards/{board_id}/analytics` | Token | 200 | 400, 401, 403, 404 | Board analytics |
 | GET | `/api/analytics/boards` | Token | 200 | 401, 403 | Cross-board analytics |
+| GET | `/api/analytics/dashboard` | Token | 200 | 400, 401, 403, 404 | Dashboard: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, people (filters `board`, `member`, `from`, `to`, `due_on`) |
 | GET | `/api/boards/{board_id}/analytics/throughput` | Token | 200 | 400, 401, 403, 404 | Board throughput |
 | GET | `/api/analytics/throughput` | Token | 200 | 400, 401, 403 | Cross-board throughput |
 
@@ -251,7 +278,7 @@ User administration (Admin only).
 |---|---|---|---|---|---|
 | GET | `/api/users` | Token | 200 | 401, 403 | List users |
 | POST | `/api/users` | Token | 201 | 400, 401, 403, 409, 422 | Create a user |
-| PATCH | `/api/users/{user_id}` | Token | 200 | 400, 401, 403, 404, 409, 422 | Update a user or assign a role |
+| PATCH | `/api/users/{user_id}` | Token | 200 | 400, 401, 403, 404, 409, 422 | Update a user, assign a role, or set `is_active` and `is_available` (there is no delete) |
 | POST | `/api/users/me/avatar` | Token | 200 | 400, 401 | Upload my avatar |
 | DELETE | `/api/users/me/avatar` | Token | 200 | 401 | Remove my avatar |
 | GET | `/api/users/{user_id}/avatar/file` | Public | 200 | 403, 404 | Avatar image (signed URL) |

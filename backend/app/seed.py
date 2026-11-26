@@ -8,6 +8,7 @@ import secrets
 from datetime import timedelta
 
 import click
+from datetime import datetime, timezone
 from argon2 import PasswordHasher
 
 from app.common import clock
@@ -41,6 +42,7 @@ def _get_or_create(username, role, full_name, password, domain="example.com"):
             email=f"{username}@{domain}",
             password_hash=_hasher.hash(password),
             role=role,
+            email_verified_at=datetime.now(timezone.utc),  # seeded accounts are verified (ACT-05)
         )
         db.session.add(user)
     return user

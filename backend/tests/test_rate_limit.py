@@ -98,7 +98,7 @@ def test_profile_and_change_password(app, client, make_user, auth):
     assert me["username"] == "prof" and me["email"] == "prof@example.com"
     ok = client.patch("/api/auth/me", headers=h, json={"full_name": "  New Name "})
     assert ok.status_code == 200 and ok.get_json()["data"]["full_name"] == "New Name"
-    for body in ({"full_name": "x", "email": "a@b.com"}, {"full_name": "x", "role": "admin"}, {"full_name": "x", "avatar_url": "https://x.y"}, {"full_name": " "}, {}):
+    for body in ({"full_name": "x", "is_active": False}, {"full_name": "x", "role": "admin"}, {"full_name": "x", "pending_email": "a@b.com"}, {"full_name": "x", "avatar_url": "https://x.y"}, {"full_name": " "}, {}):
         assert client.patch("/api/auth/me", headers=h, json=body).status_code == 400
     assert client.post("/api/auth/change-password", headers=h, json={"current_password": "wrong-one", "new_password": "newpassw0rd"}).get_json()["error"]["details"].keys() == {"current_password"}
     assert client.post("/api/auth/change-password", headers=h, json={"current_password": TEST_PASSWORD, "new_password": "short"}).status_code == 400

@@ -37,6 +37,7 @@ def test_docs_hidden_otherwise(make_app, env):
 
 def test_unset_app_env_defaults_to_production(monkeypatch):
     monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.setenv("MAIL_BACKEND", "console")  # production needs SMTP settings unless the console is chosen on purpose
     from app import create_app
 
     app = create_app({"TESTING": True})

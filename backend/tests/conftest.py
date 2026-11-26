@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 import secrets
 
 import pytest
@@ -19,7 +20,11 @@ from app.extensions import db  # noqa: E402
 
 @pytest.fixture
 def app(tmp_path):
-    app = create_app({"TESTING": True, "UPLOAD_DIR": str(tmp_path / "uploads")})
+    # the memory transport collects mail in `app.common.mail.outbox` (V17, ACT-08)
+    app = create_app({"TESTING": True, "UPLOAD_DIR": str(tmp_path / "uploads"), "MAIL_BACKEND": "memory"})
+    from app.common import mail
+
+    mail.outbox.clear()
     with app.app_context():
         db.create_all()
         yield app
@@ -61,7 +66,7 @@ def make_user(app):
 
     def _make(role="member", login=None):
         login = login or f"{role}{User.query.count()}"
-        user = User(full_name=role.title(), username=login, email=f"{login}@example.com", password_hash=hasher.hash(TEST_PASSWORD), role=role)
+        user = User(full_name=role.title(), username=login, email=f"{login}@example.com", password_hash=hasher.hash(TEST_PASSWORD), role=role, email_verified_at=datetime.now(timezone.utc))
         db.session.add(user)
         db.session.commit()
         return user
@@ -85,7 +90,7 @@ def make_app(tmp_path):
     created = []
 
     def _make(app_env):
-        app = create_app({"TESTING": True, "APP_ENV": app_env, "UPLOAD_DIR": str(tmp_path / "u")})
+        app = create_app({"TESTING": True, "APP_ENV": app_env, "MAIL_BACKEND": "memory", "UPLOAD_DIR": str(tmp_path / "u")})
         created.append(app)
         return app
 

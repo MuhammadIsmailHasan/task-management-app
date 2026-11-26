@@ -152,5 +152,25 @@ def reset_change_password(user_id):
     db.session.execute(delete(RateLimitAttempt).where(RateLimitAttempt.scope == "change_password", RateLimitAttempt.key_hash == user_key(user_id)))
 
 
+# ---- resend verification (V17, ACT-04): a per-address bucket and a per-client bucket ---------------------------------
+
+def hit_resend(address, ip):
+    """Every call counts, a blocked call adds no row. `address` is an email or a user id; `ip` may be None."""
+    entries = [("resend_verification", key_hash("resend", str(address)))]
+    if ip:
+        entries.append(("resend_verification_ip", key_hash("resend_ip", ip)))
+    per_address = _cfg("RATE_LIMIT_RESEND_VERIFICATION_MAX")
+    limits = {"resend_verification": per_address, "resend_verification_ip": per_address * 3 + 1}
+    with Session(db.engine) as session:
+        for scope, key in entries:
+            _lock(session, scope, key)
+        waits = [w for scope, key in entries if (w := _wait(session, scope, key, limits[scope]))]
+        if waits:
+            session.rollback()
+            raise RateLimited(max(waits))
+        _record(session, entries)
+        session.commit()
+
+
 def count(scope):
     return db.session.execute(select(func.count()).select_from(RateLimitAttempt).where(RateLimitAttempt.scope == scope)).scalar()

@@ -54,7 +54,7 @@
           "auth"
         ],
         "summary": "Register an account",
-        "description": "Creates a member account and returns a Token.",
+        "description": "Creates a member account and mails a confirmation link. No Token is returned (`token` is null): the account signs in after the email is confirmed.",
         "security": []
       }
     },
@@ -76,6 +76,16 @@
           },
           "429": {
             "description": "Rate limited; see Retry-After and error.details.retry_after",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
             "content": {
               "application/json": {
                 "schema": {
@@ -122,7 +132,123 @@
           "auth"
         ],
         "summary": "Log in",
-        "description": "The identifier is a username or an email, matched case-insensitively. One generic 401 for any mismatch.",
+        "description": "The identifier is a username or an email, matched case-insensitively. One generic 401 for any mismatch. With the right password, 403 ACCOUNT_DISABLED (an Admin turned the account off) or 403 ACCOUNT_NOT_ACTIVATED (the email is not confirmed yet).",
+        "security": []
+      }
+    },
+    "/api/auth/verify": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResultEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verify"
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirm an emailed link",
+        "description": "Body `token` from the link. Confirms the account's email, or applies a waiting email change. One use only: 400 TOKEN_INVALID for an unknown or used value, 400 TOKEN_EXPIRED after 24 hours. It never signs anyone in.",
+        "security": []
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; see Retry-After and error.details.retry_after",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerification"
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "summary": "Send a new confirmation link",
+        "description": "Always the same answer, whether or not the address exists or is confirmed. Rate limited per address and per client.",
         "security": []
       }
     },
@@ -270,6 +396,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid or expired Token",
             "content": {
@@ -308,7 +444,105 @@
           "auth"
         ],
         "summary": "Update the profile",
-        "description": "Only `full_name`; any other field is a 400.",
+        "description": "`full_name`, `username`, `email` and `is_available`. A new `email` waits as `pending_email` until its link is confirmed; the old one stays in use. Any other field is a 400.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/auth/me/email/resend": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; see Retry-After and error.details.retry_after",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "summary": "Send the email-change link again",
+        "description": "404 when no change is waiting. Rate limited.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/auth/me/email/pending": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "summary": "Cancel a waiting email change",
+        "description": "Clears `pending_email` and invalidates its links. Idempotent.",
         "security": [
           {
             "bearerAuth": []
@@ -380,7 +614,7 @@
           "auth"
         ],
         "summary": "Change the password",
-        "description": "A wrong current password is a 400 (never 401) and is counted; the issued Token stays valid.",
+        "description": "The current password is required. A wrong one is a 400 (never 401) and is counted; the issued Token stays valid. A notice goes to the account's email.",
         "security": [
           {
             "bearerAuth": []
@@ -714,6 +948,86 @@
         ]
       }
     },
+    "/api/boards/slug/{slug}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "boards"
+        ],
+        "summary": "Get a board by its slug",
+        "description": "Same payload and rules as GET /boards/{id}. 401 without a Token, 403 without access, 404 for an unknown, former, or deleted slug.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "slug",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
     "/api/boards/{board_id}/archive": {
       "post": {
         "responses": {
@@ -868,6 +1182,19 @@
               ]
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "assignable",
+            "description": "`true` lists only members who are active and available (the assignee picker)",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -932,7 +1259,7 @@
           "boards"
         ],
         "summary": "List board members",
-        "description": "Owner first, once, with `is_owner`. Requires board access. `?include=email` adds emails and needs board staff access (403 otherwise).",
+        "description": "Owner first, once, with `is_owner`. Requires board access. `?include=email` adds emails and needs board staff access (403 otherwise). `?assignable=true` lists only active and available people.",
         "security": [
           {
             "bearerAuth": []
@@ -1591,6 +1918,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -1649,7 +1986,7 @@
           "columns"
         ],
         "summary": "Add a column",
-        "description": "Staff access on the board. Appended with order = max + 1.",
+        "description": "Board owner, Manager or Admin. Appended with order = max + 1. A name is unique on the board (409 CONFLICT) and never `Done` (409 COLUMN_LOCKED).",
         "security": [
           {
             "bearerAuth": []
@@ -1660,6 +1997,269 @@
         {
           "in": "path",
           "name": "board_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ]
+    },
+    "/api/columns/{column_id}": {
+      "patch": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColumnEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameColumn"
+              }
+            }
+          }
+        },
+        "tags": [
+          "columns"
+        ],
+        "summary": "Rename a column",
+        "description": "Board owner, Manager or Admin. The Done column cannot be renamed and no column can be renamed to Done: 409 COLUMN_LOCKED.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "column_id",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NullEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "columns"
+        ],
+        "summary": "Delete a column",
+        "description": "Board owner, Manager or Admin. 409 COLUMN_NOT_EMPTY (with details.count) while it holds cards that are not archived; 409 COLUMN_LOCKED for Done. Archived cards have no column and never block.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/columns/{column_id}/move": {
+      "patch": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColumnEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveColumn"
+              }
+            }
+          }
+        },
+        "tags": [
+          "columns"
+        ],
+        "summary": "Reorder a column",
+        "description": "Board owner, Manager or Admin. Moves the column to a 0-based position and renumbers the board's columns. The Done column may move.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "column_id",
           "required": true,
           "schema": {
             "type": "string",
@@ -1991,6 +2591,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -2029,7 +2639,7 @@
           "cards"
         ],
         "summary": "Archive a card",
-        "description": "Staff access.",
+        "description": "Staff access. The card leaves its column (an archived card has none). A card in Done cannot be archived: 409 CARD_IN_DONE.",
         "security": [
           {
             "bearerAuth": []
@@ -2061,6 +2671,16 @@
               }
             }
           },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -2098,8 +2718,8 @@
         "tags": [
           "cards"
         ],
-        "summary": "Unarchive a card",
-        "description": "Staff access.",
+        "summary": "Restore an archived card",
+        "description": "Staff access. The card returns to the board's first column, at the end. 409 CARD_NOT_ARCHIVED when it is not archived.",
         "security": [
           {
             "bearerAuth": []
@@ -2360,6 +2980,19 @@
               "format": "uuid"
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "description": "`true` lists the archived Cards (they have no Column); default false",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2424,7 +3057,7 @@
           "cards"
         ],
         "summary": "Search and filter a board's cards",
-        "description": "Filters combine with AND; an unsupported filter[...] key returns 400. Soft-deleted cards are excluded.",
+        "description": "Filters combine with AND; an unsupported filter[...] key returns 400. Soft-deleted cards are excluded. Archived cards are excluded unless `archived=true`, which lists only them.",
         "security": [
           {
             "bearerAuth": []
@@ -2442,6 +3075,45 @@
           }
         }
       ]
+    },
+    "/api/me/cards": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyCardsEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "cards"
+        ],
+        "summary": "My cards",
+        "description": "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. An Admin gets an empty list.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     },
     "/api/cards/{card_id}/subtasks": {
       "post": {
@@ -3775,6 +4447,19 @@
               "format": "uuid"
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "unread",
+            "description": "`true` lists only unread rows; `unread_count` still counts all of them",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -3819,7 +4504,7 @@
           "notifications"
         ],
         "summary": "List my notifications",
-        "description": "Only the caller's rows. Paged with `limit` and `before`; `unread_count` counts all of them.",
+        "description": "Only the caller's rows. Paged with `limit` and `before`; `unread=true` lists only unread rows; `unread_count` counts all of them.",
         "security": [
           {
             "bearerAuth": []
@@ -3925,6 +4610,105 @@
           }
         }
       ]
+    },
+    "/api/me/notification-preferences": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "summary": "My notification preferences",
+        "description": "Exactly five types, in order; `enabled` is true where nothing was saved. In-app notifications only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferences"
+              }
+            }
+          }
+        },
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Save notification preferences",
+        "description": "Upserts the listed types (one to five, no repeat) in one transaction and returns the full list. An unknown type or a non-boolean `enabled` is a 400.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     },
     "/api/boards/{board_id}/analytics": {
       "get": {
@@ -4221,6 +5005,130 @@
         ],
         "summary": "Cross-board throughput",
         "description": "Manager only. One weekly series per board.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/analytics/dashboard": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "board",
+            "description": "One Board; absent means every Board the viewer may read",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "member",
+            "description": "Only Cards assigned to this user",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "description": "YYYY-MM-DD, default 29 days before `to`",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "description": "YYYY-MM-DD, default today in the application time zone",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "due_on",
+            "description": "The day the Due tomorrow widget lists (default tomorrow)",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Dashboard",
+        "description": "Supervisor (the Boards it owns) and Manager (any Board). Member and Admin 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.",
         "security": [
           {
             "bearerAuth": []
@@ -4707,6 +5615,19 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "archived",
+            "description": "`true` lists the archived Cards (they have no Column); default false",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
             },
             "required": false
           }
@@ -5725,6 +6646,17 @@
           "avatar_url": {
             "type": "string",
             "nullable": true
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_available": {
+            "type": "boolean"
+          },
+          "pending_email": {
+            "type": "string",
+            "description": "A new address waiting for its confirmation link; visible to its owner and an Admin only",
+            "nullable": true
           }
         }
       },
@@ -5736,7 +6668,8 @@
           },
           "token": {
             "type": "string",
-            "description": "JWT, valid 24 hours"
+            "description": "JWT, valid 24 hours. Null after register: the email must be confirmed first (V17)",
+            "nullable": true
           }
         }
       },
@@ -5781,6 +6714,100 @@
           "identifier",
           "password"
         ]
+      },
+      "Verify": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The value from the emailed link",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "VerifyResult": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "description": "verify_email or change_email"
+          }
+        }
+      },
+      "VerifyResultEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/VerifyResult"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResendVerification": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "description": "Case-insensitive, unique"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "MessageEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Message"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "AvailabilityEntry": {
         "type": "object",
@@ -5874,11 +6901,23 @@
           "full_name": {
             "type": "string",
             "maxLength": 255
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 30,
+            "pattern": "^[a-z0-9_.]{3,30}$",
+            "description": "Case-insensitive, unique"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "description": "Case-insensitive, unique"
+          },
+          "is_available": {
+            "type": "boolean"
           }
         },
-        "required": [
-          "full_name"
-        ],
         "additionalProperties": false
       },
       "ChangePassword": {
@@ -5943,6 +6982,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Read-only, derived from the name (V17): lower-case a-z, 0-9 and hyphens; used in the app URL"
           },
           "description": {
             "type": "string",
@@ -6067,6 +7110,14 @@
           },
           "is_owner": {
             "type": "boolean"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "False once an Admin deactivated the person; the Members view tags them"
+          },
+          "is_available": {
+            "type": "boolean",
+            "description": "False while the person is marked unavailable"
           },
           "role": {
             "type": "string",
@@ -6269,7 +7320,7 @@
           },
           "path": {
             "type": "string",
-            "description": "/shared/<token> or null",
+            "description": "/app/shared/<token> or null",
             "nullable": true
           }
         }
@@ -6335,6 +7386,31 @@
           }
         },
         "additionalProperties": false
+      },
+      "RenameColumn": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "MoveColumn": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0-based index among the Board's Columns"
+          }
+        },
+        "required": [
+          "position"
+        ]
       },
       "CreateCard": {
         "type": "object",
@@ -6568,6 +7644,16 @@
             "description": "Signed avatar URL (15 minutes) or null",
             "nullable": true
           },
+          "assignee_is_active": {
+            "type": "boolean",
+            "description": "False once an Admin deactivated the assignee; null without an assignee",
+            "nullable": true
+          },
+          "assignee_is_available": {
+            "type": "boolean",
+            "description": "False while the assignee is marked unavailable; null without an assignee",
+            "nullable": true
+          },
           "title": {
             "type": "string"
           },
@@ -6591,6 +7677,11 @@
           },
           "archived_at": {
             "type": "string",
+            "nullable": true
+          },
+          "due_state": {
+            "type": "string",
+            "description": "Read-only: overdue, due_tomorrow, or null (always null in Done or without an end date), in APP_TIMEZONE",
             "nullable": true
           },
           "subtasks": {
@@ -6741,6 +7832,121 @@
               "$ref": "#/components/schemas/Card"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyCardCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MyCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "board_slug": {
+            "type": "string"
+          },
+          "board_name": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "due_state": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/MyCardCategory"
+              }
+            ]
+          }
+        }
+      },
+      "MyCardGroup": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "overdue, today, tomorrow, this_week, later or no_due"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MyCard"
+            }
+          }
+        }
+      },
+      "MyCards": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "description": "In the order overdue, today, tomorrow, this_week, later, no_due; empty groups are left out",
+            "items": {
+              "$ref": "#/components/schemas/MyCardGroup"
+            }
+          }
+        }
+      },
+      "MyCardsEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/MyCards"
+              }
+            ]
           }
         },
         "additionalProperties": false
@@ -7065,11 +8271,15 @@
           },
           "type": {
             "type": "string",
-            "description": "assigned, deadline, board_join_requested, board_added or board_join_rejected"
+            "description": "assigned, deadline, comment_on_assigned, due_today, due_tomorrow, assigned_card_changed, subtask_on_assigned, board_join_requested, board_added or board_join_rejected"
           },
           "board_id": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "board_slug": {
+            "type": "string",
             "nullable": true
           },
           "board_name": {
@@ -7087,6 +8297,11 @@
           },
           "actor_name": {
             "type": "string",
+            "nullable": true
+          },
+          "action": {
+            "type": "string",
+            "description": "moved, archived or deleted: only on assigned_card_changed",
             "nullable": true
           },
           "is_read": {
@@ -7159,6 +8374,69 @@
               },
               {
                 "$ref": "#/components/schemas/Notification"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Preference": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "comment_on_assigned",
+              "due_today",
+              "due_tomorrow",
+              "assigned_card_changed",
+              "subtask_on_assigned"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "type"
+        ]
+      },
+      "Preferences": {
+        "type": "object",
+        "properties": {
+          "preferences": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/Preference"
+            }
+          }
+        },
+        "required": [
+          "preferences"
+        ]
+      },
+      "PreferencesEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Preferences"
               }
             ]
           }
@@ -7323,6 +8601,142 @@
         },
         "additionalProperties": false
       },
+      "DashboardCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "board_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "board_slug": {
+            "type": "string"
+          },
+          "board_name": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string",
+            "nullable": true
+          },
+          "due_state": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignee_name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "DashboardCardList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardCard"
+            }
+          },
+          "due_on": {
+            "type": "string"
+          }
+        }
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "object",
+            "description": "`from` and `to` as YYYY-MM-DD",
+            "additionalProperties": {}
+          },
+          "today": {
+            "type": "string"
+          },
+          "overview": {
+            "type": "object",
+            "description": "total, done, in_progress, overdue (not limited by the date range)",
+            "additionalProperties": {}
+          },
+          "throughput": {
+            "type": "object",
+            "description": "weeks (oldest first, every week listed) and total, for the weeks that touch the range",
+            "additionalProperties": {}
+          },
+          "overdue": {
+            "description": "Open cards past their end date, the end date inside the range; first 10",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCardList"
+              }
+            ]
+          },
+          "due_tomorrow": {
+            "description": "Open cards whose end date is `due_on`; first 10",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DashboardCardList"
+              }
+            ]
+          },
+          "top_priority": {
+            "type": "object",
+            "description": "cards: up to 5 open cards, highest priority first then the nearest end date",
+            "additionalProperties": {}
+          },
+          "finished": {
+            "type": "object",
+            "description": "on_time and overdue counts of cards finished in the range that have an end date",
+            "additionalProperties": {}
+          },
+          "members": {
+            "type": "array",
+            "description": "People of the scope: id, full_name, avatar_url (no email)",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          }
+        }
+      },
+      "DashboardEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Dashboard"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminUser": {
         "type": "object",
         "properties": {
@@ -7341,6 +8755,17 @@
           },
           "avatar_url": {
             "type": "string",
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_available": {
+            "type": "boolean"
+          },
+          "pending_email": {
+            "type": "string",
+            "description": "A new address waiting for its confirmation link; visible to its owner and an Admin only",
             "nullable": true
           },
           "role": {
@@ -7464,6 +8889,13 @@
               "manager",
               "admin"
             ]
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Admin only. false is refused while the user has open work (409 USER_HAS_OPEN_WORK)"
+          },
+          "is_available": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7569,6 +9001,10 @@
             "type": "string",
             "nullable": true
           },
+          "due_state": {
+            "type": "string",
+            "nullable": true
+          },
           "subtasks": {
             "type": "array",
             "items": {
@@ -7652,7 +9088,7 @@
           },
           "path": {
             "type": "string",
-            "description": "/invite/<token> or null",
+            "description": "/app/invite/<token> or null",
             "nullable": true
           }
         }
@@ -7688,6 +9124,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
           },
           "name": {
             "type": "string"

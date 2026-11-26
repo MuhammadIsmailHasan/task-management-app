@@ -22,6 +22,8 @@ def oracle(action, rel):
             return 401
         if not acc:
             return 403
+        if action == "create_column":  # V17: the Board_Owner, a Manager, and an Admin only (COL-01)
+            return 201 if rel in {"manager", "admin", "owner"} else 403
         return 201 if rel in STAFF else 403
     if action == "comment":
         if not acc:

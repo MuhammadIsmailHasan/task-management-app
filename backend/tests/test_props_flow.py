@@ -175,9 +175,14 @@ def test_property_29_one_activity_row_per_change(client, ops):
             r = client.patch(f"/api/cards/{card['id']}", headers=h, json={"priority": "low" if cur != "low" else "high"})
             delta = 1
         elif op == "move":
-            state["col"] = (state["col"] + 1) % 5
-            r = client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": env.cols[state["col"]]})
-            delta = 1
+            target = (state["col"] + 1) % 5
+            r = client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": env.cols[target]})
+            if state["archived"]:  # an archived Card cannot be moved (CARD_ARCHIVED)
+                assert r.status_code == 409
+                delta = 0
+            else:
+                state["col"] = target
+                delta = 1
         elif op == "assign":
             r = client.patch(f"/api/cards/{card['id']}", headers=h, json={"assignee_id": env.uid("member")})
             delta = 0 if state["assigned"] else 1
@@ -186,9 +191,24 @@ def test_property_29_one_activity_row_per_change(client, ops):
             r = client.patch(f"/api/cards/{card['id']}", headers=h, json={"assignee_id": None})
             delta = 1 if state["assigned"] else 0
             state["assigned"] = False
-        elif op in ("archive", "unarchive"):
-            r = client.post(f"/api/cards/{card['id']}/{op}", headers=h)
-            delta = 1
+        elif op == "archive":
+            r = client.post(f"/api/cards/{card['id']}/archive", headers=h)
+            if state["archived"]:  # idempotent: nothing changes, nothing is logged
+                delta = 0
+            elif state["col"] == 4:  # the Done column (V17: CARD_IN_DONE)
+                assert r.status_code == 409
+                delta = 0
+            else:
+                state["archived"] = True
+                delta = 1
+        elif op == "unarchive":
+            r = client.post(f"/api/cards/{card['id']}/unarchive", headers=h)
+            if state["archived"]:  # a restored Card lands in the first Column (V17)
+                state["archived"], state["col"] = False, 0
+                delta = 1
+            else:
+                assert r.status_code == 409  # CARD_NOT_ARCHIVED
+                delta = 0
         elif op == "subtask":
             r = client.post(f"/api/cards/{card['id']}/subtasks", headers=h, json={"title": "s"})
             delta = 1
@@ -199,7 +219,7 @@ def test_property_29_one_activity_row_per_change(client, ops):
             r = client.patch(f"/api/cards/{card['id']}", headers=h, json={"priority": "nope"})
             delta = 0
             assert r.status_code == 400
-        assert r.status_code < 400 or op == "bad"
+        assert r.status_code < 400 or op == "bad" or delta == 0 and r.status_code == 409
         assert count() - before == delta, op
 
 
@@ -242,10 +262,10 @@ def test_property_28_guest_never_sees_comments_or_activity(client, who, fields):
     hour=st.integers(0, 23),
     tz=st.sampled_from(["UTC", "Asia/Jakarta", "America/Los_Angeles"]),
 )
-def test_property_31_deadline_job_once_in_app_timezone(client, app, cards, hour, tz):
+def test_property_31_due_job_once_in_app_timezone(client, app, cards, hour, tz):
     from zoneinfo import ZoneInfo
 
-    from app.jobs.deadlines import run
+    from app.jobs.due import run
 
     app.config["APP_TIMEZONE"] = tz
     env = Env(client)
@@ -263,8 +283,8 @@ def test_property_31_deadline_job_once_in_app_timezone(client, app, cards, hour,
     db.session.commit()
     run(now)
     run(now)
-    got = {str(n.card_id) for n in Notification.query.filter_by(type="deadline").all()}
-    assert got == expected and Notification.query.filter_by(type="deadline").count() == len(expected)
+    got = {str(n.card_id) for n in Notification.query.filter_by(type="due_today").all()}
+    assert got == expected and Notification.query.filter_by(type="due_today").count() == len(expected)
 
 
 @PROP

@@ -9,6 +9,8 @@ from app.common.signing import avatar_url
 class Identity:
     full_name: str
     avatar_path: str | None
+    is_active: bool = True
+    is_available: bool = True
 
 
 def avatar_urls(identities: dict[UUID, Identity], now) -> dict[UUID, str | None]:

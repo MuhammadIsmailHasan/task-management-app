@@ -9,7 +9,7 @@ from hypothesis import assume, given, strategies as st
 from app.common.signing import sign_file_url, verify_file_signature
 from app.extensions import db
 from app.models import ActivityLog, Board, BoardMember, Card, Category, Column, Notification, Subtask
-from helpers import PROP, UUID0, Env, hdr, mkuser, reset_db
+from helpers import PROP, UUID0, Env, hdr, mkuser, reset_db, verify_email
 
 uname = st.text(alphabet=string.ascii_letters + string.digits + "_.", min_size=3, max_size=30)
 local = st.text(alphabet=string.ascii_lowercase + string.digits, min_size=1, max_size=20)
@@ -27,7 +27,9 @@ def test_property_1_register_login_round_trip(client, full, username, mail, pass
     assert r.status_code == 201
     data = r.get_json()["data"]
     assert data["user"]["full_name"] == full.strip() and data["user"]["username"] == username.lower() and data["user"]["email"] == mail
-    assert "password" not in str(data) and data["token"]
+    assert "password" not in str(data) and data["token"] is None  # no Token before the email is confirmed (V17)
+    assert client.post("/api/auth/login", json={"identifier": username, "password": password}).status_code == 403
+    assert verify_email(client, mail).status_code == 200
     for ident in (username.swapcase(), mail.upper()):
         again = client.post("/api/auth/login", json={"identifier": ident, "password": password})
         assert again.status_code == 200 and again.get_json()["data"]["user"]["id"] == data["user"]["id"]
@@ -56,7 +58,11 @@ def test_property_2_validation_and_unique_username_and_email(client, full, usern
 
 # ---- Property 6, 7: board seeding and column order ----
 @PROP
-@given(board_name=name, extra=st.lists(name, max_size=6))
+@given(
+    board_name=name,
+    # names are unique ignoring case on a board and never `Done` (V17, COL-02, COL-10)
+    extra=st.lists(name.filter(lambda n: n.strip().lower() not in {"done", "todo", "in progress", "review", "revision"}), max_size=6, unique_by=lambda n: n.strip().lower()),
+)
 def test_property_6_7_default_columns_and_append_order(client, board_name, extra):
     env = Env(client)
     b = client.post("/api/boards", headers=env.h["manager"], json={"name": board_name}).get_json()["data"]

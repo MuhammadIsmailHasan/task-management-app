@@ -7,6 +7,7 @@ from flask_cors import CORS
 
 from app.common.auth import register_jwt_callbacks
 from app.api import init_api, openapi_config
+from app.common.mail import check_config as check_mail_config
 from app.extensions import db, jwt, migrate
 
 REQUIRED_ENV = ("ALLOWED_ORIGINS", "JWT_SECRET", "FILE_URL_SECRET", "APP_TIMEZONE")
@@ -49,6 +50,7 @@ def _load_config(overrides):
         "APP_TIMEZONE": tz,
         "UPLOAD_DIR": os.path.abspath(env.get("UPLOAD_DIR") or "uploads"),  # absolute: send_file resolves relative paths against the app folder
         "ALLOWED_ORIGINS": origins,
+        "API_PUBLIC_PREFIX": (env.get("API_PUBLIC_PREFIX") or "").strip().rstrip("/"),  # "" in development, "/app/api" behind nginx (V17, PATH-04)
         "APP_ENV": (env.get("APP_ENV") or "production").strip().lower(),
         "RATE_LIMIT_WINDOW_SECONDS": _int(env, "RATE_LIMIT_WINDOW_SECONDS", 900),
         "RATE_LIMIT_LOGIN_PAIR_MAX": _int(env, "RATE_LIMIT_LOGIN_PAIR_MAX", 5),
@@ -56,9 +58,20 @@ def _load_config(overrides):
         "RATE_LIMIT_AVAILABILITY_MAX": _int(env, "RATE_LIMIT_AVAILABILITY_MAX", 60),
         "RATE_LIMIT_CHANGE_PASSWORD_MAX": _int(env, "RATE_LIMIT_CHANGE_PASSWORD_MAX", 5),
         "TRUSTED_PROXY_COUNT": _int(env, "TRUSTED_PROXY_COUNT", 0),
+        "RATE_LIMIT_RESEND_VERIFICATION_MAX": _int(env, "RATE_LIMIT_RESEND_VERIFICATION_MAX", 3),
+        "PUBLIC_BASE_URL": (env.get("PUBLIC_BASE_URL") or "").strip().rstrip("/"),
+        "SMTP_HOST": (env.get("SMTP_HOST") or "").strip(),
+        "SMTP_PORT": (env.get("SMTP_PORT") or "587").strip(),
+        "SMTP_USER": (env.get("SMTP_USER") or "").strip(),
+        "SMTP_PASSWORD": env.get("SMTP_PASSWORD") or "",
+        "MAIL_FROM": (env.get("MAIL_FROM") or "").strip(),
     }
+    # smtp is the default in production; development and tests default to the console (ACT-08)
+    app_env = (env.get("APP_ENV") or "production").strip().lower()
+    config["MAIL_BACKEND"] = (env.get("MAIL_BACKEND") or ("console" if app_env in ("development", "testing") else "smtp")).strip().lower()
     config.update(overrides)
     config.update(openapi_config(config["APP_ENV"]))
+    check_mail_config(config)
     return config
 
 
@@ -92,7 +105,7 @@ def create_app(config_overrides=None):
 
     register_cli(app)
 
-    from app.jobs.deadlines import register_cli as register_job_cli
+    from app.jobs.due import register_cli as register_job_cli
 
     register_job_cli(app)
     return app

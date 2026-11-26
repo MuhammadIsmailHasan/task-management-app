@@ -186,3 +186,23 @@ def test_property_50_query_count_does_not_depend_on_authors_or_assignees(app, cl
     grow(20)
     big = (count(f"/api/boards/{board.id}/cards"), count(f"/api/cards/{card_ids[0]}/comments"))
     assert small == big
+
+
+def test_the_public_prefix_replaces_api_in_signed_urls_and_old_signatures_still_verify(app, client):
+    """PATH-04: the prefix is not inside the signature."""
+    from datetime import datetime, timezone
+
+    from app.common.signing import sign_file_url, verify_file_signature
+
+    now = datetime(2026, 11, 26, tzinfo=timezone.utc)
+    plain, exp = sign_file_url("a1", now)
+    assert plain.startswith("/api/attachments/a1/file?")
+    app.config["API_PUBLIC_PREFIX"] = "/app/api"
+    try:
+        prefixed, _ = sign_file_url("a1", now)
+    finally:
+        app.config["API_PUBLIC_PREFIX"] = ""
+    assert prefixed.startswith("/app/api/attachments/a1/file?")
+    assert prefixed.split("?", 1)[1] == plain.split("?", 1)[1]  # same exp and signature
+    sig = plain.split("sig=")[1]
+    assert verify_file_signature("a1", exp, sig, now)

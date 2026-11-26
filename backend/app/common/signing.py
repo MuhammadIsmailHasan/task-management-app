@@ -6,6 +6,17 @@ from flask import current_app
 TTL_SECONDS = 900
 
 
+def api_base():
+    """The public path of the API: `/api` in development and tests, `/app/api` behind nginx (API_PUBLIC_PREFIX, PATH-04).
+
+    The prefix is not inside any signature, so changing it invalidates no valid URL.
+    """
+    try:
+        return (current_app.config.get("API_PUBLIC_PREFIX") or "/api").rstrip("/")
+    except RuntimeError:  # no application context
+        return "/api"
+
+
 def _secret(secret):
     return (secret or current_app.config["FILE_URL_SECRET"]).encode()
 
@@ -22,7 +33,7 @@ def share_scope(share_token, secret=None):
 
 def sign_file_url(attachment_id, now, secret=None, scope=None):
     exp = int(now.timestamp()) + TTL_SECONDS
-    path = f"/api/attachments/{attachment_id}/file?exp={exp}&sig={_mac(attachment_id, exp, secret, scope)}"
+    path = f"{api_base()}/attachments/{attachment_id}/file?exp={exp}&sig={_mac(attachment_id, exp, secret, scope)}"
     if scope:
         path += f"&st={scope}"
     return path, exp
@@ -43,7 +54,7 @@ def verify_file_signature(attachment_id, exp, sig, now, secret=None, scope=None)
 def avatar_url(user_id, now, secret=None):
     """Signed avatar URL; the `avatar` scope is inside the signature, so it never opens an attachment file."""
     exp = int(now.timestamp()) + TTL_SECONDS
-    return f"/api/users/{user_id}/avatar/file?exp={exp}&sig={_mac(user_id, exp, secret, 'avatar')}"
+    return f"{api_base()}/users/{user_id}/avatar/file?exp={exp}&sig={_mac(user_id, exp, secret, 'avatar')}"
 
 
 def verify_avatar_signature(user_id, exp, sig, now, secret=None):
