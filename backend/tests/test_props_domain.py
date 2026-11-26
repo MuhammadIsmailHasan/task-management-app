@@ -193,7 +193,7 @@ def test_property_11_member_edit_scope(client, assigned, field):
     card = env.card(assignee_id=env.uid("member") if assigned else None)
     value = {"title": "new", "priority": "low", "description": "d"}[field]
     r = client.patch(f"/api/cards/{card['id']}", headers=env.h["member"], json={field: value})
-    assert r.status_code == (200 if assigned else 403)
+    assert r.status_code == (200 if assigned and field == "description" else 403)  # V18: description only
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["member_other"], json={field: value}).status_code == 403
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["sup_other"], json={field: value}).status_code == 403
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["owner"], json={field: value}).status_code == 200

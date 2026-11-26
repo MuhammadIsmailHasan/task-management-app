@@ -4,6 +4,7 @@ from app.blueprints.boards import repository as boards_repo
 from app.blueprints.boards import service as boards
 from app.blueprints.boards.dto import clean_name
 from app.blueprints.columns import repository as repo
+from app.common import clock
 from app.common.errors import Conflict, ColumnLocked, ColumnNotEmpty, Forbidden, NotFound, Unauthorized, ValidationError
 from app.common.ids import to_uuid
 from app.extensions import db
@@ -51,6 +52,7 @@ def create(actor, board_id, data):
     current = boards_repo.max_column_order(board.id)
     col = boards_repo.add_column(board.id, name, 0.0 if current is None else current + 1)
     activity.add(to_uuid(actor.id), "column.created", "column", col.id, {"board_id": str(board.id), "name": name})
+    board.updated_at = clock.now()
     db.session.commit()
     return col
 
@@ -64,6 +66,7 @@ def rename(actor, column_id, data):
     if name != column.name:
         activity.add(to_uuid(actor.id), "column.renamed", "column", column.id, {"board_id": str(board.id), "from": column.name, "to": name})
         column.name = name
+        board.updated_at = clock.now()
     db.session.commit()
     return column
 
@@ -82,6 +85,7 @@ def move(actor, column_id, data):
         col.order = float(i)
     if old != position:
         activity.add(to_uuid(actor.id), "column.moved", "column", column.id, {"board_id": str(board.id), "name": column.name, "from": old, "to": position})
+        board.updated_at = clock.now()
     db.session.commit()
     return column
 
@@ -97,4 +101,5 @@ def delete(actor, column_id):
     # logged on the Board: the Column row is gone, and the Board feed reads rows by the Board's current Column ids
     activity.add(to_uuid(actor.id), "column.deleted", "board", board.id, {"board_id": str(board.id), "name": column.name})
     repo.delete(column)
+    board.updated_at = clock.now()
     db.session.commit()

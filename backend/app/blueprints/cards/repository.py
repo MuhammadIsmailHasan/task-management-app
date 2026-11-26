@@ -58,8 +58,8 @@ def max_subtask_order(card_id):
     return db.session.scalar(db.select(db.func.max(Subtask.order)).where(Subtask.card_id == card_id))
 
 
-def add_subtask(card_id, title, order):
-    s = Subtask(card_id=card_id, title=title, order=order, is_done=False)
+def add_subtask(card_id, title, order, created_by_id=None):
+    s = Subtask(card_id=card_id, title=title, order=order, is_done=False, created_by_id=created_by_id)
     db.session.add(s)
     db.session.flush()
     return s

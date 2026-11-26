@@ -21,7 +21,7 @@ def add(card_id, author_id, content, parent_id=None):
     return c
 
 
-def list_for_card(card_id, sort="latest"):
+def list_for_card(card_id, sort="latest", limit=None, offset=0):
     """Top-level comments with replies loaded, plus author roles: 3 queries whatever the row count.
 
     Returns (comments, roles) where roles maps author id to role for comments and replies.
@@ -39,6 +39,8 @@ def list_for_card(card_id, sort="latest"):
         .where(Comment.card_id == card_id, Comment.parent_id.is_(None))
         .options(selectinload(Comment.replies))
         .order_by(*order)
+        .limit(limit)
+        .offset(offset or 0)
         .execution_options(populate_existing=True)
     ).all()
     comments = [c for c, _ in rows]
@@ -47,6 +49,10 @@ def list_for_card(card_id, sort="latest"):
     if reply_authors:
         roles.update(dict(db.session.execute(db.select(User.id, User.role).where(User.id.in_(reply_authors))).all()))
     return comments, roles
+
+
+def count_top_level(card_id):
+    return db.session.scalar(db.select(db.func.count(Comment.id)).where(Comment.card_id == card_id, Comment.parent_id.is_(None)))
 
 
 def author_identities(comments):

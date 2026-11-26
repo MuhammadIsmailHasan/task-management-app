@@ -35,7 +35,7 @@ def finish(card_id, when, end=None):
 # ---- access (DASH-19) ----
 def test_roles_and_scope(world):
     assert dash(world, "member").status_code == 403
-    assert dash(world, "admin").status_code == 403
+    assert dash(world, "admin").status_code == 200  # V18: an Admin has the Manager scope (DASH-23)
     assert world.client.get("/api/analytics/dashboard").status_code == 401
     assert dash(world, "supervisor").status_code == 200  # owns the fixture's board
     assert dash(world, "supervisor", board=world.board["id"]).status_code == 200
@@ -283,5 +283,6 @@ def test_my_tasks_groups_sorts_and_leaves_out_done_archived_and_other_people(wor
 
 
 def test_my_tasks_for_an_admin_and_without_a_token(world):
-    assert mine(world, "admin").get_json()["data"]["groups"] == []
+    assert mine(world, "admin").status_code == 403  # TASK-07
+    assert mine(world, "manager").status_code == 403
     assert world.client.get("/api/me/cards").status_code == 401

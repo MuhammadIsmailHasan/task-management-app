@@ -239,7 +239,7 @@ def test_property_56_notification_dedup_with_null_card_and_constant_queries(clie
 
 def test_property_53_comment_delete_and_reply_count(client):
     env = Env(client)
-    card = env.card()
+    card = env.card(assignee_id=env.uid("member"))
     cid = card["id"]
     post = lambda who, path, body: client.post(path, headers=env.h[who], json=body).get_json()["data"]
     top = post("member", f"/api/cards/{cid}/comments", {"content": "top secret words"})
@@ -251,11 +251,11 @@ def test_property_53_comment_delete_and_reply_count(client):
     assert client.delete(f"/api/comments/{UUID0}", headers=env.h["member"]).status_code == 404
     # deleting a reply decrements the parent's count
     assert client.delete(f"/api/comments/{r1['id']}", headers=env.h["manager"]).get_json()["data"] == {"deleted": 1}
-    listed = client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"]
+    listed = client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"]["items"]
     assert listed[0]["reply_count"] == 1 and [r["id"] for r in listed[0]["replies"]] == [r2["id"]]
     # deleting the top-level comment takes the remaining reply with it
     assert client.delete(f"/api/comments/{top['id']}", headers=env.h["member"]).get_json()["data"] == {"deleted": 2}
-    assert client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"] == []
+    assert client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"]["items"] == []
     rows = ActivityLog.query.filter_by(action="comment.deleted").all()
     assert len(rows) == 2 and "top secret" not in str([r.metadata_ for r in rows])
     assert {r.metadata_["is_reply"] for r in rows} == {True, False}

@@ -5,6 +5,12 @@ from app.blueprints.auth.schema import MemberSchema
 from app.common.fields import BaseSchema, Text
 
 
+class BoardListQuerySchema(BaseSchema):
+    q = fields.String(validate=validate.Length(max=100), metadata={"description": "Case-insensitive name search (at most 100 characters)"})
+    sort = fields.String(load_default="updated_at", validate=validate.OneOf(["updated_at", "created_at"], error="sort must be updated_at or created_at"))
+    order = fields.String(load_default="desc", validate=validate.OneOf(["asc", "desc"], error="order must be asc or desc"))
+
+
 class CreateBoardSchema(BaseSchema):
     class Meta:
         unknown = ma.RAISE  # a posted `visibility` is a 400: every Board is private (V12)

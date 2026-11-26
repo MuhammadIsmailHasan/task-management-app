@@ -694,7 +694,48 @@
         ]
       },
       "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "description": "Case-insensitive name search (at most 100 characters)",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "default": "updated_at",
+              "enum": [
+                "updated_at",
+                "created_at"
+              ]
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "type": "string",
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "required": false
+          }
+        ],
         "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -3089,6 +3130,16 @@
               }
             }
           },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing, invalid or expired Token",
             "content": {
@@ -3107,7 +3158,7 @@
           "cards"
         ],
         "summary": "My cards",
-        "description": "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. An Admin gets an empty list.",
+        "description": "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. Members and Supervisors only: Manager and Admin get 403.",
         "security": [
           {
             "bearerAuth": []
@@ -4118,6 +4169,27 @@
               ]
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "Top-level comments per page; every comment when absent",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -4129,7 +4201,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentListEnvelope"
+                  "$ref": "#/components/schemas/CommentPageEnvelope"
                 }
               }
             }
@@ -4182,7 +4254,7 @@
           "comments"
         ],
         "summary": "List comments",
-        "description": "Priority comments first, then latest or popular; replies oldest first. Requires board access.",
+        "description": "Priority comments first, then latest or popular; replies oldest first. Paged with `limit` and `offset` (all when `limit` is absent). Requires board access.",
         "security": [
           {
             "bearerAuth": []
@@ -4771,7 +4843,7 @@
           "analytics"
         ],
         "summary": "Board analytics",
-        "description": "Manager on any board; Supervisor only as board owner. Member and Admin 403.",
+        "description": "Manager on any board; Supervisor only as board owner. Member 403.",
         "security": [
           {
             "bearerAuth": []
@@ -4831,7 +4903,7 @@
           "analytics"
         ],
         "summary": "Cross-board analytics",
-        "description": "Manager only. One summary per board.",
+        "description": "Manager and Admin. One summary per board.",
         "security": [
           {
             "bearerAuth": []
@@ -4917,7 +4989,7 @@
           "analytics"
         ],
         "summary": "Board throughput",
-        "description": "Cards completed per week. Manager on any board; Supervisor only as board owner. Member and Admin 403.",
+        "description": "Cards completed per week. Manager on any board; Supervisor only as board owner. Member 403.",
         "security": [
           {
             "bearerAuth": []
@@ -5004,7 +5076,7 @@
           "analytics"
         ],
         "summary": "Cross-board throughput",
-        "description": "Manager only. One weekly series per board.",
+        "description": "Manager and Admin. One weekly series per board.",
         "security": [
           {
             "bearerAuth": []
@@ -5128,7 +5200,7 @@
           "analytics"
         ],
         "summary": "Dashboard",
-        "description": "Supervisor (the Boards it owns) and Manager (any Board). Member and Admin 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.",
+        "description": "Supervisor (the Boards it owns) and Manager (any Board). Member 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.",
         "security": [
           {
             "bearerAuth": []
@@ -5138,13 +5210,39 @@
     },
     "/api/users": {
       "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false
+          }
+        ],
         "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminUserListEnvelope"
+                  "$ref": "#/components/schemas/UserPageEnvelope"
                 }
               }
             }
@@ -5177,7 +5275,7 @@
           "users"
         ],
         "summary": "List users",
-        "description": "Admin only.",
+        "description": "Admin only. Sorted by role, then name; paged with `page` and `per_page` (default 20, at most 100).",
         "security": [
           {
             "bearerAuth": []
@@ -7477,6 +7575,16 @@
           },
           "order": {
             "type": "number"
+          },
+          "created_by_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Who added it; null for rows made before V18",
+            "nullable": true
+          },
+          "can_edit": {
+            "type": "boolean",
+            "description": "Whether the viewer may rename, reorder, or delete it"
           }
         }
       },
@@ -7511,6 +7619,15 @@
           "expires_at": {
             "type": "string",
             "nullable": true
+          },
+          "created_by_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "can_edit": {
+            "type": "boolean",
+            "description": "Whether the viewer may delete it"
           }
         }
       },
@@ -8126,6 +8243,28 @@
           },
           "color": {
             "type": "string",
+            "enum": [
+              "red",
+              "orange",
+              "amber",
+              "yellow",
+              "lime",
+              "green",
+              "emerald",
+              "teal",
+              "cyan",
+              "sky",
+              "blue",
+              "indigo",
+              "violet",
+              "purple",
+              "fuchsia",
+              "pink",
+              "rose",
+              "slate",
+              null
+            ],
+            "description": "A palette key: red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, slate",
             "nullable": true
           }
         },
@@ -8167,6 +8306,27 @@
           },
           "color": {
             "type": "string",
+            "enum": [
+              "red",
+              "orange",
+              "amber",
+              "yellow",
+              "lime",
+              "green",
+              "emerald",
+              "teal",
+              "cyan",
+              "sky",
+              "blue",
+              "indigo",
+              "violet",
+              "purple",
+              "fuchsia",
+              "pink",
+              "rose",
+              "slate",
+              null
+            ],
             "nullable": true
           }
         }
@@ -8241,7 +8401,22 @@
         },
         "additionalProperties": false
       },
-      "CommentListEnvelope": {
+      "CommentPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Top-level comments on the card, whatever the page"
+          }
+        }
+      },
+      "CommentPageEnvelope": {
         "type": "object",
         "properties": {
           "status": {
@@ -8253,11 +8428,15 @@
             "description": "Human-readable message"
           },
           "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Comment"
-            },
-            "nullable": true
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/CommentPage"
+              }
+            ]
           }
         },
         "additionalProperties": false
@@ -8774,7 +8953,27 @@
           }
         }
       },
-      "AdminUserListEnvelope": {
+      "UserPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUser"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "per_page": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "UserPageEnvelope": {
         "type": "object",
         "properties": {
           "status": {
@@ -8786,11 +8985,15 @@
             "description": "Human-readable message"
           },
           "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminUser"
-            },
-            "nullable": true
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/UserPage"
+              }
+            ]
           }
         },
         "additionalProperties": false

@@ -11,7 +11,7 @@ bp = Blueprint("analytics", __name__, description="Board and cross-board summari
 
 
 @bp.route("/boards/<board_id>/analytics", methods=["GET"])
-@endpoint(bp, "Board analytics", "Manager on any board; Supervisor only as board owner. Member and Admin 403.")
+@endpoint(bp, "Board analytics", "Manager on any board; Supervisor only as board owner. Member 403.")
 @require_role("member", "supervisor", "manager", "admin")
 @bp.response(200, envelope(AnalyticsSchema))
 def board_analytics(board_id):
@@ -19,15 +19,15 @@ def board_analytics(board_id):
 
 
 @bp.route("/analytics/boards", methods=["GET"])
-@endpoint(bp, "Cross-board analytics", "Manager only. One summary per board.", errors=(401, 403))
-@require_role("manager")
+@endpoint(bp, "Cross-board analytics", "Manager and Admin. One summary per board.", errors=(401, 403))
+@require_role("manager", "admin")
 @bp.response(200, envelope(AnalyticsSchema, many=True))
 def all_boards():
     return ok(service.all_boards(current_actor()))
 
 
 @bp.route("/boards/<board_id>/analytics/throughput", methods=["GET"])
-@endpoint(bp, "Board throughput", "Cards completed per week. Manager on any board; Supervisor only as board owner. Member and Admin 403.")
+@endpoint(bp, "Board throughput", "Cards completed per week. Manager on any board; Supervisor only as board owner. Member 403.")
 @require_role("member", "supervisor", "manager", "admin")
 @bp.arguments(ThroughputQuerySchema, location="query")
 @bp.response(200, envelope(ThroughputSchema))
@@ -36,8 +36,8 @@ def board_throughput(args, board_id):
 
 
 @bp.route("/analytics/throughput", methods=["GET"])
-@endpoint(bp, "Cross-board throughput", "Manager only. One weekly series per board.", errors=(400, 401, 403))
-@require_role("manager")
+@endpoint(bp, "Cross-board throughput", "Manager and Admin. One weekly series per board.", errors=(400, 401, 403))
+@require_role("manager", "admin")
 @bp.arguments(ThroughputQuerySchema, location="query")
 @bp.response(200, envelope(ThroughputSchema, many=True))
 def all_throughput(args):
@@ -45,7 +45,7 @@ def all_throughput(args):
 
 
 @bp.route("/analytics/dashboard", methods=["GET"])
-@endpoint(bp, "Dashboard", "Supervisor (the Boards it owns) and Manager (any Board). Member and Admin 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.", errors=(400, 401, 403, 404))
+@endpoint(bp, "Dashboard", "Supervisor (the Boards it owns) and Manager (any Board). Member 403. One aggregated answer with a fixed number of queries: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, and the people of the scope. A range longer than 182 days is a 400.", errors=(400, 401, 403, 404))
 @require_role("supervisor", "manager", "member", "admin")
 @bp.arguments(DashboardQuerySchema, location="query")
 @bp.response(200, envelope(DashboardSchema))

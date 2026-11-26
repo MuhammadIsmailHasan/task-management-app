@@ -1,4 +1,5 @@
 from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.extensions import db
 from app.models.base import TimestampMixin, uuid_fk, uuid_pk
@@ -64,6 +65,7 @@ class Subtask(TimestampMixin, db.Model):
     title = db.Column(db.String(255), nullable=False)
     is_done = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     order = db.Column(db.Float, nullable=False)
+    created_by_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     card = db.relationship("Card", back_populates="subtasks", lazy="raise")
 
@@ -80,6 +82,7 @@ class Attachment(TimestampMixin, db.Model):
     url = db.Column(db.String(2048), nullable=True)
     file_path = db.Column(db.String(1024), nullable=True)
     mime_type = db.Column(db.String(255), nullable=True)
+    created_by_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     card = db.relationship("Card", back_populates="attachments", lazy="raise")
 

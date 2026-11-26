@@ -4,6 +4,7 @@ from app.blueprints.boards import service as boards
 from app.blueprints.cards import repository as cards_repo
 from app.blueprints.comments import repository as repo
 from app.blueprints.notifications import repository as notifications
+from app.common import card_policy as policy
 from app.common import clock
 from app.common.errors import Forbidden, NotFound, ValidationError
 from app.common.identities import avatar_urls
@@ -14,20 +15,20 @@ WRITERS = ("member", "supervisor", "manager")
 STAFF = ("supervisor", "manager", "admin")
 
 
-def _load_card(actor, card_id):
+def _load_card(actor, card_id, with_board=False):
     cid = to_uuid(card_id)
     card = cards_repo.get_card(cid) if cid else None
     if card is None:
         raise NotFound("Card not found")
     board = boards_repo.get_by_id(cards_repo.board_id_of_card(card))
     boards.require_access(actor, board)
-    return card
+    return (card, board) if with_board else card
 
 
-def _require_commenter(actor):
-    # Guest: 403 on public boards (401 on private comes from require_access).
-    if actor.role not in WRITERS:
-        raise Forbidden("Comments are not available for this role")
+def _require_commenter(actor, card, board):
+    """A Manager, a Supervisor with Board_Staff_Access, or the assigned Member (PERM-05). Never an Admin."""
+    if not policy.can_comment(actor, card, board):
+        raise Forbidden("You cannot comment on this card")
 
 
 def _content(data):
@@ -38,8 +39,8 @@ def _content(data):
 
 
 def create_comment(actor, card_id, data):
-    card = _load_card(actor, card_id)
-    _require_commenter(actor)
+    card, board = _load_card(actor, card_id, with_board=True)
+    _require_commenter(actor, card, board)
     c = repo.add(card.id, to_uuid(actor.id), _content(data))
     activity.add(to_uuid(actor.id), "comment.added", "card", card.id, {"comment_id": str(c.id), "card_title": card.title})
     notifications.notify_assignee(card, "comment_on_assigned", to_uuid(actor.id))
@@ -52,8 +53,8 @@ def reply(actor, comment_id, data):
     parent = repo.get(cid) if cid else None
     if parent is None:
         raise NotFound("Comment not found")
-    card = _load_card(actor, parent.card_id)
-    _require_commenter(actor)
+    card, board = _load_card(actor, parent.card_id, with_board=True)
+    _require_commenter(actor, card, board)
     if parent.parent_id is not None:
         raise ValidationError("Replies cannot be nested more than one level")
     c = repo.add(card.id, to_uuid(actor.id), _content(data), parent_id=parent.id)
@@ -122,10 +123,10 @@ def serialize(c, viewer_role, author_roles, replies=None, idents=None, urls=None
     return data
 
 
-def list_comments(card, actor, sort="latest"):
+def list_comments(card, actor, sort="latest", limit=None, offset=0):
     if sort not in ("latest", "popular"):
         raise ValidationError("sort must be latest or popular")
-    comments, roles = repo.list_for_card(card.id, sort)
+    comments, roles = repo.list_for_card(card.id, sort, limit, offset)
     idents = repo.author_identities(comments)
     urls = avatar_urls(idents, clock.now())
     return [
@@ -140,6 +141,8 @@ def serialize_one(c, viewer_role):
     return serialize(c, viewer_role, {}, idents=idents, urls=avatar_urls(idents, clock.now()))
 
 
-def list_for_request(actor, card_id, sort):
+def list_for_request(actor, card_id, sort, limit=None, offset=0):
+    """`{items, total}`: one page of top-level comments (all when `limit` is absent) and the count of all of them (CMV-07)."""
     card = _load_card(actor, card_id)
-    return list_comments(card, actor, sort or "latest")
+    items = list_comments(card, actor, sort or "latest", limit, offset)
+    return {"items": items, "total": repo.count_top_level(card.id)}

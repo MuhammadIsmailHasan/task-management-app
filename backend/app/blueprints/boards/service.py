@@ -168,9 +168,9 @@ def soft_delete(actor, board_id):
     db.session.commit()
 
 
-def list_boards(actor):
+def list_boards(actor, q=None, sort="updated_at", order="desc"):
     """Visible boards and their counts (a fixed number of queries)."""
-    boards = repo.list_visible(actor)
+    boards = repo.list_visible(actor, (q or "").strip() or None, sort, order)
     counts = repo.counts_for([b.id for b in boards], clock.today(current_app.config["APP_TIMEZONE"]))
     return boards, counts
 

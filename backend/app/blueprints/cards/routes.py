@@ -137,7 +137,7 @@ def board_cards(args, board_id):
 
 
 @bp.route("/me/cards", methods=["GET"])
-@endpoint(bp, "My cards", "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. An Admin gets an empty list.", errors=(401,))
+@endpoint(bp, "My cards", "The caller's open cards (not Done, archived or deleted) grouped by due date in APP_TIMEZONE. Members and Supervisors only: Manager and Admin get 403.", errors=(401, 403))
 @require_role(*USERS)
 @bp.response(200, envelope(MyCardsSchema))
 def my_cards():
@@ -150,7 +150,7 @@ def my_cards():
 @bp.arguments(CreateSubtaskSchema)
 @bp.response(201, envelope(SubtaskSchema))
 def add_subtask(data, card_id):
-    return ok(serialize_subtask(service.add_subtask(current_actor(), card_id, data)), "Subtask created", 201)
+    return ok(serialize_subtask(service.add_subtask(current_actor(), card_id, data), current_actor(), current_actor().id), "Subtask created", 201)
 
 
 @bp.route("/subtasks/<subtask_id>", methods=["PATCH"])
@@ -159,7 +159,7 @@ def add_subtask(data, card_id):
 @bp.arguments(UpdateSubtaskSchema)
 @bp.response(200, envelope(SubtaskSchema))
 def update_subtask(data, subtask_id):
-    return ok(serialize_subtask(service.update_subtask(current_actor(), subtask_id, data)), "Subtask updated")
+    return ok(serialize_subtask(service.update_subtask(current_actor(), subtask_id, data), current_actor(), current_actor().id), "Subtask updated")
 
 
 @bp.route("/subtasks/<subtask_id>", methods=["DELETE"])
@@ -179,7 +179,7 @@ def add_attachment(card_id):
     upload = request.files.get("file")
     data = request.form.to_dict() if upload is not None else json_body()
     att = service.add_attachment(current_actor(), card_id, data, upload)
-    return ok(serialize_attachment(att), "Attachment created", 201)
+    return ok(serialize_attachment(att, viewer=current_actor(), assignee_id=current_actor().id), "Attachment created", 201)
 
 
 @bp.route("/attachments/<attachment_id>", methods=["DELETE"])

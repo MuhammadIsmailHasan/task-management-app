@@ -43,13 +43,20 @@ def is_member(board_id, user_id):
     return BoardMember.query.filter_by(board_id=board_id, user_id=user_id).first() is not None
 
 
-def list_visible(actor):
+def _escape_like(text):
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def list_visible(actor, q_text=None, sort="updated_at", order="desc"):
     q = Board.query.filter(Board.deleted_at.is_(None))
+    if q_text:
+        q = q.filter(Board.name.ilike(f"%{_escape_like(q_text)}%", escape="\\"))
     if actor.role not in ("manager", "admin"):
         uid = to_uuid(actor.id)
         member_ids = db.select(BoardMember.board_id).where(BoardMember.user_id == uid)
         q = q.filter(db.or_(Board.owner_id == uid, Board.id.in_(member_ids)))
-    return q.order_by(Board.created_at, Board.id).all()
+    column = Board.created_at if sort == "created_at" else Board.updated_at
+    return q.order_by(column.asc() if order == "asc" else column.desc(), Board.name, Board.id).all()
 
 
 def counts_for(board_ids, today):

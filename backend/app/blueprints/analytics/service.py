@@ -59,27 +59,27 @@ def _throughput(weeks, board_id=None):
 
 def board_throughput(actor, board_id, weeks):
     board = boards.load_board(actor, board_id)
-    if not (actor.role == "manager" or (actor.role == "supervisor" and boards.is_owner(actor, board))):
+    if not (actor.role in ("manager", "admin") or (actor.role == "supervisor" and boards.is_owner(actor, board))):
         raise Forbidden("Analytics not available for this role")
     return _throughput(weeks, board.id)[0]
 
 
 def all_throughput(actor, weeks):
-    if actor.role != "manager":
+    if actor.role not in ("manager", "admin"):
         raise Forbidden("Manager only")
     return _throughput(weeks)
 
 
 def board_analytics(actor, board_id):
     board = boards.load_board(actor, board_id)
-    if not (actor.role == "manager" or (actor.role == "supervisor" and boards.is_owner(actor, board))):
+    if not (actor.role in ("manager", "admin") or (actor.role == "supervisor" and boards.is_owner(actor, board))):
         raise Forbidden("Analytics not available for this role")
     today, week_ago = _args()
     return _shape(repo.summaries(today, week_ago, board.id)[0])
 
 
 def all_boards(actor):
-    if actor.role != "manager":
+    if actor.role not in ("manager", "admin"):
         raise Forbidden("Manager only")
     today, week_ago = _args()
     return [_shape(r) for r in repo.summaries(today, week_ago)]
@@ -120,11 +120,11 @@ def _card(row):
 
 def _scope(actor, board_id):
     """The Board ids this viewer may read under the Requirement 10 rules, or a 403/404."""
-    if actor.role not in ("supervisor", "manager"):
+    if actor.role not in ("supervisor", "manager", "admin"):
         raise Forbidden("Analytics not available for this role")
     if board_id is not None:
         board = boards.load_board(actor, board_id)
-        if not (actor.role == "manager" or boards.is_owner(actor, board)):
+        if not (actor.role in ("manager", "admin") or boards.is_owner(actor, board)):
             raise Forbidden("Analytics not available for this role")
         return [board.id]
     owner = to_uuid(actor.id) if actor.role == "supervisor" else None

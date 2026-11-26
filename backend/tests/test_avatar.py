@@ -88,7 +88,7 @@ def test_avatar_signature_never_opens_an_attachment_and_admin_cannot_set_url(cli
     assert client.patch(f"/api/users/{other.id}", headers=ha, json={"avatar_url": "https://x.y"}).status_code == 400
     assert client.post("/api/users", headers=ha, json={"full_name": "N", "username": "newbie", "email": "n@x.com", "password": TEST_PASSWORD, "avatar_url": "https://x.y"}).status_code == 400
     listing = client.get("/api/users", headers=ha).get_json()["data"]
-    assert any(u["avatar_url"] for u in listing)
+    assert any(u["avatar_url"] for u in listing["items"])
 
 
 def _set_avatar(app, user, kind="png"):
@@ -109,7 +109,7 @@ def test_avatar_fields_in_comment_member_candidate_and_card_payloads(client):
     client.post(f"/api/comments/{comment['id']}/replies", headers=env.h["manager"], json={"content": "re"})
     url_prefix = f"/api/users/{env.uid('member')}/avatar/file?exp="
 
-    got = client.get(f"/api/cards/{card['id']}/comments", headers=env.h["manager"]).get_json()["data"][0]
+    got = client.get(f"/api/cards/{card['id']}/comments", headers=env.h["manager"]).get_json()["data"]["items"][0]
     assert got["author_avatar_url"].startswith(url_prefix) and got["replies"][0]["author_avatar_url"] is None
     assert comment["author_avatar_url"].startswith(url_prefix)
 

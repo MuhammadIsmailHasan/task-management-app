@@ -92,6 +92,8 @@ class SubtaskSchema(BaseSchema):
     title = fields.String()
     is_done = fields.Boolean()
     order = fields.Float()
+    created_by_id = fields.UUID(allow_none=True, metadata={"description": "Who added it; null for rows made before V18"})
+    can_edit = fields.Boolean(metadata={"description": "Whether the viewer may rename, reorder, or delete it"})
 
 
 class AttachmentSchema(BaseSchema):
@@ -102,6 +104,8 @@ class AttachmentSchema(BaseSchema):
     url = fields.String(allow_none=True, metadata={"description": "Stored link, for link attachments"})
     file_url = fields.String(allow_none=True, metadata={"description": "Signed URL valid 15 minutes, uploads only"})
     expires_at = fields.String(allow_none=True)
+    created_by_id = fields.UUID(allow_none=True)
+    can_edit = fields.Boolean(metadata={"description": "Whether the viewer may delete it"})
 
 
 class AttachmentUrlSchema(BaseSchema):

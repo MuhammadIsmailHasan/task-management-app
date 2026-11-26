@@ -37,5 +37,21 @@ def open_owned_boards(user_id):
     return total, db.session.execute(grouped.order_by(Board.name, Board.id).limit(LIMIT)).all()
 
 
+# explicit comparisons, so Postgres binds each literal as the `user_role` enum, not as text
+_ROLE_ORDER = db.case((User.role == "admin", 0), (User.role == "manager", 1), (User.role == "supervisor", 2), else_=3)
+
+
 def list_all():
-    return User.query.order_by(User.full_name, User.id).all()
+    return User.query.order_by(_ROLE_ORDER, db.func.lower(User.full_name), User.id).all()
+
+
+def list_page(page, per_page):
+    """One count and one page, sorted by role, then name, then id (USRP-02, USRP-03)."""
+    total = db.session.scalar(db.select(db.func.count(User.id)))
+    rows = (
+        User.query.order_by(_ROLE_ORDER, db.func.lower(User.full_name), User.id)
+        .limit(per_page)
+        .offset((page - 1) * per_page)
+        .all()
+    )
+    return rows, total

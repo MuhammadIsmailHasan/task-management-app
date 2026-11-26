@@ -151,7 +151,7 @@ Boards, archive, members, public link and the board activity feed.
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
 | POST | `/api/boards` | Token | 201 | 400, 401, 403, 422 | Create a board |
-| GET | `/api/boards` | Token | 200 | 401 | List visible boards, each with `card_count`, `done_count`, `overdue_count`, `member_count` |
+| GET | `/api/boards` | Token | 200 | 400, 401 | List visible boards (`q` name search, `sort` `updated_at` or `created_at`, `order` `asc` or `desc`; default last updated first), each with `card_count`, `done_count`, `overdue_count`, `member_count` |
 | GET | `/api/boards/{board_id}` | Token | 200 | 400, 401, 403, 404 | Get a board with its columns |
 | GET | `/api/boards/slug/{slug}` | Token | 200 | 401, 403, 404 | Get a board by its slug |
 | PATCH | `/api/boards/{board_id}` | Token | 200 | 400, 401, 403, 404, 422 | Update name, description or owner |
@@ -195,7 +195,7 @@ Cards, move, subtasks, attachments, signed file URLs, card activity, search and 
 |---|---|---|---|---|---|
 | POST | `/api/columns/{column_id}/cards` | Token | 201 | 400, 401, 403, 404, 422 | Create a card |
 | GET | `/api/cards/{card_id}` | Token | 200 | 400, 401, 403, 404 | Get a card |
-| GET | `/api/me/cards` | Token | 200 | 401 | My open cards in time groups (overdue, today, tomorrow, this week, later, no due date) |
+| GET | `/api/me/cards` | Token | 200 | 401, 403 | My open cards in time groups (overdue, today, tomorrow, this week, later, no due date). Member and Supervisor only; Manager and Admin get 403 |
 | PATCH | `/api/cards/{card_id}` | Token | 200 | 400, 401, 403, 404, 422 | Update a card |
 | DELETE | `/api/cards/{card_id}` | Token | 200 | 401, 403, 404 | Soft-delete a card |
 | POST | `/api/cards/{card_id}/archive` | Token | 200 | 401, 403, 404, 409 | Archive a card (it leaves its column) |
@@ -229,7 +229,7 @@ Comments, replies and the priority flag.
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
 | POST | `/api/cards/{card_id}/comments` | Token | 201 | 400, 401, 403, 404, 422 | Add a comment |
-| GET | `/api/cards/{card_id}/comments` | Token | 200 | 400, 401, 403, 404, 422 | List comments |
+| GET | `/api/cards/{card_id}/comments` | Token | 200 | 400, 401, 403, 404, 422 | List comments: `data` of `{ items, total }`; `limit` (1 to 50) and `offset` page the top-level comments, all when `limit` is absent |
 | POST | `/api/comments/{comment_id}/replies` | Token | 201 | 400, 401, 403, 404, 422 | Reply to a top-level comment |
 | PATCH | `/api/comments/{comment_id}/priority` | Token | 200 | 401, 403, 404 | Toggle the priority flag |
 | DELETE | `/api/comments/{comment_id}` | Token | 200 | 401, 403, 404 | Delete my comment (author only) |
@@ -254,7 +254,7 @@ Board and cross-board summaries.
 |---|---|---|---|---|---|
 | GET | `/api/boards/{board_id}/analytics` | Token | 200 | 400, 401, 403, 404 | Board analytics |
 | GET | `/api/analytics/boards` | Token | 200 | 401, 403 | Cross-board analytics |
-| GET | `/api/analytics/dashboard` | Token | 200 | 400, 401, 403, 404 | Dashboard: overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, people (filters `board`, `member`, `from`, `to`, `due_on`) |
+| GET | `/api/analytics/dashboard` | Token | 200 | 400, 401, 403, 404 | Dashboard (Manager and Admin: every Board; Supervisor: owned Boards): overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, people (filters `board`, `member`, `from`, `to`, `due_on`) |
 | GET | `/api/boards/{board_id}/analytics/throughput` | Token | 200 | 400, 401, 403, 404 | Board throughput |
 | GET | `/api/analytics/throughput` | Token | 200 | 400, 401, 403 | Cross-board throughput |
 
@@ -276,7 +276,7 @@ User administration (Admin only).
 
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
-| GET | `/api/users` | Token | 200 | 401, 403 | List users |
+| GET | `/api/users` | Token | 200 | 400, 401, 403 | List users sorted by role, then name; `page`, `per_page` (default 20, at most 100); `data` of `{ items, page, per_page, total }` |
 | POST | `/api/users` | Token | 201 | 400, 401, 403, 409, 422 | Create a user |
 | PATCH | `/api/users/{user_id}` | Token | 200 | 400, 401, 403, 404, 409, 422 | Update a user, assign a role, or set `is_active` and `is_available` (there is no delete) |
 | POST | `/api/users/me/avatar` | Token | 200 | 400, 401 | Upload my avatar |

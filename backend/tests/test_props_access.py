@@ -28,11 +28,11 @@ def oracle(action, rel):
     if action == "comment":
         if not acc:
             return denied(rel)
-        return 201 if rel in {"manager", "owner", "sup_member", "sup_other", "member", "member_other"} else 403
+        return 201 if rel in {"manager", "owner", "sup_member"} else 403  # V18: staff only; the card has no assignee (PERM-05)
     if action == "analytics":
         if rel == "guest":
             return 401
-        return 200 if rel in ("manager", "owner") else 403
+        return 200 if rel in ("manager", "admin", "owner") else 403  # V18: an Admin reads analytics (DASH-23)
     if action == "activity":
         if not acc:
             return denied(rel)

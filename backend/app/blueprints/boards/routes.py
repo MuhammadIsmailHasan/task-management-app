@@ -13,6 +13,7 @@ from app.blueprints.boards.schema import (
     CandidateSchema,
     MembersQuerySchema,
     ShareSchema,
+    BoardListQuerySchema,
     BoardSchema,
     CreateBoardSchema,
     UpdateBoardSchema,
@@ -42,9 +43,10 @@ def create_board(data):
 @bp.route("/boards", methods=["GET"])
 @endpoint(bp, "List my boards", "Owner or member Boards for Member and Supervisor; every Board for Manager and Admin. No Token: 401.", errors=(401,))
 @require_role(*USERS)
+@bp.arguments(BoardListQuerySchema, location="query")
 @bp.response(200, envelope(BoardSchema, many=True))
-def list_boards():
-    boards, counts = service.list_boards(current_actor())
+def list_boards(args):
+    boards, counts = service.list_boards(current_actor(), args.get("q"), args["sort"], args["order"])
     return ok([serialize_board(b, counts=counts.get(b.id)) for b in boards])
 
 

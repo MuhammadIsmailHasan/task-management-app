@@ -113,7 +113,7 @@ def test_weeks_validation_and_roles(world):  # noqa: F811
     assert series(world, "supervisor").status_code == 200  # owner
     assert series(world, "other_sup").status_code == 403
     assert series(world, "member").status_code == 403
-    assert series(world, "admin").status_code == 403
+    assert series(world, "admin").status_code == 200  # V18: an Admin reads analytics
     assert world.client.get(f"/api/boards/{world.board['id']}/analytics/throughput").status_code == 401
     assert series(world, path="/api/boards/00000000-0000-0000-0000-000000000000/analytics/throughput").status_code == 404
 

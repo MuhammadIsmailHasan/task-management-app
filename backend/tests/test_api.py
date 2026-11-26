@@ -136,7 +136,9 @@ def test_card_crud_permissions_validation(world):
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 403
     r = c.patch(f"/api/cards/{cid}", headers=world.h["supervisor"], json={"assignee_id": str(world.users["member"].id)})
     assert r.status_code == 200
-    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 200
+    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 403  # description only (PERM-03)
+    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"description": "n", "title": "n"}).status_code == 403
+    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"description": "n"}).status_code == 200
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"assignee_id": None}).status_code == 403
     assert c.patch(f"/api/cards/{cid}", headers=world.h["other_sup"], json={"title": "n"}).status_code == 403
     assert c.post(f"/api/cards/{cid}/archive", headers=world.h["supervisor"]).get_json()["data"]["archived_at"]
@@ -255,7 +257,7 @@ def test_guest_on_board(world):
 def test_categories(world):
     c, bid = world.client, world.board["id"]
     h = world.h["supervisor"]
-    cat = c.post(f"/api/boards/{bid}/categories", headers=h, json={"name": "Bug", "color": "#f00"}).get_json()["data"]
+    cat = c.post(f"/api/boards/{bid}/categories", headers=h, json={"name": "Bug", "color": "red"}).get_json()["data"]
     assert c.post(f"/api/boards/{bid}/categories", headers=h, json={"name": "bug"}).status_code == 409
     other = c.post(f"/api/boards/{bid}/categories", headers=h, json={"name": "Feat"}).get_json()["data"]
     assert c.patch(f"/api/categories/{other['id']}", headers=h, json={"name": "BUG"}).status_code == 409
@@ -272,6 +274,8 @@ def test_comments_flow(world):
     c = world.client
     card = mkcard(world)
     url = f"/api/cards/{card['id']}/comments"
+    assert c.post(url, headers=world.h["member"], json={"content": "x"}).status_code == 403  # not the assignee (PERM-05)
+    c.patch(f"/api/cards/{card['id']}", headers=world.h["supervisor"], json={"assignee_id": str(world.users["member"].id)})
     assert c.post(url, headers=world.h["member"], json={"content": "  "}).get_json()["error"]["details"]["content"][0] == "content is required"
     assert c.post(url, headers=world.h["admin"], json={"content": "x"}).status_code == 403
     assert c.post(url, json={"content": "x"}).status_code == 401  # private board
@@ -280,17 +284,17 @@ def test_comments_flow(world):
     r1 = c.post(f"/api/comments/{m2['id']}/replies", headers=world.h["supervisor"], json={"content": "r1"}).get_json()["data"]
     assert c.post(f"/api/comments/{r1['id']}/replies", headers=world.h["supervisor"], json={"content": "deep"}).status_code == 400
     c.post(f"/api/comments/{m2['id']}/replies", headers=world.h["supervisor"], json={"content": "r2"})
-    pop = c.get(url + "?sort=popular", headers=world.h["supervisor"]).get_json()["data"]
+    pop = c.get(url + "?sort=popular", headers=world.h["supervisor"]).get_json()["data"]["items"]
     assert [x["content"] for x in pop] == ["m2", "m1"] and pop[0]["reply_count"] == 2
     assert [r["content"] for r in pop[0]["replies"]] == ["r1", "r2"]
     assert pop[1]["can_create_card"] is True and pop[0]["can_create_card"] is False
-    latest = c.get(url, headers=world.h["member"]).get_json()["data"]
+    latest = c.get(url, headers=world.h["member"]).get_json()["data"]["items"]
     assert [x["content"] for x in latest] == ["m2", "m1"]
     assert latest[0]["can_create_card"] is False
     assert c.patch(f"/api/comments/{m1['id']}/priority", headers=world.h["supervisor"]).status_code == 403
     assert c.patch(f"/api/comments/{m1['id']}/priority").status_code == 401
     assert c.patch(f"/api/comments/{m1['id']}/priority", headers=world.h["manager"]).get_json()["data"]["is_priority"] is True
-    latest = c.get(url, headers=world.h["member"]).get_json()["data"]
+    latest = c.get(url, headers=world.h["member"]).get_json()["data"]["items"]
     assert [x["content"] for x in latest] == ["m1", "m2"]
     assert c.patch(f"/api/comments/{m1['id']}/priority", headers=world.h["manager"]).get_json()["data"]["is_priority"] is False
 
@@ -300,11 +304,12 @@ def test_comment_and_activity_names(world):
     c = world.client
     card = mkcard(world)
     url = f"/api/cards/{card['id']}/comments"
+    c.patch(f"/api/cards/{card['id']}", headers=world.h["supervisor"], json={"assignee_id": str(world.users["member"].id)})
     made = c.post(url, headers=world.h["manager"], json={"content": "hello"}).get_json()["data"]
     reply = c.post(f"/api/comments/{made['id']}/replies", headers=world.h["member"], json={"content": "hi"}).get_json()["data"]
     assert made["author_name"] == world.users["manager"].full_name
     assert reply["author_name"] == world.users["member"].full_name
-    listed = c.get(url, headers=world.h["supervisor"]).get_json()["data"]
+    listed = c.get(url, headers=world.h["supervisor"]).get_json()["data"]["items"]
     assert listed[0]["author_name"] == world.users["manager"].full_name
     assert listed[0]["replies"][0]["author_name"] == world.users["member"].full_name
     detail = c.get(f"/api/cards/{card['id']}", headers=world.h["supervisor"]).get_json()["data"]
@@ -488,8 +493,8 @@ def test_analytics(world):
     assert (d["total"], d["done"], d["in_progress"], d["overdue"], d["done_delta"]) == (3, 1, 1, 1, 1)
     assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["supervisor"]).status_code == 200  # owner
     assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["other_sup"]).status_code == 403
-    for who in ("member", "admin"):
-        assert c.get(f"/api/boards/{bid}/analytics", headers=world.h[who]).status_code == 403
+    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["member"]).status_code == 403
+    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["admin"]).status_code == 200  # V18: an Admin reads analytics
     assert c.get(f"/api/boards/{bid}/analytics").status_code == 401
     assert len(c.get("/api/analytics/boards", headers=world.h["manager"]).get_json()["data"]) == 1
     assert c.get("/api/analytics/boards", headers=world.h["supervisor"]).status_code == 403
@@ -523,7 +528,7 @@ def test_user_admin(world):
     actions = {a.action for a in ActivityLog.query.all()}
     assert {"user.created", "user.updated", "user.role_changed"} <= actions
     assert c.patch(f"/api/users/{uid}", headers=world.h["admin"], json={"role": "root"}).status_code == 400
-    assert len(c.get("/api/users", headers=world.h["admin"]).get_json()["data"]) >= 7
+    assert c.get("/api/users", headers=world.h["admin"]).get_json()["data"]["total"] >= 7
 
 
 # ---- cross-cutting ----

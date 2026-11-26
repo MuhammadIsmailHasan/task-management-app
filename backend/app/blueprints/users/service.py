@@ -17,8 +17,8 @@ from app.common.signing import verify_avatar_signature
 from app.extensions import db
 
 
-def list_users():
-    return repo.list_all()
+def list_users(page=1, per_page=20):
+    return repo.list_page(page, per_page)
 
 
 def _role(value):

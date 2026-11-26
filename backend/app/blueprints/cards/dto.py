@@ -51,11 +51,33 @@ def progress_fields(subtasks):
     return {"progress": progress, "subtask_done_count": done, "subtask_total_count": total}
 
 
-def serialize_subtask(s):
-    return {"id": str(s.id), "card_id": str(s.card_id), "title": s.title, "is_done": s.is_done, "order": s.order}
+def item_can_edit(viewer, created_by_id, assignee_id):
+    """`can_edit` of a subtask or an attachment for this viewer (PERM-01). Staff: always; an assigned Member: own items."""
+    if viewer is None:
+        return False
+    if viewer.role != "member":
+        return True
+    return (
+        assignee_id is not None
+        and str(assignee_id) == viewer.id
+        and created_by_id is not None
+        and str(created_by_id) == viewer.id
+    )
 
 
-def serialize_attachment(a, now=None, scope=None):
+def serialize_subtask(s, viewer=None, assignee_id=None):
+    return {
+        "id": str(s.id),
+        "card_id": str(s.card_id),
+        "title": s.title,
+        "is_done": s.is_done,
+        "order": s.order,
+        "created_by_id": str(s.created_by_id) if s.created_by_id else None,
+        "can_edit": item_can_edit(viewer, s.created_by_id, assignee_id),
+    }
+
+
+def serialize_attachment(a, now=None, scope=None, viewer=None, assignee_id=None):
     data = {
         "id": str(a.id),
         "card_id": str(a.card_id),
@@ -64,6 +86,8 @@ def serialize_attachment(a, now=None, scope=None):
         "url": a.url,
         "file_url": None,
         "expires_at": None,
+        "created_by_id": str(a.created_by_id) if a.created_by_id else None,
+        "can_edit": item_can_edit(viewer, a.created_by_id, assignee_id),
     }
     if a.file_path:
         from datetime import datetime, timezone
@@ -94,9 +118,9 @@ def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, act
         "order": card.order,
         "archived_at": iso(card.archived_at),
         "due_state": due,
-        "subtasks": [serialize_subtask(s) for s in subtasks],
+        "subtasks": [serialize_subtask(s, viewer, card.assignee_id) for s in subtasks],
         **progress_fields(subtasks),
-        "attachments": [serialize_attachment(a) for a in attachments],
+        "attachments": [serialize_attachment(a, viewer=viewer, assignee_id=card.assignee_id) for a in attachments],
     }
     # Guests never get comments or activity.
     if viewer is not None:

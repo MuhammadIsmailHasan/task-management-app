@@ -77,7 +77,7 @@ def test_property_11_member_move_scope(client, assigned, actor):
 @given(content=st.one_of(st.text(alphabet=" \t\n", max_size=5), st.text(min_size=1, max_size=40).filter(lambda s: s.strip())))
 def test_property_22_blank_comments_rejected(client, content):
     env = Env(client)
-    card = env.card()
+    card = env.card(assignee_id=env.uid("member"))
     r = client.post(f"/api/cards/{card['id']}/comments", headers=env.h["member"], json={"content": content})
     if content.strip():
         assert r.status_code == 201
@@ -92,7 +92,7 @@ def test_property_22_blank_comments_rejected(client, content):
 @given(replies=st.lists(st.integers(0, 3), max_size=12))
 def test_property_23_reply_count_and_depth_cap(client, replies):
     env = Env(client)
-    card = env.card()
+    card = env.card(assignee_id=env.uid("member"))
     tops = [client.post(f"/api/cards/{card['id']}/comments", headers=env.h["member"], json={"content": f"t{i}"}).get_json()["data"] for i in range(4)]
     counts = [0] * 4
     last = None
@@ -117,7 +117,7 @@ def test_property_23_reply_count_and_depth_cap(client, replies):
 def test_property_24_to_27_comment_listing(client, spec, flags, sort, viewer):
     with Ticker():
         env = Env(client)
-        card = env.card()
+        card = env.card(assignee_id=env.uid("member"))
         tops = []
         for author, n_replies in spec:
             t = client.post(f"/api/cards/{card['id']}/comments", headers=env.h[author], json={"content": "t"}).get_json()["data"]
@@ -130,7 +130,7 @@ def test_property_24_to_27_comment_listing(client, spec, flags, sort, viewer):
             for _ in range(t[2]):
                 client.post(f"/api/comments/{t[0]}/replies", headers=env.h["member"], json={"content": "r"})
         url = f"/api/cards/{card['id']}/comments" + (f"?sort={sort}" if sort else "")
-        got = client.get(url, headers=env.h[viewer]).get_json()["data"]
+        got = client.get(url, headers=env.h[viewer]).get_json()["data"]["items"]
         idx = {t[0]: i for i, t in enumerate(tops)}  # creation order = time order
         prio = sorted((t for t in tops if t[3]), key=lambda t: -idx[t[0]])
         rest = [t for t in tops if not t[3]]
@@ -326,7 +326,7 @@ def test_property_33_analytics_access_and_correctness(client, app, cards, actor)
     r = client.get(f"/api/boards/{env.bid}/analytics", headers=env.h[actor])
     if actor == "guest":
         assert r.status_code == 401
-    elif actor in ("manager", "owner"):
+    elif actor in ("manager", "owner", "admin"):
         d = r.get_json()["data"]
         assert d["total"] == len(live)
         assert d["done"] == sum(1 for col, _ in live if col == 4)
@@ -337,7 +337,7 @@ def test_property_33_analytics_access_and_correctness(client, app, cards, actor)
     else:
         assert r.status_code == 403
     allb = client.get("/api/analytics/boards", headers=env.h[actor])
-    assert allb.status_code == (200 if actor == "manager" else (401 if actor == "guest" else 403))
+    assert allb.status_code == (200 if actor in ("manager", "admin") else (401 if actor == "guest" else 403))
 
 
 # ---- Property 35: search and filter ----

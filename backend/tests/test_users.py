@@ -20,7 +20,7 @@ def code(r):
 
 # ---- the Admin screen (ADM-02, ADM-03) ----
 def test_the_user_list_carries_both_flags_and_no_pending_email(world):
-    rows = world.client.get("/api/users", headers=world.h["admin"]).get_json()["data"]
+    rows = world.client.get("/api/users", headers=world.h["admin"]).get_json()["data"]["items"]
     assert all(r["is_active"] is True and r["is_available"] is True for r in rows)
     assert "pending_email" not in str(rows)
 

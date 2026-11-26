@@ -1,7 +1,7 @@
 from flask_smorest import Blueprint
 
 from app.blueprints.comments import service
-from app.blueprints.comments.schema import CommentListQuerySchema, CommentSchema, DeletedSchema, CreateCommentSchema, ReplySchema
+from app.blueprints.comments.schema import CommentListQuerySchema, CommentPageSchema, CommentSchema, DeletedSchema, CreateCommentSchema, ReplySchema
 from app.common.auth import current_actor, require_role
 from app.common.docs import endpoint
 from app.common.envelope import envelope
@@ -49,9 +49,9 @@ def delete_comment(comment_id):
 
 
 @bp.route("/cards/<card_id>/comments", methods=["GET"])
-@endpoint(bp, "List comments", "Priority comments first, then latest or popular; replies oldest first. Requires board access.")
+@endpoint(bp, "List comments", "Priority comments first, then latest or popular; replies oldest first. Paged with `limit` and `offset` (all when `limit` is absent). Requires board access.")
 @require_role(*USERS)
 @bp.arguments(CommentListQuerySchema, location="query")
-@bp.response(200, envelope(CommentSchema, many=True))
+@bp.response(200, envelope(CommentPageSchema))
 def list_comments(args, card_id):
-    return ok(service.list_for_request(current_actor(), card_id, args.get("sort")))
+    return ok(service.list_for_request(current_actor(), card_id, args.get("sort"), args.get("limit"), args["offset"]))

@@ -10,6 +10,7 @@ from app.blueprints.auth import repository as users
 from app.blueprints.boards import repository as boards_repo
 from app.blueprints.boards import service as boards
 from app.blueprints.cards import repository as repo
+from app.common import card_policy as policy
 from app.blueprints.cards.dto import check_dates, serialize_attachment, serialize_card, validate_card_fields
 from app.blueprints.notifications import repository as notif_repo
 from app.common import clock, ordering
@@ -42,16 +43,21 @@ def load_card(actor, card_id):
     return card, board
 
 
-def _require_edit(actor, card, board, assignment=False):
-    """Member only when assigned; staff roles need Board_Staff_Access."""
+def _require(allowed, message="You cannot do this on this card"):
+    if not allowed:
+        raise Forbidden(message)
+
+
+def _require_fields_edit(actor, card, board, keys):
+    """Staff edit any field; the assigned Member edits the description alone (PERM-03)."""
     if actor is None:
         raise Forbidden("Authentication required")
-    if actor.role == "member":
-        if assignment or card.assignee_id is None or str(card.assignee_id) != actor.id:
-            raise Forbidden("Members can only edit cards assigned to them")
+    if policy.is_staff(actor, board):
         return
-    if not boards.can_write_staff(actor, board):
-        raise Forbidden("Staff access required")
+    if not policy.is_assignee(actor, card):
+        raise Forbidden("Members can only edit cards assigned to them")
+    if set(keys) - {"description"}:
+        raise Forbidden("Members can only edit the description")
 
 
 def get_card(actor, card_id):
@@ -138,6 +144,8 @@ def _assign(actor, card, assignee_id, board):
     user = users.get_by_id(uid) if uid else None
     if user is None:
         raise ValidationError("assignee_id must reference an existing user")
+    if user.role in ("manager", "admin"):
+        raise ValidationError("Managers and admins cannot be assigned", details={"assignee_id": ["Managers and admins cannot be assigned"]})
     if card.assignee_id != user.id and not (user.is_active and user.is_available):
         raise ValidationError("The user is not available to be assigned", details={"assignee_id": ["The user is inactive or unavailable"]})
     if not (board.owner_id == user.id or boards_repo.is_member(board.id, user.id)):
@@ -174,7 +182,7 @@ def _change(key, old, new):
 def update_card(actor, card_id, data):
     card, board = load_card(actor, card_id)
     assignment = "assignee_id" in data
-    _require_edit(actor, card, board, assignment=assignment)
+    _require_fields_edit(actor, card, board, data.keys())
     fields = validate_card_fields(data, partial=True)
     _apply_category(fields, data, board)
     start = fields.get("start_date", card.start_date) if "start_date" in fields else card.start_date
@@ -246,7 +254,7 @@ def set_archived(actor, card_id, archived):
 
 def move_card(actor, card_id, data):
     card, board = load_card(actor, card_id)
-    _require_edit(actor, card, board)
+    _require(policy.can_move(actor, card, board), "Members can only move cards assigned to them")
     if card.archived_at is not None:
         raise CardArchived("An archived card cannot be moved")
     col_id = to_uuid(data.get("column_id"))
@@ -303,12 +311,12 @@ def move_card(actor, card_id, data):
 
 def add_subtask(actor, card_id, data):
     card, board = load_card(actor, card_id)
-    _require_edit(actor, card, board)
+    _require(policy.can_add_item(actor, card, board), "Only the assignee and board staff can add subtasks")
     title = data.get("title")
     if not isinstance(title, str) or not title.strip():
         raise ValidationError("title is required")
     current = repo.max_subtask_order(card.id)
-    sub = repo.add_subtask(card.id, title.strip(), 1.0 if current is None else current + 1)
+    sub = repo.add_subtask(card.id, title.strip(), 1.0 if current is None else current + 1, _aid(actor))
     activity.add(
         _aid(actor), "card.subtask_added", "card", card.id, {"subtask_id": str(sub.id), "title": sub.title, "card_title": card.title}
     )
@@ -323,12 +331,15 @@ def _load_subtask(actor, subtask_id):
     if sub is None:
         raise NotFound("Subtask not found")
     card, board = load_card(actor, sub.card_id)
-    _require_edit(actor, card, board)
-    return sub, card
+    return sub, card, board
 
 
 def update_subtask(actor, subtask_id, data):
-    sub, card = _load_subtask(actor, subtask_id)
+    sub, card, board = _load_subtask(actor, subtask_id)
+    if set(data) - {"is_done"}:
+        _require(policy.can_edit_item(actor, card, board, sub.created_by_id), "You can only change subtasks you created")
+    else:
+        _require(policy.can_check_subtask(actor, card, board), "Only the assignee and board staff can check subtasks")
     changed = False  # a reorder alone does not notify (NPF-04)
     if "title" in data:
         if not isinstance(data["title"], str) or not data["title"].strip():
@@ -380,7 +391,8 @@ def reorder_subtasks(sub, data):
 
 
 def delete_subtask(actor, subtask_id):
-    sub, card = _load_subtask(actor, subtask_id)
+    sub, card, board = _load_subtask(actor, subtask_id)
+    _require(policy.can_edit_item(actor, card, board, sub.created_by_id), "You can only delete subtasks you created")
     repo.delete_subtask(sub)
     activity.add(
         _aid(actor), "card.subtask_removed", "card", card.id, {"subtask_id": str(sub.id), "title": sub.title, "card_title": card.title}
@@ -393,7 +405,7 @@ def delete_subtask(actor, subtask_id):
 
 def add_attachment(actor, card_id, json_data, upload):
     card, board = load_card(actor, card_id)
-    _require_edit(actor, card, board)
+    _require(policy.can_add_item(actor, card, board), "Only the assignee and board staff can add attachments")
     if upload is not None and upload.filename:
         ext = os.path.splitext(upload.filename)[1].lower()
         mime = upload.mimetype or mimetypes.guess_type(upload.filename)[0] or ""
@@ -403,13 +415,13 @@ def add_attachment(actor, card_id, json_data, upload):
         os.makedirs(directory, exist_ok=True)
         stored = f"{uuidlib.uuid4().hex}{ext}"
         upload.save(os.path.join(directory, stored))
-        att = repo.add_attachment(card_id=card.id, name=upload.filename[:255], file_path=stored, mime_type=mime)
+        att = repo.add_attachment(card_id=card.id, name=upload.filename[:255], file_path=stored, mime_type=mime, created_by_id=_aid(actor))
     else:
         url = json_data.get("url")
         if not isinstance(url, str) or not url.strip() or not url.lower().startswith(("http://", "https://")):
             raise ValidationError("Provide an http(s) url or a file")
         name = (json_data.get("name") or url).strip()[:255]
-        att = repo.add_attachment(card_id=card.id, name=name, url=url.strip())
+        att = repo.add_attachment(card_id=card.id, name=name, url=url.strip(), created_by_id=_aid(actor))
     activity.add(
         _aid(actor), "card.attachment_added", "card", card.id, {"attachment_id": str(att.id), "name": att.name, "card_title": card.title}
     )
@@ -428,7 +440,7 @@ def _load_attachment(actor, attachment_id):
 
 def delete_attachment(actor, attachment_id):
     att, card, board = _load_attachment(actor, attachment_id)
-    _require_edit(actor, card, board)
+    _require(policy.can_edit_item(actor, card, board, att.created_by_id), "You can only delete attachments you added")
     path = att.file_path
     repo.delete_attachment(att)
     activity.add(
@@ -534,7 +546,9 @@ def group_key(end_date, today):
 def my_cards(actor):
     """The caller's open Cards in time groups, empty groups left out (Requirement 52). An Admin cannot be an assignee: empty."""
     today = clock.today(current_app.config["APP_TIMEZONE"])
-    rows = repo.assigned_open(to_uuid(actor.id)) if actor.role != "admin" else []
+    if actor.role in ("manager", "admin"):
+        raise Forbidden("My tasks is for members and supervisors")
+    rows = repo.assigned_open(to_uuid(actor.id))
     buckets = {key: [] for key in MY_GROUPS}
     for r in rows:
         buckets[group_key(r.end_date, today)].append(r)

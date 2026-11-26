@@ -4,7 +4,7 @@ from flask_smorest import Blueprint
 from app.blueprints.auth.dto import serialize_user, serialize_user_admin
 from app.blueprints.auth.schema import AdminUserSchema, UserSchema
 from app.blueprints.users import service
-from app.blueprints.users.schema import CreateUserSchema, UpdateUserSchema
+from app.blueprints.users.schema import CreateUserSchema, UpdateUserSchema, UserListQuerySchema, UserPageSchema
 from app.common.auth import current_actor, require_role
 from app.common.docs import endpoint
 from app.common.envelope import envelope
@@ -14,11 +14,13 @@ bp = Blueprint("users", __name__, description="User administration (Admin only)"
 
 
 @bp.route("/users", methods=["GET"])
-@endpoint(bp, "List users", "Admin only.", errors=(401, 403))
+@endpoint(bp, "List users", "Admin only. Sorted by role, then name; paged with `page` and `per_page` (default 20, at most 100).", errors=(401, 403))
 @require_role("admin")
-@bp.response(200, envelope(AdminUserSchema, many=True))
-def list_users():
-    return ok([serialize_user_admin(u) for u in service.list_users()])
+@bp.arguments(UserListQuerySchema, location="query")
+@bp.response(200, envelope(UserPageSchema))
+def list_users(args):
+    rows, total = service.list_users(args["page"], args["per_page"])
+    return ok({"items": [serialize_user_admin(u) for u in rows], "page": args["page"], "per_page": args["per_page"], "total": total})
 
 
 @bp.route("/users", methods=["POST"])
