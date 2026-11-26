@@ -29,7 +29,7 @@ interface CardAttributesProps {
   categories: Category[];
   members: Member[];
   /** The Card's own assignee name and avatar, for an assignee who is no longer on the member list. */
-  assigneeFallback?: { name: string; avatar_url: string | null } | null;
+  assigneeFallback?: { name: string; avatar_url: string | null; inactive?: boolean; unavailable?: boolean } | null;
   columnName?: string;
   /** May change category, priority, and dates. */
   canEdit: boolean;
@@ -46,7 +46,7 @@ interface CardAttributesProps {
 const PRIORITY_COLOR: Record<Priority, string> = { high: "text-label-red-fg", medium: "text-label-orange-fg", low: "text-label-green-fg" };
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
 
-const row = "h-auto min-h-control w-full justify-start gap-3 px-3 text-sm font-normal text-ink";
+const row = "h-auto min-h-control-sm w-auto justify-start gap-2 rounded-full px-4 text-sm font-medium text-ink";
 
 /** The icon and the text of one attribute row; every row has the same height, font, and icon size. */
 function RowContent({ icon: Icon, iconClass, lead, children }: { icon: LucideIcon; iconClass?: string; lead?: ReactNode; children: ReactNode }) {
@@ -60,7 +60,7 @@ function RowContent({ icon: Icon, iconClass, lead, children }: { icon: LucideIco
 
 function StaticRow({ icon, iconClass, lead, label, children, danger }: { icon: LucideIcon; iconClass?: string; lead?: ReactNode; label: string; children: ReactNode; danger?: boolean }) {
   return (
-    <div role="group" aria-label={label} className={cn("flex min-h-control w-full items-center gap-3 rounded-sm border border-line px-3 text-sm", danger && "text-danger")}>
+    <div role="group" aria-label={label} className={cn("flex min-h-control-sm w-fit max-w-full items-center gap-2 rounded-full border border-line px-4 text-sm font-medium", danger && "text-danger")}>
       <RowContent icon={icon} iconClass={iconClass} lead={lead}>
         {children}
       </RowContent>
@@ -68,7 +68,7 @@ function StaticRow({ icon, iconClass, lead, label, children, danger }: { icon: L
   );
 }
 
-/** Column, category, priority, dates, and assignee as plain icon rows; each editable row opens a searchable select or a popover on the draft. */
+/** The attribute chip row (CM-02): status (read-only), priority, assignee, dates, and category as pills; each editable chip opens a select or a popover and saves on its own. */
 export function CardAttributes({ value, onChange, categories, members, assigneeFallback, columnName, canEdit, canAssign, overdue, status = {}, onRetry, onDatesClose }: CardAttributesProps) {
   const state = (field: FieldKey) => <FieldStatus field={field} state={status[field]} onRetry={onRetry ? () => onRetry(field) : undefined} />;
   const [datesOpen, setDatesOpen] = useState(false);
@@ -117,34 +117,13 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
   const categoryText = category?.name ?? "No label";
   const assigneeName = assignee?.full_name ?? (value.assignee_id && assigneeFallback ? assigneeFallback.name : null);
   const assigneeText = assigneeName ?? "Unassigned";
-  const assigneeLead = assigneeName ? <BaseAvatar name={assigneeName} src={assignee?.avatar_url ?? assigneeFallback?.avatar_url} /> : undefined;
+  const assigneeLead = assigneeName ? <BaseAvatar name={assigneeName} src={assignee?.avatar_url ?? assigneeFallback?.avatar_url} inactive={assigneeFallback?.inactive} unavailable={assigneeFallback?.unavailable} /> : undefined;
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div role="group" aria-label="Card attributes" className="flex flex-wrap items-start gap-2">
       <StaticRow icon={Columns3} label={`Column: ${columnName ?? ""}`}>
         {columnName ?? "No column"}
       </StaticRow>
-
-      <div className="flex min-w-0 flex-col gap-1">
-      {canEdit ? (
-        <BaseCombobox
-          label="Label"
-          options={categoryOptions}
-          value={value.category_id}
-          onChange={(v) => onChange({ category_id: v })}
-          trigger={
-            <BaseButton variant="secondary" className={row} aria-label={`Label: ${categoryText}`}>
-              <RowContent icon={Tag}><span className="lowercase">{categoryText}</span></RowContent>
-            </BaseButton>
-          }
-        />
-      ) : (
-        <StaticRow icon={Tag} label={`Label: ${categoryText}`}>
-          <span className="lowercase">{categoryText}</span>
-        </StaticRow>
-      )}
-      {state("category_id")}
-      </div>
 
       <div className="flex min-w-0 flex-col gap-1">
       {canEdit ? (
@@ -169,6 +148,29 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
       {state("priority")}
       </div>
 
+      <div className="flex min-w-0 flex-col gap-1">
+      {canAssign ? (
+        <BaseCombobox
+          label="Assignee"
+          options={memberOptions}
+          value={value.assignee_id}
+          searchable
+          onChange={(v) => onChange({ assignee_id: v })}
+          trigger={
+            <BaseButton variant="secondary" className={row} aria-label={`Assignee: ${assigneeText}`}>
+              <RowContent icon={UserIcon} lead={assigneeLead}>
+                {assigneeText}
+              </RowContent>
+            </BaseButton>
+          }
+        />
+      ) : (
+        <StaticRow icon={UserIcon} lead={assigneeLead} label={`Assignee: ${assigneeText}`}>
+          {assigneeText}
+        </StaticRow>
+      )}
+      {state("assignee_id")}
+      </div>
       <div className="flex min-w-0 flex-col gap-1">
       {canEdit ? (
         <BasePopover
@@ -198,28 +200,26 @@ export function CardAttributes({ value, onChange, categories, members, assigneeF
       </div>
 
       <div className="flex min-w-0 flex-col gap-1">
-      {canAssign ? (
+      {canEdit ? (
         <BaseCombobox
-          label="Assignee"
-          options={memberOptions}
-          value={value.assignee_id}
-          searchable
-          onChange={(v) => onChange({ assignee_id: v })}
+          label="Label"
+          options={categoryOptions}
+          value={value.category_id}
+          onChange={(v) => onChange({ category_id: v })}
           trigger={
-            <BaseButton variant="secondary" className={row} aria-label={`Assignee: ${assigneeText}`}>
-              <RowContent icon={UserIcon} lead={assigneeLead}>
-                {assigneeText}
-              </RowContent>
+            <BaseButton variant="secondary" className={row} aria-label={`Label: ${categoryText}`}>
+              <RowContent icon={Tag}><span className="lowercase">{categoryText}</span></RowContent>
             </BaseButton>
           }
         />
       ) : (
-        <StaticRow icon={UserIcon} lead={assigneeLead} label={`Assignee: ${assigneeText}`}>
-          {assigneeText}
+        <StaticRow icon={Tag} label={`Label: ${categoryText}`}>
+          <span className="lowercase">{categoryText}</span>
         </StaticRow>
       )}
-      {state("assignee_id")}
+      {state("category_id")}
       </div>
+
     </div>
   );
 }

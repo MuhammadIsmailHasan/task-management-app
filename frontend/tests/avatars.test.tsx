@@ -64,7 +64,7 @@ describe("avatars where people act", () => {
   };
   it("the board card shows the assignee image", () => {
     const { container } = render(
-      <CardTile card={card} assignee={{ full_name: "Ann Lee", avatar_url: card.assignee_avatar_url ?? null }} overdue={false} draggable={false} onOpen={vi.fn()} onDragStart={vi.fn()} onDragEnd={vi.fn()} />,
+      <CardTile card={card} assignee={{ full_name: "Ann Lee", avatar_url: card.assignee_avatar_url ?? null }} dueState={null} draggable={false} onOpen={vi.fn()} onDragStart={vi.fn()} onDragEnd={vi.fn()} />,
     );
     expect(container.querySelector("img")).not.toBeNull();
   });

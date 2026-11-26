@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { BaseButton } from "@/components/shared/BaseButton";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseAlert } from "@/components/shared/BaseField";
 import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
@@ -98,8 +98,9 @@ export function AvatarUploader({ user, onChange }: AvatarUploaderProps) {
             </>
           )}
           {!file && user.avatar_url && (
-            <BaseConfirm
-              message="Remove your avatar?"
+            <ConfirmDialog
+              title="Remove profile picture?"
+              message="Your initials are shown instead."
               confirmLabel="Remove"
               onConfirm={remove}
               trigger={

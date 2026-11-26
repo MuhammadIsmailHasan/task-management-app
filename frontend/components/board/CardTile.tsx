@@ -1,10 +1,10 @@
-import { CalendarDays, CircleCheck, Flag, Paperclip, SquareCheck, TriangleAlert } from "lucide-react";
+import { CalendarDays, CircleCheck, Clock, Flag, Paperclip, TriangleAlert } from "lucide-react";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { ProgressMeter } from "@/components/shared/ProgressMeter";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
 import { shortDate } from "@/lib/format";
 import { categoryTone, DOT } from "@/lib/tones";
-import type { Card, Category, Priority, Member } from "@/lib/types";
+import type { Card, Category, DueState, Priority, Member } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
@@ -12,8 +12,9 @@ const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "ac
 interface CardTileProps {
   card: Card;
   category?: Category;
-  assignee?: Pick<Member, "full_name" | "avatar_url">;
-  overdue: boolean;
+  assignee?: Pick<Member, "full_name" | "avatar_url"> & { inactive?: boolean; unavailable?: boolean };
+  /** From the Card's `due_state`; null in Done and without a date. */
+  dueState: DueState;
   /** The Card sits in the Done Column. */
   done?: boolean;
   draggable: boolean;
@@ -24,7 +25,9 @@ interface CardTileProps {
 }
 
 /** The card face, Trello style: label chips, title, a row of small badges, and the assignee avatar. */
-export function CardTile({ card, category, assignee, overdue, done = false, draggable, onOpen, onDragStart, onDragEnd }: CardTileProps) {
+export function CardTile({ card, category, assignee, dueState, done = false, draggable, onOpen, onDragStart, onDragEnd }: CardTileProps) {
+  const overdue = dueState === "overdue";
+  const tomorrow = dueState === "due_tomorrow";
   const total = card.subtasks.length;
   const doneCount = card.subtasks.filter((s) => s.is_done).length;
   return (
@@ -69,9 +72,9 @@ export function CardTile({ card, category, assignee, overdue, done = false, drag
       {total > 0 && <ProgressMeter done={doneCount} total={total} overdue={overdue} />}
       <div className="flex flex-wrap items-center gap-3 text-card-meta text-ink-muted">
         {card.end_date && (
-          <span className={cn("inline-flex items-center gap-1", overdue && "font-semibold text-danger")}>
-            {overdue ? <TriangleAlert className="size-icon-sm" aria-hidden="true" /> : <CalendarDays className="size-icon-sm" aria-hidden="true" />}
-            {overdue ? `Overdue · ${shortDate(card.end_date)}` : shortDate(card.end_date)}
+          <span className={cn("inline-flex items-center gap-1", overdue && "font-semibold text-danger", tomorrow && "font-semibold text-ink")}>
+            {overdue ? <TriangleAlert className="size-icon-sm" aria-hidden="true" /> : tomorrow ? <Clock className="size-icon-sm" aria-hidden="true" /> : <CalendarDays className="size-icon-sm" aria-hidden="true" />}
+            {overdue ? `Overdue · ${shortDate(card.end_date)}` : tomorrow ? `Due tomorrow · ${shortDate(card.end_date)}` : shortDate(card.end_date)}
           </span>
         )}
         {card.attachments.length > 0 && (
@@ -80,7 +83,7 @@ export function CardTile({ card, category, assignee, overdue, done = false, drag
             {card.attachments.length}
           </span>
         )}
-        {assignee && <BaseAvatar name={assignee.full_name} src={assignee.avatar_url} className="ml-auto" />}
+        {assignee && <BaseAvatar name={assignee.full_name} src={assignee.avatar_url} inactive={assignee.inactive} unavailable={assignee.unavailable} className="ml-auto" />}
       </div>
     </div>
   );

@@ -14,30 +14,29 @@ describe("one title per route (Requirement 32, TITLE-02)", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it.each([
-    ["(auth)/login", "Log in"],
-    ["(auth)/register", "Register"],
-    ["(app)/profile", "Profile"],
-    ["(app)/admin/users", "Users"],
-    ["(app)/invite/[token]", "Invitation"],
-    ["(app)/boards", "Home"],
+    ["app/(auth)/login", "Log in"],
+    ["app/(auth)/register", "Register"],
+    ["app/(shell)/profile", "Profile"],
+    ["app/(shell)/users", "Users"],
+    ["app/(shell)/invite/[token]", "Invitation"],
+    ["app/(shell)/boards", "Home"],
   ])("%s", async (route, name) => {
     const mod = await import(`../app/${route}/page`);
     expect(render(mod.metadata)).toBe(`RevoBoard | ${name}`);
   });
 
-  it("Board, Categories and Shared use the Board name and fall back when it cannot be read", async () => {
-    const params = Promise.resolve({ id: "b1", token: "t" });
+  it("Board and Shared use the Board name and fall back when it cannot be read", async () => {
+    const params = Promise.resolve({ slug: "alpha-board", token: "t" });
     mocks.serverGet.mockResolvedValue({ name: "Alpha Board" });
     mocks.request.mockResolvedValue({ name: "Alpha Board" });
-    const board = await import("../app/(app)/boards/[id]/page");
-    const cats = await import("../app/(app)/boards/[id]/categories/page");
-    const shared = await import("../app/shared/[token]/page");
+    const board = await import("../app/app/(shell)/b/[slug]/page");
+    const shared = await import("../app/app/shared/[token]/page");
     expect(render(await board.generateMetadata({ params }))).toBe("RevoBoard | Alpha Board");
-    expect(render(await cats.generateMetadata({ params }))).toBe("RevoBoard | Categories · Alpha Board");
     expect(render(await shared.generateMetadata({ params }))).toBe("RevoBoard | Shared · Alpha Board");
     mocks.serverGet.mockRejectedValue(new Error("x"));
     mocks.request.mockRejectedValue(new Error("x"));
     expect(render(await board.generateMetadata({ params }))).toBe("RevoBoard | Board");
+    expect(mocks.serverGet).toHaveBeenCalledWith("/boards/slug/alpha-board");
     expect((await shared.generateMetadata({ params })).robots).toEqual({ index: false, follow: false });
   });
 });

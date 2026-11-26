@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import type { Board, Member } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { boardPath } from "@/lib/routes";
 
 const AVATARS = 3;
 
@@ -18,7 +19,7 @@ export function BoardTile({ board, members }: { board: Board; members: Member[] 
 
   return (
     <Link
-      href={`/boards/${board.id}`}
+      href={boardPath(board.slug)}
       className="flex h-full flex-col overflow-hidden rounded-frame border border-line bg-surface-raised text-ink no-underline shadow-card transition-all duration-base ease-out hover:-translate-y-lift hover:shadow-hover focus-ring"
     >
       <div className="flex flex-1 flex-col gap-3 p-6">

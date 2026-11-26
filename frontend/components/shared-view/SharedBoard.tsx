@@ -11,6 +11,7 @@ import { columnTone, SOLID } from "@/lib/tones";
 import type { Category, SharedBoard as SharedBoardT, SharedCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { SharedCardModal } from "./SharedCardModal";
+import { routes } from "@/lib/routes";
 
 interface SharedBoardProps {
   token: string;
@@ -28,7 +29,6 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
   const doneId = board.columns.find((c) => c.name === "Done")?.id;
   const byCategory = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
@@ -44,11 +44,11 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
       <div role="status" className="flex shrink-0 flex-wrap items-center justify-between gap-2 bg-brand px-4 py-2 text-sm text-on-brand lg:px-8">
         <span>Shared view, read only</span>
         {signedIn ? (
-          <Link href="/boards" className="font-semibold text-on-accent-tint underline">
+          <Link href={routes.boards} className="font-semibold text-on-accent-tint underline">
             Go to Home
           </Link>
         ) : (
-          <Link href="/login" className="font-semibold text-on-accent-tint underline">
+          <Link href={routes.login} className="font-semibold text-on-accent-tint underline">
             Sign in
           </Link>
         )}
@@ -87,7 +87,7 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
                       card={card}
                       category={card.category_id ? byCategory.get(card.category_id) : undefined}
                       assignee={card.assignee_name ? { full_name: card.assignee_name, avatar_url: null } : undefined}
-                      overdue={!!card.end_date && card.end_date < today && col.id !== doneId}
+                      dueState={col.id === doneId ? null : (card.due_state ?? null)}
                       draggable={false}
                       onOpen={() => setOpenId(card.id)}
                       onDragStart={noop}

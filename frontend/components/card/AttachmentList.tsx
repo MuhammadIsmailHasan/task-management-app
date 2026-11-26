@@ -5,7 +5,7 @@ import { FileArchive, FileText, Link as LinkIcon, Plus, X } from "lucide-react";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox } from "@/components/shared/BaseCombobox";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BasePopover } from "@/components/shared/BasePopover";
 import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
@@ -85,8 +85,7 @@ export function AttachmentList({ cardId, attachments, canEdit, onChange }: Attac
                   <span className="truncate">{a.name}</span>
                 </a>
                 {canEdit && (
-                  <BaseConfirm
-                    variant="modal"
+                  <ConfirmDialog
                     title="Remove attachment?"
                     message={a.name}
                     confirmLabel="Remove"

@@ -11,16 +11,22 @@ import { computeDropOrder, needsRebalance } from "@/lib/ordering";
 import type { Board as BoardT, Card, Category, Comment, Member } from "@/lib/types";
 import { Board } from "./Board";
 import { BoardHeader } from "./BoardHeader";
+import { CalendarView } from "./CalendarView";
+import { ListView } from "./ListView";
 
 interface BoardViewProps {
+  /** Which view of the Board this page shows (Requirement 50); the toolbar, filters, and Card modal are shared. */
+  view?: "board" | "list" | "calendar";
   board: BoardT;
   initialCards: Card[];
   initialCategories: Category[];
+  /** The number of archived Cards, for the toolbar's Archived link. */
+  initialArchivedCount?: number;
 }
 
-export function BoardView({ board, initialCards, initialCategories }: BoardViewProps) {
+export function BoardView({ view = "board", board, initialCards, initialCategories, initialArchivedCount = 0 }: BoardViewProps) {
   const { session } = useShell();
-  const columns = board.columns ?? [];
+  const [columns, setColumns] = useState(board.columns ?? []);
   const [cards, setCards] = useState(initialCards);
   const [categories, setCategories] = useState(initialCategories);
   const [members, setMembers] = useState<Member[]>([]);
@@ -34,8 +40,11 @@ export function BoardView({ board, initialCards, initialCategories }: BoardViewP
   const router = useRouter();
   const cardParam = params.get("card");
   const [notice, setNotice] = useState<string | null>(null);
+  const [archivedCount, setArchivedCount] = useState(initialArchivedCount);
   const role = session?.role;
   const staff = role === "supervisor" || role === "manager" || role === "admin";
+  // the Board_Owner, a Manager, and an Admin manage Columns (COL-01)
+  const canManageColumns = !!session && (role === "manager" || role === "admin" || board.owner_id === session.userId);
 
   // Re-fetch the categories on a board switch, never from a hard-coded list.
   useEffect(() => {
@@ -74,6 +83,55 @@ export function BoardView({ board, initialCards, initialCategories }: BoardViewP
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardParam, board.id]);
+
+  const failColumn = (err: unknown, fallback: string) => setError(err instanceof ApiError ? err.message : fallback);
+
+  const columnActions = canManageColumns
+    ? {
+        onRename: async (id: string, name: string) => {
+          setError(null);
+          try {
+            const saved = await api.columns.rename(id, name);
+            setColumns((all) => all.map((c) => (c.id === id ? { ...c, ...saved } : c)));
+          } catch (err) {
+            failColumn(err, "Could not rename the column.");
+            throw err;
+          }
+        },
+        onMove: async (id: string, delta: -1 | 1) => {
+          const ordered = [...columns].sort((a, b) => a.order - b.order);
+          const from = ordered.findIndex((c) => c.id === id);
+          const to = from + delta;
+          if (from < 0 || to < 0 || to >= ordered.length) return;
+          const snapshot = columns;
+          const next = [...ordered];
+          next.splice(to, 0, next.splice(from, 1)[0]);
+          setError(null);
+          setColumns(next.map((c, i) => ({ ...c, order: i })));
+          try {
+            await api.columns.move(id, to);
+          } catch (err) {
+            setColumns(snapshot);
+            failColumn(err, "Could not move the column.");
+          }
+        },
+        onDelete: async (id: string) => {
+          setError(null);
+          await api.columns.remove(id); // a 409 keeps the dialog open with its message (COL-05)
+          setColumns((all) => all.filter((c) => c.id !== id));
+        },
+        onAdd: async (name: string) => {
+          setError(null);
+          try {
+            const created = await api.columns.create(board.id, name);
+            setColumns((all) => [...all, created]);
+          } catch (err) {
+            failColumn(err, "Could not add the column.");
+            throw err;
+          }
+        },
+      }
+    : undefined;
 
   function closeCard() {
     setOpenId(null);
@@ -151,6 +209,7 @@ export function BoardView({ board, initialCards, initialCategories }: BoardViewP
         search={search}
         onSearch={setSearch}
         onCategory={setCategoryId}
+        archivedCount={archivedCount}
       />
       {notice && (
         <div className="shrink-0 px-4 pt-4 lg:px-8">
@@ -162,17 +221,22 @@ export function BoardView({ board, initialCards, initialCategories }: BoardViewP
           <BaseAlert>{error}</BaseAlert>
         </div>
       )}
-      <Board
-        columns={columns}
-        cards={cards}
-        categories={categories}
-        members={members}
-        canMove={!!session}
-        canCreate={staff}
-        onOpen={(c) => setOpenId(c.id)}
-        onMove={onMove}
-        onCreate={onCreate}
-      />
+      {view === "list" && <ListView columns={columns} cards={cards} categories={categories} members={members} onOpen={(c) => setOpenId(c.id)} />}
+      {view === "calendar" && <CalendarView columns={columns} cards={cards} onOpen={(c) => setOpenId(c.id)} />}
+      {view === "board" && (
+        <Board
+          columns={columns}
+          cards={cards}
+          categories={categories}
+          members={members}
+          canMove={!!session}
+          canCreate={staff}
+          onOpen={(c) => setOpenId(c.id)}
+          onMove={onMove}
+          onCreate={onCreate}
+          columnActions={columnActions}
+        />
+      )}
       {open && (
         <CardModal
           cardId={open.id}
@@ -180,7 +244,7 @@ export function BoardView({ board, initialCards, initialCategories }: BoardViewP
           columns={columns}
           categories={categories}
           onClose={closeCard}
-          onChanged={(card) => setCards((all) => all.map((c) => (c.id === card.id ? { ...c, ...card } : c)))}
+          onChanged={(card) => setCards((all) => (card.archived_at ? (setArchivedCount((n) => n + 1), all.filter((c) => c.id !== card.id)) : all.map((c) => (c.id === card.id ? { ...c, ...card } : c))))}
           onDeleted={(id) => {
             setCards((all) => all.filter((c) => c.id !== id));
             closeCard();

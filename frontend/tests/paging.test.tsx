@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { currentPageSize, pageSizeFor } from "@/lib/paging";
 import type { Notification } from "@/lib/types";
 
-const note = (i: number): Notification => ({ id: `n${i}`, type: "assigned", board_id: "b", board_name: "B", card_id: "c", card_title: null, actor_name: null, is_read: true, notify_date: "2026-11-19", created_at: "2026-11-19T10:00:00Z" });
+const note = (i: number): Notification => ({ id: `n${i}`, type: "assigned", board_id: "b", board_slug: "b", board_name: "B", card_id: "c", card_title: null, actor_name: null, is_read: true, notify_date: "2026-11-19", created_at: "2026-11-19T10:00:00Z" });
 
 vi.mock("@/lib/api", () => ({ api: { notifications: { inbox: vi.fn(), markRead: vi.fn(), readAll: vi.fn() } } }));
 vi.mock("@/components/shell/ShellContext", () => ({

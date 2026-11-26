@@ -7,6 +7,7 @@ import { BaseAlert } from "@/components/shared/BaseField";
 import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import type { InviteLookup } from "@/lib/types";
+import { boardPath } from "@/lib/routes";
 
 /** The four states of an invitation: ask, waiting, already in, or staff (Requirement 24, criteria 23 and 24). */
 export function InviteJoin({ token, invite }: { token: string; invite: InviteLookup }) {
@@ -50,13 +51,13 @@ export function InviteJoin({ token, invite }: { token: string; invite: InviteLoo
       {state === "member" && (
         <>
           <p>You are already a member of this board.</p>
-          <Link href={`/boards/${board.id}`} className="font-semibold">Open board</Link>
+          <Link href={boardPath(board.slug)} className="font-semibold">Open board</Link>
         </>
       )}
       {state === "staff" && (
         <>
           <p>You already have access to every board.</p>
-          <Link href={`/boards/${board.id}`} className="font-semibold">Open board</Link>
+          <Link href={boardPath(board.slug)} className="font-semibold">Open board</Link>
         </>
       )}
     </div>

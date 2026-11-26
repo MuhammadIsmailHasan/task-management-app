@@ -3,14 +3,15 @@ import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { InviteModal } from "@/components/board/InviteModal";
 import { InviteJoin } from "@/components/invite/InviteJoin";
 import { BoardUnavailable } from "@/components/board/BoardUnavailable";
 import { BoardTile } from "@/components/board/BoardTile";
 import { CardTile } from "@/components/board/CardTile";
 import { InboxView } from "@/components/shell/InboxView";
 import { ShellContext } from "@/components/shell/ShellContext";
-import { TeamView } from "@/components/shell/TeamView";
+import { MembersView } from "@/components/shell/MembersView";
+import { ShareModal } from "@/components/board/ShareModal";
+import { shellValue } from "./support/shell";
 import { CommentThread } from "@/components/card/CommentThread";
 import { SubtaskChecklist } from "@/components/card/SubtaskChecklist";
 import { buildPatch, mergeSent, toDraft, type Draft, type FieldKey } from "@/lib/autosave";
@@ -30,22 +31,13 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 vi.mock("@/lib/api", () => ({ api: mocks.api }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/boards/b1", useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/app/b/alpha", useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
 const jwt = (claims: object) => `h.${btoa(JSON.stringify(claims))}.s`;
-const shell = (role: "manager" | "supervisor" | "member" | "admin", userId = "u1") => ({
-  session: { token: "t", userId, role, exp: 0 },
-  user: null,
-  boardId: "b1",
-  boards: [{ id: "b1", name: "Alpha", owner_id: "own", archived_at: null }] as Board[],
-  panel: null as "inbox" | "activity" | "team" | null,
-  inbox: { items: [], unread_count: 2 },
-  refreshInbox: vi.fn(),
-  toggleSidePanel: vi.fn(),
-  closeSidePanel: vi.fn(),
-  adjustUnread: vi.fn(),
-});
+const alpha = { id: "b1", slug: "alpha", name: "Alpha", owner_id: "own", archived_at: null } as Board;
+const shell = (role: "manager" | "supervisor" | "member" | "admin", userId = "u1") =>
+  shellValue({ session: { token: "t", userId, role, exp: 0 }, boardId: "b1", board: alpha, boards: [alpha], inbox: { items: [], unread_count: 2 } });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -53,17 +45,17 @@ beforeEach(() => {
 });
 
 const note = (over: Partial<Notification>): Notification => ({
-  id: "n1", type: "assigned", board_id: "b1", board_name: "Alpha", card_id: "c1", card_title: "Plan", actor_name: "Ada Lovelace",
+  id: "n1", type: "assigned", board_id: "b1", board_slug: "alpha", board_name: "Alpha", card_id: "c1", card_title: "Plan", actor_name: "Ada Lovelace",
   is_read: false, notify_date: "2026-11-21", created_at: "2026-11-21T10:00:00Z", ...over,
 });
 
 describe("Inbox links and sentences (Requirement 28)", () => {
   it.each([
-    [{ type: "assigned" as const }, "/boards/b1?card=c1"],
-    [{ type: "deadline" as const }, "/boards/b1?card=c1"],
-    [{ type: "board_join_requested" as const, card_id: null }, "/boards/b1?invite=1"],
-    [{ type: "board_added" as const, card_id: null }, "/boards/b1"],
-    [{ type: "board_join_rejected" as const, card_id: null }, "/boards"],
+    [{ type: "assigned" as const }, "/app/b/alpha?card=c1"],
+    [{ type: "deadline" as const }, "/app/b/alpha?card=c1"],
+    [{ type: "board_join_requested" as const, card_id: null }, "/app/b/alpha?invite=1"],
+    [{ type: "board_added" as const, card_id: null }, "/app/b/alpha"],
+    [{ type: "board_join_rejected" as const, card_id: null }, "/app/boards"],
   ])("%j goes to %s", (over, href) => expect(hrefFor(note(over))).toBe(href));
 
   it("writes the three new types as sentences with the actor and the board, and never an Email", () => {
@@ -83,7 +75,7 @@ describe("Inbox links and sentences (Requirement 28)", () => {
       </ShellContext.Provider>,
     );
     const rows = await screen.findAllByRole("link");
-    expect(rows.map((r) => r.getAttribute("href"))).toEqual(["/boards/b1?card=c1", "/boards/b1?invite=1"]);
+    expect(rows.map((r) => r.getAttribute("href"))).toEqual(["/app/b/alpha?card=c1", "/app/b/alpha?invite=1"]);
     await userEvent.click(rows[0]);
     expect(ctx.adjustUnread).toHaveBeenCalledWith(-1);
     expect(ctx.closeSidePanel).toHaveBeenCalled();
@@ -91,20 +83,21 @@ describe("Inbox links and sentences (Requirement 28)", () => {
   });
 });
 
-describe("proxy and Safe_Return_Path know /invite", () => {
+describe("proxy and Safe_Return_Path know /app/invite", () => {
   const call = (path: string, cookie?: string) => proxy(new NextRequest(`http://localhost:3000${path}`, cookie ? { headers: { cookie: `kanban_token=${cookie}` } } : undefined));
-  it("sends a visitor from an invite link to /login?next=/invite/<token>", () => {
-    const r = call("/invite/abc123");
+  it("sends a visitor from an invite link to /app/login?next=/app/invite/<token>", () => {
+    const r = call("/app/invite/abc123");
     expect(r.status).toBe(307);
-    expect(new URL(r.headers.get("location")!).searchParams.get("next")).toBe("/invite/abc123");
+    expect(new URL(r.headers.get("location")!).pathname).toBe("/app/login");
+    expect(new URL(r.headers.get("location")!).searchParams.get("next")).toBe("/app/invite/abc123");
   });
   it("lets a signed-in visitor through", () => {
-    expect(call("/invite/abc123", jwt({ sub: "u", role: "member", exp: 9_999_999_999 })).status).toBe(200);
+    expect(call("/app/invite/abc123", jwt({ sub: "u", role: "member", exp: 9_999_999_999 })).status).toBe(200);
   });
-  it("returns to /invite/ paths and nothing like them", () => {
-    expect(safeReturnPath("/invite/abc123")).toBe("/invite/abc123");
-    expect(safeReturnPath("/invitex")).toBe("/boards");
-    expect(safeReturnPath("//invite/abc")).toBe("/boards");
+  it("returns to /app/invite/ paths and nothing like them", () => {
+    expect(safeReturnPath("/app/invite/abc123")).toBe("/app/invite/abc123");
+    expect(safeReturnPath("/app/invitex")).toBe("/app/boards");
+    expect(safeReturnPath("//app/invite/abc")).toBe("/app/boards");
   });
 });
 
@@ -116,7 +109,7 @@ const boards = [{ id: "b1", name: "Alpha", owner_id: "own", archived_at: null } 
 const renderSidebar = (ctx: ReturnType<typeof shell>) =>
   render(
     <ShellContext.Provider value={ctx}>
-      <TeamView />
+      <MembersView />
     </ShellContext.Provider>,
   );
 
@@ -131,6 +124,12 @@ describe("Team view members (Requirement 22, V16 SHELL-19, SHELL-20)", () => {
     expect(screen.getByRole("button", { name: "Remove Mia Member" })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/@/);
     expect(screen.queryByRole("img", { name: /(Private|Public) board/ })).not.toBeInTheDocument();
+  });
+
+  it("leaves --space-4 between the panel header and the member search field (FIX-06)", async () => {
+    renderSidebar(shell("manager"));
+    await screen.findByText("Olive Owner");
+    expect(screen.getByTestId("member-search-wrap")).toHaveClass("pt-4");
   });
 
   it("shows the add button to a Manager and an Admin only, never to the Board_Owner", async () => {
@@ -159,19 +158,19 @@ const request = (over: Partial<JoinRequest> = {}): JoinRequest => ({
   user: { id: "u9", full_name: "Rina Requester", username: "rina", email: "rina@example.com", avatar_url: null }, ...over,
 });
 
-describe("InviteModal (Requirement 24)", () => {
+describe("ShareModal invite and join requests (Requirements 24 and 55)", () => {
   beforeEach(() => {
-    mocks.api.boards.invite.mockResolvedValue({ enabled: true, token: "tok", path: "/invite/tok" });
+    mocks.api.boards.invite.mockResolvedValue({ enabled: true, token: "tok", path: "/app/invite/tok" });
     mocks.api.boards.joinRequests.mockResolvedValue([request()]);
     mocks.api.invites.decide.mockResolvedValue({});
   });
 
   it("shows the link, the requester's Email in the pending list, and Approve and Reject to staff", async () => {
     const onChanged = vi.fn();
-    render(<InviteModal boardId="b1" open onClose={vi.fn()} canDecide onChanged={onChanged} />);
+    render(<ShareModal boardId="b1" boardName="Alpha" open onClose={vi.fn()} canPublicLink={false} canDecide onPendingChange={onChanged} />);
     expect(await screen.findByText("Rina Requester")).toBeInTheDocument();
     expect(screen.getByText(/rina@example\.com/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Invite link")).toHaveValue(`${window.location.origin}/invite/tok`);
+    expect(screen.getByLabelText("Invite link")).toHaveValue(`${window.location.origin}/app/invite/tok`);
     await userEvent.click(screen.getByRole("button", { name: "Approve Rina Requester" }));
     expect(mocks.api.invites.decide).toHaveBeenCalledWith("r1", "approved");
     await waitFor(() => expect(onChanged).toHaveBeenLastCalledWith(0));
@@ -179,7 +178,7 @@ describe("InviteModal (Requirement 24)", () => {
   });
 
   it("shows the owner the list without actions and with the note", async () => {
-    render(<InviteModal boardId="b1" open onClose={vi.fn()} canDecide={false} onChanged={vi.fn()} />);
+    render(<ShareModal boardId="b1" boardName="Alpha" open onClose={vi.fn()} canPublicLink={false} canDecide={false} />);
     await screen.findByText("Rina Requester");
     expect(screen.getByText("A manager or an admin decides on requests.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^(Approve|Reject)/ })).not.toBeInTheDocument();
@@ -188,18 +187,21 @@ describe("InviteModal (Requirement 24)", () => {
   it("offers Generate when invites are off, and asks before Regenerate", async () => {
     mocks.api.boards.invite.mockResolvedValue({ enabled: false, token: null, path: null });
     mocks.api.boards.joinRequests.mockResolvedValue([]);
-    mocks.api.boards.enableInvite.mockResolvedValue({ enabled: true, token: "new", path: "/invite/new" });
-    render(<InviteModal boardId="b1" open onClose={vi.fn()} canDecide onChanged={vi.fn()} />);
+    mocks.api.boards.enableInvite.mockResolvedValue({ enabled: true, token: "new", path: "/app/invite/new" });
+    render(<ShareModal boardId="b1" boardName="Alpha" open onClose={vi.fn()} canPublicLink={false} canDecide />);
     await userEvent.click(await screen.findByRole("button", { name: "Generate invite link" }));
-    expect(await screen.findByLabelText("Invite link")).toHaveValue(`${window.location.origin}/invite/new`);
+    expect(mocks.api.boards.enableInvite).not.toHaveBeenCalled();
+    await userEvent.click(await screen.findByRole("button", { name: "Create" }));
+    expect(await screen.findByLabelText("Invite link")).toHaveValue(`${window.location.origin}/app/invite/new`);
     await userEvent.click(screen.getByRole("button", { name: "Regenerate" }));
     expect(mocks.api.boards.regenerateInvite).not.toHaveBeenCalled();
-    expect(screen.getByText("Make a new link? The old link stops working.")).toBeInTheDocument();
+    expect(screen.getByText("Regenerate invite link?")).toBeInTheDocument();
+    expect(screen.getByText("The old link stops working.")).toBeInTheDocument();
   });
 });
 
 describe("Invite page (Requirement 24, criteria 23 and 24)", () => {
-  const lookup = (state: "staff" | "member" | "pending" | "can_request") => ({ board: { id: "b1", name: "Alpha", description: "The plan" }, state, request: null });
+  const lookup = (state: "staff" | "member" | "pending" | "can_request") => ({ board: { id: "b1", slug: "alpha", name: "Alpha", description: "The plan" }, state, request: null });
 
   it("asks to join and then says the request was sent", async () => {
     mocks.api.invites.request.mockResolvedValue({ id: "r", board_id: "b1", status: "pending" });
@@ -218,7 +220,7 @@ describe("Invite page (Requirement 24, criteria 23 and 24)", () => {
     render(<InviteJoin token="tok" invite={lookup(state)} />);
     expect(screen.getByText(text)).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    if (state !== "pending") expect(screen.getByRole("link", { name: "Open board" })).toHaveAttribute("href", "/boards/b1");
+    if (state !== "pending") expect(screen.getByRole("link", { name: "Open board" })).toHaveAttribute("href", "/app/b/alpha");
   });
 });
 
@@ -226,7 +228,7 @@ describe("BoardUnavailable", () => {
   it("says so in words with a link home", () => {
     render(<BoardUnavailable />);
     expect(screen.getByText("You no longer have access to this board, or it was removed.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "/boards");
+    expect(screen.getByRole("link", { name: "Go to Home" })).toHaveAttribute("href", "/app/boards");
   });
 });
 
@@ -252,7 +254,7 @@ describe("Derived progress and the meter (Requirement 27)", () => {
   });
 
   it("shows 'done of total' on the board card only when there are Subtasks", () => {
-    const props = { overdue: false, draggable: false, onOpen: vi.fn(), onDragStart: vi.fn(), onDragEnd: vi.fn() };
+    const props = { dueState: null, draggable: false, onOpen: vi.fn(), onDragStart: vi.fn(), onDragEnd: vi.fn() };
     const { rerender } = render(<CardTile card={baseCard()} {...props} />);
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     rerender(<CardTile card={baseCard({ subtasks: [sub("a", true), sub("b", false)] })} {...props} />);

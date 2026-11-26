@@ -20,13 +20,19 @@ interface BaseModalProps {
   headerAside?: ReactNode;
   /** When false the body does not scroll itself, so panes inside it can. */
   scrollBody?: boolean;
+  /** Id of the element that describes the dialog (`aria-describedby`). */
+  describedBy?: string;
+  /** Called when the dialog opens; call `preventDefault` and focus an element of your own to choose the first focus. */
+  onOpenAutoFocus?: (event: Event) => void;
+  /** Called when the dialog closes; call `preventDefault` and focus the control that opened it. */
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 /** The only modal in the app: a thin wrapper over the shadcn/ui Dialog (Radix: focus trap, Escape, ARIA). */
-export function BaseModal({ open, title, onClose, children, size = "md", footer, titleHidden = false, headerAside, scrollBody = true }: BaseModalProps) {
+export function BaseModal({ open, title, onClose, children, size = "md", footer, titleHidden = false, headerAside, scrollBody = true, describedBy, onOpenAutoFocus, onCloseAutoFocus }: BaseModalProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent size={size} aria-describedby={undefined}>
+      <DialogContent size={size} aria-describedby={describedBy} onOpenAutoFocus={onOpenAutoFocus} onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className={cn(titleHidden && "sr-only")}>{title}</DialogTitle>
           {headerAside}

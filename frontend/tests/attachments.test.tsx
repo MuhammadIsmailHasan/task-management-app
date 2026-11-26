@@ -207,13 +207,13 @@ describe("CardModal Auto_Save", () => {
     modal();
     await userEvent.click(await screen.findByRole("button", { name: "Delete subtask Outline" }));
     expect(api.subtasks.remove).not.toHaveBeenCalled();
-    const ask = screen.getByText('Delete subtask "Outline"?').parentElement as HTMLElement;
+    const ask = (await screen.findByText("Delete subtask “Outline”?")).closest('[role="dialog"]') as HTMLElement;
     await userEvent.click(within(ask).getByRole("button", { name: "Delete" }));
     expect(api.subtasks.remove).toHaveBeenCalledWith("s1");
 
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(api.cards.remove).not.toHaveBeenCalled();
-    const askCard = screen.getByText(/Delete this card\?/).parentElement as HTMLElement;
+    const askCard = (await screen.findByText("Delete card?")).closest('[role="dialog"]') as HTMLElement;
     await userEvent.click(within(askCard).getByRole("button", { name: "Delete" }));
     expect(api.cards.remove).toHaveBeenCalledWith("c1");
   });

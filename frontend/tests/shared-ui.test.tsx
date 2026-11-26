@@ -1,10 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox } from "@/components/shared/BaseCombobox";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseTooltip } from "@/components/shared/BaseTooltip";
 
 const opts = (n: number) => Array.from({ length: n }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
@@ -45,10 +45,10 @@ describe("BaseCombobox", () => {
   });
 });
 
-describe("BaseConfirm", () => {
+describe("ConfirmDialog", () => {
   it("asks first and runs only after the danger button", async () => {
     const onConfirm = vi.fn();
-    render(<BaseConfirm message="Delete this subtask?" trigger={<BaseButton>Delete</BaseButton>} onConfirm={onConfirm} />);
+    render(<ConfirmDialog message="Delete this subtask?" trigger={<BaseButton>Delete</BaseButton>} onConfirm={onConfirm} />);
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText("Delete this subtask?")).toBeInTheDocument();
@@ -70,5 +70,26 @@ describe("BaseTooltip", () => {
     );
     await userEvent.tab();
     expect((await screen.findAllByText("Member One")).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Option hover highlight (FIX-05)", () => {
+  it("highlights the option under the pointer, clears it on leave, and keeps the keyboard highlight independent", async () => {
+    render(<Harness n={4} />);
+    await userEvent.click(screen.getByRole("button", { name: /Choice/ }));
+    const options = screen.getAllByRole("option");
+    const [first, second] = options;
+    fireEvent.pointerMove(first);
+    expect(first).toHaveAttribute("data-hovered", "true");
+    fireEvent.pointerMove(second);
+    fireEvent.pointerLeave(first);
+    expect(first).not.toHaveAttribute("data-hovered");
+    expect(second).toHaveAttribute("data-hovered", "true");
+    fireEvent.pointerLeave(second);
+    expect(options.some((o) => o.hasAttribute("data-hovered"))).toBe(false);
+    // the pointer never moves the keyboard highlight, and the keyboard never sets the pointer one
+    expect(options.some((o) => o.getAttribute("aria-selected") === "true" && o === second)).toBe(false);
+    await userEvent.keyboard("{ArrowDown}");
+    expect(options.some((o) => o.hasAttribute("data-hovered"))).toBe(false);
   });
 });

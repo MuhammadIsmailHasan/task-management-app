@@ -10,21 +10,20 @@ import { deriveProgress } from "@/lib/progress";
 
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
-const APP = "https://app.example.test";
 const page = () =>
   render(
     <>
-      <LandingHeader appUrl={APP} />
+      <LandingHeader />
       <main>
-        <Hero appUrl={APP} />
+        <Hero />
         <Features />
         <Workflow />
         <Teams />
         <Roles />
         <Faq />
-        <ClosingCta appUrl={APP} />
+        <ClosingCta />
       </main>
-      <LandingFooter appUrl={APP} />
+      <LandingFooter />
     </>,
   );
 
@@ -35,19 +34,18 @@ describe("Landing_Page (Requirement 41)", () => {
     expect(ids).toEqual(["features", "workflow", "teams", "roles", "faq"]);
   });
 
-  it("has one h1 and links out only to the App_Host and to its own anchors (LAND-04, LAND-12)", () => {
+  it("has one h1 and links only to the app under /app, to `/`, and to its own anchors (LAND-04, LAND-12, PATH-12)", () => {
     const { container } = page();
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     const links = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href")!);
-    expect(links.filter((h) => h.startsWith("http")).every((h) => h.startsWith(APP))).toBe(true);
-    expect(links.filter((h) => !h.startsWith("http") && !h.startsWith("#") && h !== "/")).toEqual([]);
-    expect(links).toContain(`${APP}/register`);
-    expect(links).toContain(`${APP}/login`);
+    expect(links.filter((h) => !h.startsWith("#") && h !== "/" && !h.startsWith("/app/"))).toEqual([]);
+    expect(links).toContain("/app/register");
+    expect(links).toContain("/app/login");
   });
 
-  it("uses relative app paths when APP_URL is unset", () => {
-    render(<Hero appUrl="" />);
-    expect(screen.getAllByRole("link", { name: /Get started/ })[0]).toHaveAttribute("href", "/register");
+  it("sends the call to action to the register page under /app", () => {
+    render(<Hero />);
+    expect(screen.getAllByRole("link", { name: /Get started/ })[0]).toHaveAttribute("href", "/app/register");
   });
 
   it("asks the four FAQ questions as native details elements", () => {
@@ -64,7 +62,7 @@ describe("Landing_Page (Requirement 41)", () => {
 
   it("makes no request and reads no cookie, header, or storage (LAND-01)", () => {
     const root = path.resolve(import.meta.dirname, "..");
-    const files = [...readdirSync(path.join(root, "components", "landing")).map((f) => path.join(root, "components", "landing", f)), path.join(root, "app", "site", "page.tsx")];
+    const files = [...readdirSync(path.join(root, "components", "landing")).map((f) => path.join(root, "components", "landing", f)), path.join(root, "app", "page.tsx")];
     for (const f of files) expect(readFileSync(f, "utf8")).not.toMatch(/\bfetch\(|cookies\(|headers\(|localStorage|sessionStorage|@\/lib\/api/);
   });
 });

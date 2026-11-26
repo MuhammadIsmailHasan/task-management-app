@@ -47,10 +47,10 @@ describe("classifyIdentifier (Property 42)", () => {
 
 describe("safeReturnPath and isUsableToken (Property 48)", () => {
   it("keeps only guarded same-site paths", () => {
-    expect(safeReturnPath("/boards/abc?x=1")).toBe("/boards/abc?x=1");
-    expect(safeReturnPath("/profile")).toBe("/profile");
-    for (const bad of ["//evil.com", "https://evil.com", "/\\evil", "javascript:alert(1)", "/login", "", null, undefined, "/boardsx"]) {
-      expect(safeReturnPath(bad)).toBe("/boards");
+    expect(safeReturnPath("/app/b/alpha?x=1")).toBe("/app/b/alpha?x=1");
+    expect(safeReturnPath("/app/profile")).toBe("/app/profile");
+    for (const bad of ["//evil.com", "https://evil.com", "/\\evil", "javascript:alert(1)", "/app/login", "/boards/abc", "", null, undefined, "/app/boardsx"]) {
+      expect(safeReturnPath(bad)).toBe("/app/boards");
     }
   });
   it("is stable for any input", () => {
@@ -68,22 +68,22 @@ describe("proxy (route guard)", () => {
   const call = (path: string, cookie?: string) =>
     proxy(new NextRequest(`http://localhost:3000${path}`, cookie ? { headers: { cookie: `kanban_token=${cookie}` } } : undefined));
 
-  it("redirects without a cookie to /login with next", () => {
-    const r = call("/boards/abc?x=1");
+  it("redirects without a cookie to /app/login with next", () => {
+    const r = call("/app/b/alpha?x=1");
     expect(r.status).toBe(307);
     const url = new URL(r.headers.get("location")!);
-    expect(url.pathname).toBe("/login");
-    expect(url.searchParams.get("next")).toBe("/boards/abc?x=1");
+    expect(url.pathname).toBe("/app/login");
+    expect(url.searchParams.get("next")).toBe("/app/b/alpha?x=1");
   });
   it("redirects a malformed or expired cookie and removes it", () => {
     for (const cookie of ["bogus", jwt({ sub: "u", role: "member", exp: 1 })]) {
-      const r = call("/profile", cookie);
+      const r = call("/app/profile", cookie);
       expect(r.status).toBe(307);
       expect(r.headers.get("set-cookie")).toContain("kanban_token=;");
     }
   });
   it("lets a usable cookie through", () => {
-    expect(call("/boards", jwt({ sub: "u", role: "member", exp: 9_999_999_999 })).status).toBe(200);
+    expect(call("/app/boards", jwt({ sub: "u", role: "member", exp: 9_999_999_999 })).status).toBe(200);
   });
 });
 
@@ -138,7 +138,7 @@ describe("SharedBoard", () => {
   it("is read only: banner, sign-in link, no add, drag, comments or activity", async () => {
     render(<SharedBoard token="t" board={board} cards={[card]} categories={[]} />);
     expect(screen.getByText("Shared view, read only")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/app/login");
     expect(screen.queryByText(/add a card/i)).toBeNull();
     expect(screen.getByRole("button", { name: "Open card Ship it" })).toHaveAttribute("draggable", "false");
     await userEvent.click(screen.getByRole("button", { name: "Open card Ship it" }));

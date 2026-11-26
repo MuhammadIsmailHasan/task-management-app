@@ -8,7 +8,7 @@ import { ChipStrip } from "@/components/board/ChipStrip";
 import { FileDropZone } from "@/components/card/FileDropZone";
 import type { Analytics, Board, Card, Category, Member } from "@/lib/types";
 
-const board = { id: "b1", name: "Website", description: "Redesign the site", owner_id: null, archived_at: null, card_count: 8, done_count: 2, overdue_count: 1, member_count: 5 } as Board;
+const board = { id: "b1", slug: "website", name: "Website", description: "Redesign the site", owner_id: null, archived_at: null, card_count: 8, done_count: 2, overdue_count: 1, member_count: 5 } as Board;
 const members = ["Ann Lee", "Bob Roy", "Cy Day"].map((n, i) => ({ id: `u${i}`, full_name: n, username: n.replace(" ", "").toLowerCase(), avatar_url: null })) as Member[];
 
 describe("BoardTile", () => {
@@ -20,7 +20,7 @@ describe("BoardTile", () => {
     expect(screen.getByText("1 overdue")).toBeInTheDocument();
     expect(screen.getAllByRole("img").filter((e) => /Ann|Bob|Cy/.test(e.getAttribute("aria-label") ?? ""))).toHaveLength(3);
     expect(screen.getByText("+2")).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/boards/b1");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/app/b/website");
   });
 
   it("copes with a board without counts or description", () => {
@@ -48,7 +48,7 @@ describe("two badge types on a card", () => {
   const category = { id: "k1", board_id: "b1", name: "Design", color: null } as Category;
 
   it("draws the category as an upper-case tag and the priority as a tinted pill with a flag", () => {
-    render(<CardTile card={card} category={category} overdue={false} draggable onOpen={() => undefined} onDragStart={() => undefined} onDragEnd={() => undefined} />);
+    render(<CardTile card={card} category={category} dueState={null} draggable onOpen={() => undefined} onDragStart={() => undefined} onDragEnd={() => undefined} />);
     const cat = screen.getByText("Design");
     const pri = screen.getByText("high");
     expect(cat.className).toMatch(/uppercase/);

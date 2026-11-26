@@ -1,13 +1,12 @@
 "use client";
 
-import { Search, TrendingUp } from "lucide-react";
+import { Archive, Search, TrendingUp } from "lucide-react";
+import { BaseLinkButton } from "@/components/shared/BaseLinkButton";
+import { boardViewPath } from "@/lib/routes";
 import { BaseInput } from "@/components/shared/BaseField";
-import { useShell } from "@/components/shell/ShellContext";
 import { BoardSwitcher } from "@/components/shell/BoardSwitcher";
 import type { Board, Card, Category, Member } from "@/lib/types";
 import { FilterRow } from "./FilterRow";
-import { InviteButton } from "./InviteButton";
-import { PublicLinkButton } from "./PublicLinkButton";
 
 interface BoardHeaderProps {
   board: Board;
@@ -18,13 +17,12 @@ interface BoardHeaderProps {
   search: string;
   onSearch: (value: string) => void;
   onCategory: (id: string | null) => void;
+  /** The number of archived Cards; the toolbar links to the Archived page (VIEW-05). */
+  archivedCount?: number;
 }
 
-/** The Board_Toolbar and the filter bar (SHELL-12, SHELL-16, SHELL-17; reference `01-board-desktop.png`). */
-export function BoardHeader({ board, cards, categories, categoryId, search, onSearch, onCategory }: BoardHeaderProps) {
-  const { session } = useShell();
-  const isStaff = !!session && (session.role === "manager" || session.role === "admin");
-  const canInvite = !!session && (isStaff || board.owner_id === session.userId);
+/** The Board_Toolbar and the filter bar (SHELL-12, SHELL-16; reference `01-board-desktop.png`). Sharing is in the Top_Menu (SHR-01), not here.. */
+export function BoardHeader({ board, cards, categories, categoryId, search, onSearch, onCategory, archivedCount = 0 }: BoardHeaderProps) {
   const doneId = board.columns?.find((c) => c.name === "Done")?.id;
   const done = doneId ? cards.filter((c) => c.column_id === doneId).length : 0;
   const percent = cards.length ? Math.round((done / cards.length) * 100) : 0;
@@ -43,10 +41,11 @@ export function BoardHeader({ board, cards, categories, categoryId, search, onSe
             {columnCount} Columns · {cards.length} Total Tasks{board.description ? ` · ${board.description}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {isStaff && <PublicLinkButton boardId={board.id} />}
-          {canInvite && <InviteButton boardId={board.id} canDecide={isStaff} />}
-        </div>
+        <BaseLinkButton variant="secondary" size="sm" href={boardViewPath(board.slug, "archived")}>
+          <Archive aria-hidden="true" />
+          Archived
+          <span className="rounded-full bg-surface-strong px-2 text-2xs font-semibold">{archivedCount}</span>
+        </BaseLinkButton>
       </div>
       <section aria-label="Filters" className="flex flex-wrap items-center gap-3 rounded-frame bg-surface p-3">
         <div className="min-w-0 flex-1">

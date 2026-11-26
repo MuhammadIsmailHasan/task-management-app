@@ -1,9 +1,12 @@
 "use client";
 
+import { SquareKanban } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BaseBadge } from "@/components/shared/BaseBadge";
+import { cn } from "@/lib/utils";
 import { pageTitle } from "@/lib/titles";
 import { BaseButton } from "@/components/shared/BaseButton";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseCard } from "@/components/shared/BaseCard";
 import { BaseAlert, BaseInput, BaseTextarea } from "@/components/shared/BaseField";
 import { BaseModal } from "@/components/shared/BaseModal";
@@ -84,8 +87,9 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   useEffect(() => {
     // Board staff get each member's Email for the assignee picker; anyone else (or a 403) gets the plain list.
-    const plain = () => api.boards.members(board.id).then(setMembers).catch(() => setMembers([]));
-    if (staff) api.boards.members(board.id, true).then(setMembers).catch(plain);
+    // `assignable`: only active and available people are offered; an assignee who is neither stays on the Card (ADM-08, ADM-09)
+    const plain = () => api.boards.members(board.id, false, true).then(setMembers).catch(() => setMembers([]));
+    if (staff) api.boards.members(board.id, true, true).then(setMembers).catch(plain);
     else void plain();
   }, [board.id, staff]);
 
@@ -168,18 +172,16 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   const canComment = !!session && role !== "admin";
   const datesValid = !draft || isRangeValid(draft.start_date, draft.end_date);
-  const doneId = columns.find((c) => c.name === "Done")?.id;
-  const today = new Date().toISOString().slice(0, 10);
-  const overdue = !!draft?.end_date && draft.end_date < today && card?.column_id !== doneId;
+  const overdue = card?.due_state === "overdue"; // the server's rule, never the browser date (VIEW-09)
   const columnName = columns.find((c) => c.id === card?.column_id)?.name;
   const showRight = !!card && (comments !== undefined || !!card.activity);
 
   const footer = card && draft && canEdit && staff && (
     <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-      <BaseButton variant="secondary" onClick={archive}>
+      <BaseButton variant="secondary" onClick={archive} disabled={columnName === "Done"} title={columnName === "Done" ? "Move the card out of Done to archive it" : undefined}>
         Archive
       </BaseButton>
-      <BaseConfirm message="Delete this card? This cannot be undone from the board." onConfirm={remove} trigger={<BaseButton variant="danger">Delete</BaseButton>} />
+      <ConfirmDialog title="Delete card?" message="This cannot be undone from the board." onConfirm={remove} trigger={<BaseButton variant="danger">Delete</BaseButton>} />
     </div>
   );
 
@@ -200,15 +202,29 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
         open
         size="card"
         title={`${draft ? draft.title.trim() || "Untitled card" : "Card"} | ${board.name}`}
+        titleHidden
         scrollBody={false}
         onClose={() => void requestClose()}
         footer={footer || undefined}
         headerAside={
-          (closing || fields.busy) && (
-            <span aria-live="polite" className="ml-auto text-xs text-ink-muted">
-              Saving…
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span aria-hidden="true" className="inline-flex size-control shrink-0 items-center justify-center rounded-card bg-accent-tint text-on-accent-tint">
+              <SquareKanban className="size-icon" />
             </span>
-          )
+            <span className="min-w-0 text-sm text-ink-muted break-words">{board.name}</span>
+            {columnName && (
+              <>
+                <span aria-hidden="true" className="text-ink-muted">
+                  /
+                </span>
+                <BaseBadge tone="accent">{columnName}</BaseBadge>
+              </>
+            )}
+            <span aria-live="polite" className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 text-xs text-ink-muted">
+              <i aria-hidden="true" className={cn("size-dot rounded-full", closing || fields.busy ? "bg-label-orange-fg" : "bg-accent")} />
+              {closing || fields.busy ? "Saving…" : "Auto-saved"}
+            </span>
+          </div>
         }
       >
         {!card || !draft ? (
@@ -219,11 +235,12 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
               <div className="flex min-w-0 flex-col gap-6 lg:col-span-3 lg:min-h-0 lg:overflow-y-auto">
                 <BaseCard plain title="Details">
                   <div className="flex flex-col gap-1">
+                    <span className="text-2xs text-ink-muted uppercase">Card title</span>
                     {canEdit ? (
                       <BaseInput
                         ref={titleRef}
                         aria-label="Title"
-                        className="text-page-title font-semibold"
+                        className="font-heading text-title"
                         value={draft.title}
                         aria-invalid={titleError ? true : undefined}
                         onChange={(e) => {
@@ -247,7 +264,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                     onChange={onAttributes}
                     categories={categories}
                     members={members}
-                    assigneeFallback={card.assignee_name ? { name: card.assignee_name, avatar_url: card.assignee_avatar_url ?? null } : null}
+                    assigneeFallback={card.assignee_name ? { name: card.assignee_name, avatar_url: card.assignee_avatar_url ?? null, inactive: card.assignee_is_active === false, unavailable: card.assignee_is_available === false } : null}
                     columnName={columnName}
                     canEdit={canEdit}
                     canAssign={staff}
@@ -277,19 +294,6 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                   </div>
                 </BaseCard>
 
-                <BaseCard plain title="Attachments">
-                  <AttachmentList
-                    cardId={card.id}
-                    attachments={card.attachments}
-                    canEdit={canEdit}
-                    onChange={(attachments) => {
-                      const next = { ...card, attachments };
-                      setCard(next);
-                      onChanged(next);
-                    }}
-                  />
-                </BaseCard>
-
                 <BaseCard plain title="Subtasks">
                   <SubtaskChecklist
                     cardId={card.id}
@@ -297,6 +301,19 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                     canEdit={canEdit}
                     onChange={(subtasks) => {
                       const next = withSubtasks(card, subtasks);
+                      setCard(next);
+                      onChanged(next);
+                    }}
+                  />
+                </BaseCard>
+
+                <BaseCard plain title="Attachments">
+                  <AttachmentList
+                    cardId={card.id}
+                    attachments={card.attachments}
+                    canEdit={canEdit}
+                    onChange={(attachments) => {
+                      const next = { ...card, attachments };
                       setCard(next);
                       onChanged(next);
                     }}

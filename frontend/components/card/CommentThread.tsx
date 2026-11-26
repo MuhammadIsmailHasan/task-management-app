@@ -5,7 +5,7 @@ import { Flag } from "lucide-react";
 import { BaseAvatar } from "@/components/shared/BaseAvatar";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseAlert } from "@/components/shared/BaseField";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { formatWhen } from "@/lib/activity";
 import type { Comment } from "@/lib/types";
 import { CommentComposer } from "./CommentComposer";
@@ -42,6 +42,7 @@ export function CommentThread({ comments, sort, names = {}, canReply, canPriorit
       setNotice("Card created in the first column.");
     } catch {
       setNotice("Could not create the card.");
+      throw new Error("Could not create the card.");
     }
   }
 
@@ -81,13 +82,21 @@ export function CommentThread({ comments, sort, names = {}, canReply, canPriorit
               </BaseButton>
             )}
             {c.can_create_card && onCreateCard && (
-              <BaseButton size="sm" variant="ghost" className={actionButton} onClick={() => createCard(c)}>
-                Create card
-              </BaseButton>
+              <ConfirmDialog
+                tone="primary"
+                confirmLabel="Create"
+                title="Create card from comment?"
+                message="A new card with this comment as its description is added to the first column."
+                onConfirm={() => createCard(c)}
+                trigger={
+                  <BaseButton size="sm" variant="ghost" className={actionButton}>
+                    Create card
+                  </BaseButton>
+                }
+              />
             )}
             {onDelete && viewerId && c.author_id === viewerId && (
-              <BaseConfirm
-                variant="modal"
+              <ConfirmDialog
                 title="Delete comment?"
                 message={reply ? "This reply will be deleted." : "This comment will be deleted."}
                 detail={!reply && c.reply_count > 0 ? `This also deletes its ${c.reply_count} ${c.reply_count === 1 ? "reply" : "replies"}.` : undefined}

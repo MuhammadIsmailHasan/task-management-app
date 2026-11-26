@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CardModal } from "@/components/card/CardModal";
 import { ShellContext } from "@/components/shell/ShellContext";
 import type { Board, Card, Member } from "@/lib/types";
+import { shellValue } from "./support/shell";
 
 const card: Card = {
   id: "c1",
@@ -35,18 +36,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 const board = { id: "b1", name: "Board", owner_id: null, archived_at: null, columns: [{ id: "col1", name: "Todo", order: 0 }] } as unknown as Board;
-const shell = {
-  session: { token: "t", userId: "u9", role: "manager" as const, exp: 0 },
-  user: null,
-  boardId: "b1",
-  boards: [],
-  panel: null,
-  inbox: null,
-  refreshInbox: async () => undefined,
-  toggleSidePanel: () => undefined,
-  closeSidePanel: () => undefined,
-  adjustUnread: () => undefined,
-};
+const shell = shellValue({ session: { token: "t", userId: "u9", role: "manager" as const, exp: 0 }, boardId: "b1" });
 
 describe("CardModal", () => {
   it("shows the live title and the board name in the header", async () => {

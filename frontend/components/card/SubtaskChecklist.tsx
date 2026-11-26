@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import { BaseButton } from "@/components/shared/BaseButton";
-import { BaseConfirm } from "@/components/shared/BaseConfirm";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
 import { ProgressMeter } from "@/components/shared/ProgressMeter";
 import { api } from "@/lib/api";
@@ -108,8 +108,9 @@ export function SubtaskChecklist({ cardId, subtasks, canEdit, onChange }: Subtas
               }}
             />
             {canEdit && (
-              <BaseConfirm
-                message={`Delete subtask "${s.title}"?`}
+              <ConfirmDialog
+                title={`Delete subtask “${s.title}”?`}
+                message="This cannot be undone."
                 onConfirm={() => guard(async () => { await api.subtasks.remove(s.id); onChange(subtasks.filter((x) => x.id !== s.id)); })}
                 trigger={
                   <BaseButton size="sm" variant="ghost" className="size-control-sm px-0" aria-label={`Delete subtask ${s.title}`}>

@@ -20,6 +20,8 @@ const token = `h.${btoa(JSON.stringify({ sub: "u1", role: "member", exp: 9999999
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.history.pushState({}, "", "/app/login"); // the session cookie is Path=/app (PATH-06)
+  document.cookie = "kanban_token=; Max-Age=0; Path=/app";
   document.cookie = "kanban_token=; Max-Age=0; Path=/";
 });
 
@@ -42,7 +44,7 @@ describe("AuthForm", () => {
     await userEvent.type(screen.getByLabelText("Username or email"), "ann@x.com");
     await userEvent.type(screen.getByLabelText("Password"), "secret-pass");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/boards"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/app/boards"));
     expect(login).toHaveBeenCalledWith({ identifier: "ann@x.com", password: "secret-pass" });
     expect(document.cookie).toContain("kanban_token=");
   });
@@ -59,15 +61,15 @@ describe("AuthForm", () => {
 
   it("maps validation details onto the fields", async () => {
     register.mockRejectedValue(
-      new ApiError(400, "VALIDATION_ERROR", "Validation failed", { password: ["password must be at least 8 characters"] }),
+      new ApiError(400, "VALIDATION_ERROR", "Validation failed", { password: ["password is too common"] }),
     );
     render(<AuthForm mode="register" />);
     await userEvent.type(screen.getByLabelText("Full name"), "Ann");
     await userEvent.type(screen.getByLabelText("Username"), "ann");
     await userEvent.type(screen.getByLabelText("Email"), "ann@x.com");
-    await userEvent.type(screen.getByLabelText("Password"), "short");
+    await userEvent.type(screen.getByLabelText("Password"), "long-enough-pass");
     await userEvent.click(screen.getByRole("button", { name: "Register" }));
-    expect(await screen.findByText("password must be at least 8 characters")).toBeInTheDocument();
+    expect(await screen.findByText("password is too common")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -109,5 +111,89 @@ describe("AuthForm", () => {
     await userEvent.tab();
     await waitFor(() => expect(availability).toHaveBeenCalled());
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("validates every register field on submit, shows every error at once, focuses the first, and sends nothing (FIX-04)", async () => {
+    render(<AuthForm mode="register" />);
+    await userEvent.click(screen.getByRole("button", { name: "Register" }));
+    for (const label of ["Full name", "Username", "Email", "Password"]) {
+      expect(screen.getByLabelText(label)).toHaveAttribute("aria-invalid", "true");
+      expect(screen.getByLabelText(label)).toHaveAttribute("aria-describedby", expect.stringMatching(/-error$/));
+    }
+    expect(screen.getByLabelText("Full name")).toHaveFocus();
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it("validates both login fields at once (FIX-04)", async () => {
+    render(<AuthForm mode="login" />);
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    expect(screen.getByLabelText("Username or email")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Password")).toHaveAttribute("aria-invalid", "true");
+    expect(login).not.toHaveBeenCalled();
+  });
+
+  it("clears a field's error as soon as it is edited, and only that field's (FIX-03)", async () => {
+    render(<AuthForm mode="register" />);
+    await userEvent.click(screen.getByRole("button", { name: "Register" }));
+    expect(screen.getByText("Full name is required.")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Full name"), "A");
+    expect(screen.queryByText("Full name is required.")).toBeNull();
+    expect(screen.getByLabelText("Full name")).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("clears a server error on edit and does not bring it back until the next submit (FIX-03)", async () => {
+    register.mockRejectedValue(new ApiError(409, "CONFLICT", "taken", { username: ["This username is already taken."] }));
+    render(<AuthForm mode="register" />);
+    await userEvent.type(screen.getByLabelText("Full name"), "Ann");
+    await userEvent.type(screen.getByLabelText("Username"), "ann");
+    await userEvent.type(screen.getByLabelText("Email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "long-enough-pass");
+    await userEvent.click(screen.getByRole("button", { name: "Register" }));
+    expect(await screen.findByText("This username is already taken.")).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Username"), "2");
+    expect(screen.queryByText("This username is already taken.")).toBeNull();
+  });
+});
+
+describe("register, confirmation, and the destination (V17, ACT-01, ACT-02, ACT-12)", () => {
+  const fill = async () => {
+    await userEvent.type(screen.getByLabelText("Full name"), "Ann");
+    await userEvent.type(screen.getByLabelText("Username"), "ann_1");
+    await userEvent.type(screen.getByLabelText("Email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "long-enough-pass");
+  };
+
+  it("goes to the check-your-email page after register, signs nobody in, and keeps the address and destination out of the URL", async () => {
+    register.mockResolvedValue({ user, token: null });
+    render(<AuthForm mode="register" next="/app/invite/abc" />);
+    await fill();
+    await userEvent.click(screen.getByRole("button", { name: "Register" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/app/verify"));
+    expect(document.cookie).not.toContain("kanban_token=");
+    expect(JSON.parse(sessionStorage.getItem("revoboard.pending-activation")!)).toEqual({ email: "ann@x.com", next: "/app/invite/abc" });
+  });
+
+  it("keeps the destination on the links between the two forms", () => {
+    render(<AuthForm mode="login" next="/app/invite/abc" />);
+    expect(screen.getByRole("link", { name: "Create account" })).toHaveAttribute("href", "/app/register?next=%2Fapp%2Finvite%2Fabc");
+  });
+
+  it("shows the unconfirmed message with a resend link, and the disabled message without one", async () => {
+    login.mockRejectedValueOnce(new ApiError(403, "ACCOUNT_NOT_ACTIVATED", "Confirm your email address first"));
+    const { unmount } = render(<AuthForm mode="login" />);
+    await userEvent.type(screen.getByLabelText("Username or email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "secret-pass");
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    expect(await screen.findByText("Confirm your email address first")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Resend confirmation email" })).toHaveAttribute("href", "/app/verify");
+    unmount();
+    login.mockRejectedValueOnce(new ApiError(403, "ACCOUNT_DISABLED", "This account is disabled"));
+    render(<AuthForm mode="login" />);
+    await userEvent.type(screen.getByLabelText("Username or email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "secret-pass");
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    expect(await screen.findByText("This account is disabled")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Resend confirmation email" })).not.toBeInTheDocument();
   });
 });
