@@ -204,6 +204,14 @@ Clarification to Decision A (V2): Req 3.4 and 11.2 grant Supervisor writes only 
 | BH | **One Share modal and a rebuilt Card modal (V17; supersedes SHELL-17 and the two-modal split of Requirements 23, 24, and 31 for layout only).** Behaviour, permissions, and payloads are unchanged. | One entry point for sharing; the owner supplied new references. | Requirements 55 and 56 |
 | BI | **Notification preferences and the due job (V17; supersedes Requirement 9 criteria 2 and 3).** Five preference types; the daily `deadline` job is replaced by `flask notify-due` every 15 minutes. | Assignees choose what reaches them; the day-level job could not catch changes made during the day. | Requirements 57 and 58 |
 | BJ | **Account activation and mail (V17; amends Requirement 1 and Requirement 19).** Registration sends a verification link; sign-in needs a verified email; mail goes through Gmail SMTP behind a small transport. | The owner wants verified addresses and a safe email-change flow. | Requirement 59 |
+| BK | **Toasts (V18; supersedes inline success messages and non-field error banners for action results).** One `sonner` Toaster at the bottom right; field errors, page states, auto-save status, and an open ConfirmDialog's error area stay. | One predictable place for feedback. | Requirement 60 |
+| BL | **Design consistency scales (V18).** Spacing, control-height, chip-height, and progress tokens; one searchable combobox, one date field, one checkbox; no option highlighted on open. | The owner found inconsistent space and sizes across the project. | Requirement 61 |
+| BM | **Admin reads the Dashboard (V18; amends Decision B and Requirement 10 criterion 4, DASH-19).** An Admin has the Manager's analytics scope; a Supervisor keeps only owned Boards. An Admin still cannot comment or be assigned. | The owner wants the Admin to see the whole picture. | Requirement 65 |
+| BN | **Managers and Admins are never assignees (V18; amends TASK-01 and Requirement 4 assignment).** My Tasks is for Member and Supervisor. | A Manager cannot hold Cards, so My Tasks would always be empty. | Requirement 66 |
+| BO | **Column drag (V18; amends COL-11).** Columns reorder by drag on the existing card drag code; the menu stays as the keyboard way. | Same gesture as Cards. | Requirement 67 |
+| BP | **Per-item Member rights (V18; supersedes the assigned-Member edit rule of Requirement 4).** An Assigned Member edits only the description, adds subtasks, attachments, and comments, edits and deletes only their own subtasks and attachments, checks any subtask, and still moves the Card. Subtasks and attachments get `created_by_id`. | A Member must not change what others wrote. | Requirement 69 |
+| BQ | **Who comments (V18; amends Requirement 7).** A Manager, a Supervisor with Board_Staff_Access, and the Card's assignee Member. Not an Admin (Decision B) and not any other Member. | Comments come from people responsible for the Card. | Requirement 69 |
+| BR | **Category palette (V18; amends Requirement 8).** `color` is one of 18 palette keys validated by the Backend; the five V17 keys keep their names. | Five colours were too few; a free picker breaks the token rule and contrast. | Requirement 71 |
 
 Notes on status codes: V2 standardizes "no Token returns 401; valid Token with insufficient role or access returns 403". This changes Req 11.5 (a Guest requesting a private Board) from 403 in V1 to 401 in V2. From V10 a request without a Token returns 401 on every Board route, public Boards included; the only Token-free Board reads are the shared routes of Requirement 18. V10 adds 429 for a blocked rate-limited request (Decision O). V12 (Decision Y): a signed-in user without Board_Access gets 403 on every Board route, because no Board is public; `/api/invite` needs a Token (401) and `/api/shared` needs none.
 
@@ -280,6 +288,14 @@ Notes on status codes: V2 standardizes "no Token returns 401; valid Token with i
 71. **My Tasks and the Admin (V17, RESOLVED by the owner in round 3):** an Admin does not see My Tasks (NAV-01, TASK-01).
 72. **Two account flags (V17, RESOLVED by the owner in round 3):** `email_verified_at` (activation) and `is_active` (Admin switch) stay separate, with `ACCOUNT_NOT_ACTIVATED` and `ACCOUNT_DISABLED` (ACT-01, ADM-07).
 73. **Session cookie path (V17, RESOLVED by the owner in round 3):** `Path=/app` (PATH-06) is accepted; every existing session ends at the V17 deploy and users sign in again. `deploy/README.md` SHALL say so in the release notes.
+74. **Old subtasks and attachments without a creator (V18, default applied):** rows created before V18 get `created_by_id` null. A Member cannot edit or delete them (only check a subtask); staff can. Backfilling from the activity log is possible but not exact, so it is not done.
+75. **Description only (V18, default applied):** a Member's `PATCH /api/cards/{id}` may carry `description` only; title, priority, dates, category, and assignee are refused with 403. The Member still moves the Card through the move route.
+76. **Comment editing (V18, default applied):** comments have no edit route today; V18 adds none. "Own comments" means delete.
+77. **Admin and comments (V18, default applied):** Decision B stands; an Admin reads comments and never writes them.
+78. **Page size of activity (V18, default applied):** the owner set 5 for comments; activity uses the same 5 so the two panes match.
+79. **Board list sort default (V18, default applied):** `updated_at` descending (the most recently changed Board first).
+80. **Toast and ConfirmDialog (V18, default applied):** an error raised by a ConfirmDialog action stays in the dialog's error area (FIX-07, COL-05) because the dialog is still open; a success closes the dialog and shows a toast.
+81. **Back arrow parents (V18, default applied):** the table in NAVB-05. The Card modal has a close control, not a back arrow.
 
 ## Requirements
 
@@ -1716,6 +1732,7 @@ This requirement supersedes Requirement 42 (HOST-01 to HOST-15) and amends Requi
 11. [PATH-11] THE deployment files SHALL change as follows (tasks 39.9 and 39.48): `deploy/nginx/revoboard.conf` (one server block, `/app/api/` proxy, `/api/` 404, no host names beyond the optional `server_name`), `compose.yaml` and `deploy/bare/supervisor.conf` (remove `SITE_URL` and `APP_URL`; add `NEXT_PUBLIC_API_URL` at build time and `API_PUBLIC_PREFIX` for the Backend), `deploy/deploy.sh`, `deploy/seed.sh`, `deploy/setup-server.sh`, `deploy/bare/*.sh`, `deploy/smoke.sh` and `deploy/smoke.mjs` (check `/` returns the Landing_Page, `/app/login` returns 200, `/app/api/health` returns 200, `/api/health` returns 404, `/boards` answers 308 to `/app/boards`, and an unknown `/app/xyz` returns 404 with the Not_Found_Page), and `deploy/README.md` (the new topology, the 308 table, the cookie path). THE access by server IP and port 8082 SHALL keep working, because no host name is required (DEP-13).
 12. [PATH-12] THE CORS allow-list (`ALLOWED_ORIGINS`) SHALL stay and list the one public origin; the browser makes only same-origin calls, so CORS applies to development only. THE Landing_Page SHALL keep the rules of Requirement 41 (static, no API call) with its two call-to-action links pointing to `/app/register` and `/app/login`.
 ### Requirement 47: Navigation
+> Amended by Requirements 62, 70, and 71, V18 (logo, active state, back arrow, Members and Categories panels).
 **User Story:** As a signed-in user, I want global places in a left sidebar and the places of the open Board in a menu at the top, so that I always know where I am and what belongs to the Board.
 This requirement supersedes Requirement 39 for the navigation items (SHELL-01 to SHELL-08 and SHELL-17 to SHELL-21), keeps its App_Header (HDR rules), Board_Switcher (SHELL-12 to SHELL-15), progress pill (SHELL-16), Skip link (SHELL-25), and Side_Panel look (SHELL-26), and amends Requirements 8, 9, and 6 where they say where a view opens (Decision BA). The Sidebar here is new; it is not the V1 to V15 Sidebar. Reference: `design/reference/v2/01-board-desktop.png` for the frame, the Side_Panel references `11-inbox-desktop.png`, `13-activity-desktop.png`, and `09-categories-desktop.png` for the panel views.
 #### Acceptance Criteria
@@ -1762,6 +1779,7 @@ This requirement adds `boards.slug` and the URL `/app/b/{slug}` (Decision BB). E
 **Rules that stay**
 14. [SLUG-14] THE ActivityLog metadata, notifications, logs, and error messages SHALL NOT carry `share_token` or `invite_token` (Requirements 18 and 24); a slug is not a credential and MAY appear in them.
 ### Requirement 49: Column CRUD
+> Amended by Requirement 67, V18 (Column drag).
 **User Story:** As a Board_Owner, I want to create, rename, reorder, and delete the Columns of my Board, so that its workflow fits my team, without losing finished work.
 This requirement amends Requirement 3 criteria 4 and 5 and Requirement 2 criterion 6, which let a Manager, an Admin, or a Supervisor with Board_Access create Columns: from V17 the Board_Owner, a Manager, and an Admin manage Columns, and a Supervisor who is only a BoardMember does not (Decision BC, Open Question 55, answered by the owner in round 2). The Default_Columns of Requirement 3 criterion 1 stay. Reference: the Column header of `01-board-desktop.png`; the new controls use the Component_Recipes.
 #### Acceptance Criteria
@@ -1804,6 +1822,7 @@ The Board, List, Calendar, and Archived pages share the Board_Toolbar, the filte
 9. [VIEW-09] THE Frontend SHALL show a due badge on every Card tile, List row, and Calendar item from `due_state`: "Overdue" on the `danger` tone and "Due tomorrow" on the `warning` tone (`BaseBadge`, Component_Recipes), beside the date. A Card in Done shows none. THE badge SHALL carry text, not colour alone, and the existing "Overdue" red date chip of the Card modal (CardAttributes) SHALL read the same field. THE Frontend SHALL never compute the state from the browser date.
 10. [VIEW-10] THE Backend SHALL keep a constant number of queries for the list endpoint with `archived=true` and with the default (Requirement 13, `selectinload` rules), and SHALL add the `board_id` index (COL-07) so the Archived list reads by Board directly.
 ### Requirement 51: Dashboard
+> Amended by Requirement 65, V18 (Admin access, filter bar).
 **User Story:** As a Supervisor or Manager, I want a greeting, filters, and a few clear widgets about late, upcoming, and finished work, so that I see what needs attention before I open a Board.
 This requirement supersedes DASH-08 and DASH-09 (no greeting, limited widgets) and amends Requirement 43 (DASH-01 to DASH-07 stand, with the path `/app/dashboard`). The existing Overview card and the throughput chart stay. Reference: `design/reference/v2/03-dashboard-desktop.png` and `03-dashboard-mobile.png`; new widgets use the same card recipe. The Dashboard keeps the audience of Requirement 10: a Supervisor sees the Boards it owns, a Manager sees every Board; a Member and an Admin get HTTP 403 (Decision B).
 #### Acceptance Criteria
@@ -1835,6 +1854,7 @@ THE Overview and Top 5 priority widgets, which ignore the range, SHALL show "Not
 **States**
 13. [DASH-22] THE Dashboard SHALL keep the loading, error with Retry, and empty states of DASH-07 for the new widgets; each widget with no rows SHALL show a short empty line ("Nothing overdue", "Nothing due tomorrow", "No cards to rank"); charts follow the chart rules (token colours, an accessible name, a hidden data table). WHILE the viewport is below 960 pixels, THE widgets SHALL stack in one column with no horizontal scroll between 360 and 414 pixels, and the filters SHALL wrap.
 ### Requirement 52: My Tasks
+> Amended by Requirement 66, V18 (My Tasks for Member and Supervisor only).
 **User Story:** As a signed-in user, I want one list of the Cards assigned to me across my Boards, grouped by when they are due, so that I know what to do next.
 My Tasks has no reference image and is built from the Component_Recipes (Open Question 63).
 #### Acceptance Criteria
@@ -1844,6 +1864,7 @@ My Tasks has no reference image and is built from the Component_Recipes (Open Qu
 4. [TASK-04] THE Backend SHALL provide `GET /api/me/cards`, for any signed-in user (an Admin gets an empty list, because an Admin cannot be an assignee, Requirement 22), returning one Envelope `data` of `{ "today": "YYYY-MM-DD", "groups": [ { "key", "cards": [...] } ] }` in the order of criterion 2, where a card has `id`, `title`, `board_id`, `board_slug`, `board_name`, `priority`, `end_date`, `due_state`, and `category` (`id`, `name`, `color`) or null. THE Backend SHALL compute the groups from `APP_TIMEZONE`, SHALL use a number of queries that does not depend on the number of Cards, SHALL return no other user's Card, and SHALL return no Email or description.
 5. [TASK-05] THE Frontend SHALL read the groups from the API and SHALL NOT group by the browser date.
 ### Requirement 53: Users, Active, and Availability
+> Amended by Requirement 63, V18 (order, paging, width).
 **User Story:** As an Admin, I want to deactivate an account or mark a person unavailable instead of deleting them, so that history and assignments stay intact and work is never orphaned.
 This requirement supersedes the Admin user delete (there is none in the specs of Requirement 1; the task removes any route or button that exists), amends Requirement 1 (sign-in) and Requirement 4 (assignee), and keeps Decision B. Reference: `design/reference/v2/08-user-management-desktop.png` and `08-user-management-mobile.png` for the table frame; the table layout itself is built from the Component_Recipes (Open Question 63).
 #### Acceptance Criteria
@@ -1890,6 +1911,7 @@ This requirement supersedes SHELL-17, PUB-09, and INV-19 to INV-21 for layout on
 4. [SHR-04] THE modal SHALL open on `?invite=1` (the Inbox link of a `board_join_requested` notification, Requirement 28) and on the Share item, SHALL keep a copied link out of the document title and the URL, and SHALL send no token to a log. THE Frontend SHALL build the link from `window.location.origin` and the API's `path` (`/app/invite/{token}`, `/app/shared/{token}`, PATH-04). Closing the modal SHALL return focus to the Share item.
 5. [SHR-05] THE modal SHALL fit 360 to 414 pixels as a full-width sheet with 44 pixel actions and no horizontal scroll, keep a focus trap and Escape (BaseModal), and show loading and error-with-Retry states for each section independently. THE Shared_View, the invite page, and every API route stay as they are.
 ### Requirement 56: Card Modal
+> Amended by Requirements 68 and 69, V18 (layout, paging, permissions).
 **User Story:** As a user, I want the Card modal to look like the owner's new design, with the key attributes in one row, so that I can read and edit a Card at a glance.
 This requirement rebuilds the layout of the Card modal (Requirement 14 criterion 8, Requirement 25, Requirement 40 criteria for the modal) to match `design/reference/v2/04-card-modal-desktop.png` and `04-card-modal-mobile.png`. Behaviour, permissions, auto-save, and payloads do not change (Decision BH).
 #### Acceptance Criteria
@@ -1944,3 +1966,172 @@ This requirement amends Requirement 1 (register and login) and Requirement 19, a
 10. [ACT-10] THE `.env.example` files, `compose.yaml`, `deploy/bare/supervisor.conf`, the server environment template, and `deploy/README.md` SHALL list `MAIL_BACKEND`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`, `PUBLIC_BASE_URL`, and `RATE_LIMIT_RESEND_VERIFICATION_MAX`, with a note that a Gmail account needs 2-step verification and an app password (Open Question 64).
 11. [ACT-11] THE Backend SHALL document the new routes and codes (`ACCOUNT_NOT_ACTIVATED`, `ACCOUNT_DISABLED`, `TOKEN_INVALID`, `TOKEN_EXPIRED`) in `openapi.json` and `API.md`, SHALL keep `GET /api/auth/availability` and the login rate limit as they are, and SHALL regenerate both documents.
 12. [ACT-12] THE Frontend SHALL keep the visitor's destination through register, verification, and sign-in, so an invite link still leads to its Join_Request (Open Question 69): the register and login pages accept `?next=<safe path>` under the PATH-05 rules; WHEN register succeeds, THE Frontend SHALL store `next` in `sessionStorage` with the address and go to `/app/verify`; THE "Sign in" button after "Email confirmed" SHALL go to `/app/login?next=<stored next>` when the verification happens in the same browser, and to `/app/login` otherwise; after sign-in THE Frontend SHALL go to `next` when it is a safe path. THE signed-out invite page's "Create account" and "Sign in" links SHALL pass `next=/app/invite/{token}`. THE verification email link SHALL NOT carry `next` (no invite token in an email the Backend writes), and `next` SHALL never be sent to the Backend.
+### Requirement 60: Toasts
+**User Story:** As a user, I want every action to answer me in one place, so that I always know whether it worked without scanning the page.
+This requirement adds a Toast channel (Decision BK). It supersedes the inline success messages and the non-field error banners of earlier versions for **action results**. It does not change the page states (loading, error with Retry, empty), the field errors of forms, the V12 auto-save status, or the error area of an open ConfirmDialog (Open Question 80).
+#### Acceptance Criteria
+1. [TOAST-01] THE Frontend SHALL show a Toast at the bottom right of the viewport for the result of every user action that writes data (create, update, delete, move, invite, join, restore, upload, mark read in bulk, sign out excepted): a success Toast after a 2xx answer and an error Toast after a non-2xx answer or a network failure. THE Toast library SHALL be `sonner`, wrapped once in `components/shared/BaseToaster.tsx` and called only through `lib/toast.ts` (`toast.success(message)`, `toast.error(message)`), so no component imports `sonner` directly.
+2. [TOAST-02] THE error Toast SHALL show the API Envelope `message` (or "Something went wrong. Try again." for a network failure or an empty message); IT SHALL NOT show a stack, a code, or a raw status. THE success Toast SHALL use a short past-tense sentence naming the thing ("Column added", "Card restored to To Do", "User updated").
+3. [TOAST-03] WHILE the viewport is below 960 pixels, THE Toasts SHALL appear at the bottom centre, full width minus the page gutter, above the mobile safe area. AT most 3 Toasts SHALL be visible; a fourth pushes out the oldest.
+4. [TOAST-04] A success Toast SHALL close after 4 seconds and an error Toast after 6 seconds; both SHALL pause while hovered or focused and SHALL have a close control with the name "Dismiss". THE Toaster region SHALL be an `aria-live` region (`polite` for success, `assertive` for error) so a screen reader announces it, and a Toast SHALL NOT take focus.
+5. [TOAST-05] THE Toast SHALL use Design_System tokens only: `--surface-raised`, `--ink`, `--border`, the `success` and `danger` tones for the icon, `--radius-md`, `--shadow-lg`, the spacing scale of Requirement 61, and the light and dark themes.
+6. [TOAST-06] A field error of a form (a 400 `VALIDATION_ERROR` with `details`) SHALL stay next to its field (Requirement 45) and SHALL NOT also raise a Toast; a 400 without `details` raises an error Toast. WHILE a ConfirmDialog is open, its action error SHALL stay in the dialog (COL-05) and SHALL NOT raise a Toast; a success closes the dialog and raises a success Toast.
+7. [TOAST-07] Auto-saved edits (the Card modal fields of Requirement 25) SHALL keep the inline "Saving / Saved" status and SHALL raise only error Toasts, not a success Toast per keystroke save.
+
+### Requirement 61: Design Consistency
+**User Story:** As the product owner, I want the same space, size, and colour rules on every screen, so that the product looks like one product.
+This requirement adds scales to the Design_System (Decision BL) and applies them to every screen of V1 to V18. It supersedes any per-component spacing written before V18 that conflicts with it.
+#### Acceptance Criteria
+**Scales**
+1. [DS-01] THE Design_System SHALL define these tokens in `styles/tokens.css` and map them in `@theme` so Tailwind utilities use them: `--space-label` 8px (label to control), `--space-field` 16px (between form fields and between controls in a toolbar), `--space-section` 24px (between sections and between cards of a grid), `--space-page` 24px below 960 pixels and 32px from 960 pixels (page gutter and the space under the page title), `--control-h` 40px (input, select, button, search, date field), `--control-h-sm` 32px (compact controls in a Column header and table rows), `--chip-h` 24px (badge, pill, chip, filter chip), and `--progress-h` 8px (progress bars).
+2. [DS-02] EVERY input, select, combobox, search field, date field, and button of default size SHALL be `--control-h` high, and every compact control `--control-h-sm`; the text size inside follows the existing type scale (`text-sm`). No component SHALL set its own height with a number.
+3. [DS-03] EVERY chip-like element (priority badge, due badge, category pill, column badge, role badge, filter chip, count pill, "Overdue" date chip) SHALL be `--chip-h` high with the same horizontal padding, radius (`--radius-full`), and text size (`text-xs`, `font-medium`). THE Board_Toolbar progress pill and its bar SHALL use `--chip-h` and `--progress-h`; the toolbar search field SHALL use `--control-h`, so the toolbar has two heights only.
+4. [DS-04] EVERY labelled field SHALL put `--space-label` between the label and the control, and a hint or error line SHALL sit `--space-label` below the control. Forms SHALL stack fields with `--space-field`, and form sections with `--space-section`.
+5. [DS-05] EVERY page SHALL use `--space-page` as its gutter and below its title block, and SHALL separate its top-level blocks (filters, widgets, tables) with `--space-section`.
+6. [DS-06] A grep in CI (`frontend/scripts/check-tokens.mjs`, already used for colours) SHALL also fail on an arbitrary spacing, height, or width value (`p-[`, `gap-[`, `h-[`, `w-[`, `m-[` with a number) outside `components/ui/`.
+**Lists and options**
+7. [DS-07] A list of options (`BaseCombobox`, `BaseSelect`, `BaseMenu`, the command menu) SHALL NOT show any option as highlighted when it opens. AN option SHALL be highlighted only while the pointer is over it or after the first arrow key, and the highlight SHALL clear when the pointer leaves the list. THE chosen value SHALL be marked with a check icon and `aria-selected="true"`, never with the highlight colour alone. This supersedes the cmdk default (first item selected on open) everywhere.
+8. [DS-08] EVERY select in the product SHALL be a `BaseCombobox` that can be searched by typing, with the same trigger look (`--surface`, `--border`, `--control-h`, chevron), the same popover (`--surface-raised`, `--shadow-lg`), and the same empty line ("No matches"). A plain native `<select>` SHALL NOT be used.
+**Date and check controls**
+9. [DS-09] THE Frontend SHALL have one date field, `BaseDateField` (the field already used for the Card modal dates, over `react-day-picker`), and every date input (Card modal start and end, Dashboard range and "Due on", any other) SHALL use it: a trigger that shows the date in the user's locale format, a calendar popover, a Clear control where the date is optional, and the keyboard rules of `react-day-picker`. A native `<input type="date">` SHALL NOT be used.
+10. [DS-10] EVERY checkbox SHALL be `BaseCheckbox` (one size, `--radius-sm`, the accent tone when checked, a visible focus ring); EVERY on/off setting SHALL be `BaseSwitch`. THE Card modal's "Start date" and "End date" toggles SHALL use `BaseCheckbox` with a label, aligned to the date field it enables.
+**Surfaces**
+11. [DS-11] A form control SHALL be visually distinct from the surface it sits on: on `--canvas` a control uses `--surface`, on `--surface` it uses `--surface-sunken`, and every control has a `--border` that meets 3:1 against its background in both themes.
+12. [DS-12] A focus ring SHALL never be clipped: a scroll container that holds focusable controls SHALL have inner padding at least `--border-width-focus` plus the ring offset, or the control SHALL use an inset ring.
+**Verification**
+13. [DS-13] THE owner's visual review (Requirement 72) SHALL check every screen against DS-01 to DS-12 at 360, 414, 960, and 1280 pixels.
+### Requirement 62: Sidebar Logo, Active State, and Back Arrow
+**User Story:** As a user, I want the brand in the Sidebar, to see where I am, and to go up one level with one click, so that I never get lost.
+This requirement amends Requirement 47 (NAV) and the App_Header of Requirement 39.
+#### Acceptance Criteria
+1. [NAVB-01] THE Sidebar SHALL show the RevoBoard logo at its top, and THE logo SHALL be the Sidebar toggle (round 2 within V18): a `button` with `aria-expanded` and the name "Collapse sidebar" or "Expand sidebar" that shows the logo with the word mark while the Sidebar is expanded and the logo mark only while it is collapsed. THE separate expand and collapse icon button SHALL be removed. THE logo SHALL be separated from the first Sidebar item by `--space-section`. BELOW 960 pixels, where the Sidebar is a drawer, THE drawer SHALL show the logo with the word mark (not a toggle), and the App_Header SHALL show the logo mark beside the menu button, linking to the role's home page (Dashboard for Supervisor, Manager, Admin; My Tasks for Member). THE App_Header SHALL no longer show a logo from 960 pixels.
+2. [NAVB-02] THE logo SHALL use the existing transparent assets (`public/brand/`) at the `sm` logo height, with empty `alt` text inside the toggle (the button carries the name); the mark-only logo in the App_Header link SHALL have the accessible name "RevoBoard home".
+3. [NAVB-03] A Sidebar item SHALL be active WHEN the current path equals its `href` or starts with its `href` followed by `/`, and THE Boards item SHALL also be active on every Board path (`/app/b/...` and `/app/boards/...`). THE active item SHALL carry `aria-current="page"` and the existing active recipe. AT most one Sidebar item SHALL be active.
+4. [NAVB-04] A Top_Menu item that is a route SHALL follow the same rule within the open Board (Board is active on `/app/b/{slug}` only; List, Calendar on their path; Archived activates no Top_Menu item and shows the toolbar "Archived" control as pressed).
+5. [NAVB-05] THE App_Header SHALL show, at its top left, a back arrow (`ArrowLeft`, `BaseIconButton`, name "Back to <parent>") on every page that is not a Sidebar destination, linking to the parent page in this table (Open Question 81). IT SHALL NOT use browser history.
+| Page | Parent |
+|---|---|
+| `/app/b/{slug}`, `/list`, `/calendar`, `/archived` | `/app/boards` ("Boards") |
+| `/app/profile` | the role's home page |
+| `/app/invite/{token}` | `/app/boards` |
+| `/app/dashboard`, `/app/my-tasks`, `/app/boards`, `/app/users` | none (Sidebar destinations) |
+6. [NAVB-06] THE back arrow SHALL keep the parent's query string when the parent is the page the user came from inside the app in this tab (for example `/app/boards?q=sales&sort=updated_at`), read from a `sessionStorage` key set by the parent page; otherwise it SHALL link to the bare parent path.
+7. [NAVB-07] THE App_Header SHALL be separated from the page content below it by a 1 pixel `--border` line across the full width of the app frame (`border-b border-line`), at every width (round 2 within V18).
+8. [NAVB-08] FROM 960 pixels, THE Top_Menu SHALL be centred in the App_Header between the back arrow on the left and the bell and User_Menu on the right (a three-part row: left and right parts of equal flexible width, the Top_Menu in the middle), and SHALL stay centred whether or not the back arrow shows. BELOW 960 pixels the Top_Menu stays in the drawer (NAV-03).
+
+### Requirement 63: Users Page
+**User Story:** As an Admin, I want the Users page to use the whole page, list people in a fixed order, and page through them, so that a long list stays readable.
+This requirement amends Requirement 53.
+#### Acceptance Criteria
+1. [USRP-01] THE Users page SHALL use the full page content width (the shell content area minus `--space-page` on each side), with no narrower `max-width`; the table SHALL scroll inside its card, not the page, below 960 pixels.
+2. [USRP-02] THE Backend SHALL return `GET /api/users` sorted by role in the order `admin`, `manager`, `supervisor`, `member`, then by `full_name` ascending (case-insensitive), then by `id`.
+3. [USRP-03] `GET /api/users` SHALL accept `page` (integer from 1, default 1) and `per_page` (integer 1 to 100, default 20) and SHALL return `data` of `{ "items": [...], "page", "per_page", "total" }`. A `page` beyond the last page SHALL return an empty `items` with the real `total`. An invalid value SHALL be HTTP 400 `VALIDATION_ERROR` with `details`. THE number of queries SHALL not depend on the number of users (one count, one page).
+4. [USRP-04] THE Frontend SHALL show, below the table, a pagination bar: "Showing 21 to 40 of 57", Previous and Next buttons (disabled at the ends), and page numbers with an ellipsis when there are more than 7 pages; the page SHALL be kept in the query string (`?page=`). AFTER a save, THE table SHALL reload the same page.
+5. [USRP-05] EVERY save, error, and refusal of the Users page (role change, active and available toggles, create) SHALL use the Toasts of Requirement 60; `USER_HAS_OPEN_WORK` keeps its list in the ConfirmDialog (TOAST-06).
+
+### Requirement 64: Boards List Search and Sort
+**User Story:** As a user with many Boards, I want to search and sort the Boards page, so that I find a Board fast.
+#### Acceptance Criteria
+1. [BRDL-01] THE Boards page SHALL have, in its title block, a search field (`--control-h`, placeholder "Search boards", name "Search boards") that matches the Board name case-insensitively as the user types (debounced 250 ms), and a sort `BaseCombobox` with "Last updated", "First updated", "Newest", "Oldest" (`updated_at` desc, `updated_at` asc, `created_at` desc, `created_at` asc). THE default SHALL be "Last updated" (Open Question 79).
+2. [BRDL-02] THE Backend SHALL accept on `GET /api/boards` the parameters `q` (string, trimmed, at most 100 characters; matched with `ILIKE` on `name`, with `%` and `_` escaped) and `sort` (`updated_at` or `created_at`) and `order` (`asc` or `desc`), with ties broken by `name` then `id`. An invalid `sort` or `order` SHALL be HTTP 400 `VALIDATION_ERROR`. THE access rules of Requirement 11 and Requirement 22 SHALL not change.
+3. [BRDL-03] THE search and sort SHALL be kept in the query string (`?q=&sort=&order=`) so a link and the back arrow (NAVB-06) restore them. WHEN no Board matches, THE page SHALL show "No boards match \"<q>\"" with a "Clear search" button.
+4. [BRDL-04] A Board's `updated_at` SHALL change on a rename, a description, visibility, or owner change, and a Column create, rename, move, or delete; it SHALL NOT change on a Card change (so the sort reflects the Board, not its traffic).
+### Requirement 65: Dashboard Access and Filter Bar
+**User Story:** As an Admin, Manager, or Supervisor, I want a clear filter bar, so that I can narrow the Dashboard without guessing what each control does.
+This requirement amends Requirement 51 (DASH-11, DASH-19) and Decision B (Decision BM).
+#### Acceptance Criteria
+**Access**
+1. [DASH-23] THE Backend SHALL allow an Admin to call `GET /api/analytics/dashboard` with the scope of a Manager (every Board; any `board`). A Supervisor SHALL keep the scope of DASH-19 (only the Boards it owns, as the owner confirmed). A Member SHALL still receive 403. THE other analytics routes of Requirement 10 SHALL follow the same rule.
+2. [DASH-24] THE Sidebar SHALL show Dashboard to Supervisor, Manager, and Admin (NAV-01 amended), and the role's home page of an Admin SHALL be `/app/dashboard`.
+**Filter bar**
+3. [DASH-25] THE filters SHALL sit in one filter card under the greeting (`--surface-raised`, `--border`, `--radius-frame`, padding `--space-section`), not inline with the title. EVERY filter SHALL have a visible label above it (`text-xs`, `font-medium`, `--ink-muted`, `--space-label` gap): "Board", "Member", "From", "To". THE controls SHALL be `--control-h` high and use `--surface`, so they never match the card background.
+4. [DASH-26] Board and Member SHALL be searchable `BaseCombobox` controls (DS-08) with "All boards" and "Anyone" as their first option, which is the default and is shown as the value, not as a highlighted row (DS-07).
+5. [DASH-27] THE date range SHALL be two `BaseDateField` controls, "From" and "To" (DS-09), defaulting to the last 30 days (DASH-11). THE preset controls ("Last 7 days", "Last 30 days", "This month") SHALL be removed (round 2 within V18): the two date fields are the only way to set the range.
+6. [DASH-28] THE filter card SHALL lay out its four filters in one row from 960 pixels (four equal columns, `--space-field` gaps), two columns from 600 to 959 pixels, and one column below 600 pixels. A "Reset filters" text button SHALL appear at the end of the row, after "To", when any filter differs from its default, and SHALL NOT add a second row from 960 pixels.
+7. [DASH-29] THE "Due on" date of the Due tomorrow widget (DASH-15) SHALL use `BaseDateField` in single mode, `--control-h-sm`, in the widget header, with the label "Due on" visually hidden.
+
+### Requirement 66: My Tasks and Assignee Roles
+**User Story:** As a Manager, I do not hold Cards myself, so that My Tasks does not show me an empty page that can never fill.
+This requirement amends TASK-01, NAV-01, and the assignment rules of Requirement 4 and Requirement 22 (Decision BN).
+#### Acceptance Criteria
+1. [TASK-06] THE Sidebar SHALL show My Tasks to a Member and a Supervisor only. A Manager or an Admin who opens `/app/my-tasks` SHALL be redirected to `/app/dashboard`.
+2. [TASK-07] `GET /api/me/cards` SHALL return HTTP 403 for a Manager and an Admin.
+3. [TASK-08] THE Backend SHALL refuse a Manager or an Admin as `assignee_id` on create and update with HTTP 400 `VALIDATION_ERROR` and `details.assignee_id` "Managers and admins cannot be assigned". THE assignee pickers SHALL list Members and Supervisors only (already true for Board members; V18 makes it a rule, not a side effect).
+4. [TASK-09] THE migration of V18 SHALL leave any existing Card assigned to a Manager or Admin as it is (no data change) and SHALL report the count in the deploy log; such a Card can be reassigned by staff. A Card cannot be newly assigned to them.
+### Requirement 67: Column Drag and Drop
+**User Story:** As a Board_Owner, Manager, or Admin, I want to drag a Column to a new place, so that I reorder the workflow the same way I move Cards.
+This requirement amends COL-11 (Decision BO). The rights of COL-01 do not change.
+#### Acceptance Criteria
+1. [COLD-01] THE Frontend SHALL let the Board_Owner, a Manager, and an Admin drag a Column by a grip handle in its header (`GripVertical`, name "Reorder column <name>") to a new position in the Column row. Dragging SHALL reuse the pointer drag code that moves Cards in `components/board/Board.tsx` (extracted into one hook, `hooks/useDragSort.ts`, used by both), and SHALL NOT add a drag library.
+2. [COLD-02] WHILE a Column is dragged, THE Board SHALL show a drop indicator between Columns (`--accent`, `--border-width-focus`), SHALL scroll the board area sideways near its edges, and SHALL NOT start a Card drag. Escape SHALL cancel and put the Column back.
+3. [COLD-03] ON drop at a new index, THE Frontend SHALL move the Column at once (optimistic), call `PATCH /api/columns/{id}/move` with the 0-based `position`, reconcile with the response, and on an error put the Column back and show an error Toast. A drop at the same index SHALL send nothing.
+4. [COLD-04] THE "Move left" and "Move right" items of the Column menu SHALL stay, as the keyboard way to reorder (WCAG 2.5.7), and SHALL be disabled at the ends. THE Done_Column MAY be dragged (COL-10).
+5. [COLD-05] A user without Column rights SHALL see no grip and SHALL NOT be able to start a Column drag.
+
+### Requirement 68: Card Modal Layout and Paging
+**User Story:** As a user, I want a roomier Card modal with the parts in a sensible order and long threads cut short, so that I read and edit a Card comfortably.
+This requirement amends Requirement 56 (CM).
+#### Acceptance Criteria
+1. [CMV-01] THE Card modal SHALL be 960 pixels wide from 1024 pixels (a new token `--modal-w-lg`), keep its V17 split (main pane and right pane), and stay full screen below 960 pixels.
+2. [CMV-02] THE Card modal SHALL NOT clip any border or focus ring of its controls (DS-12): the main and right panes SHALL have inner padding `--space-section` and the title input SHALL use the inset focus ring.
+3. [CMV-03] THE chip row SHALL NOT show the Column chip, because the Column is already in the modal header. Every remaining chip SHALL follow DS-03.
+4. [CMV-04] THE main pane order SHALL be Description, Attachments, Subtasks (Attachments moved above Subtasks), so the "Add attachment" popover has room below it.
+5. [CMV-05] THE start and end date fields SHALL be `BaseDateField` with a `BaseCheckbox` to enable each (DS-09, DS-10).
+6. [CMV-06] THE right pane SHALL show the 5 newest top-level comments first, each with its replies, and a "Load more comments" button at the bottom that adds the next 5, until none is left (then the button is gone). THE activity tab SHALL do the same with "Load more activity" and 5 entries per page (Open Question 78). A posted comment SHALL be added at the top without a reload; the count in the tab SHALL show the total.
+7. [CMV-07] THE Backend SHALL accept on `GET /api/cards/{id}/comments` the parameters `limit` (1 to 50) and `offset` (from 0) besides `sort`, and SHALL return `data` of `{ "items": [...], "total": n }` where `total` counts top-level comments and each item carries its replies. WHEN `limit` is absent, THE Backend SHALL return every comment in the same shape. THE number of queries SHALL not depend on the number of comments. THE card activity route keeps its `limit` and `before` paging.
+8. [CMV-08] THE select controls of the modal (assignee, priority, category) SHALL follow DS-07 and DS-08.
+
+### Requirement 69: Card Permissions
+**User Story:** As a Board_Owner, I want Members to work on their Cards without changing what others wrote, and only the right people to comment, so that a Card stays trustworthy.
+This requirement supersedes the "Member edits an assigned Card" rule of Requirement 4 and Requirement 7 criterion on who comments (Decisions BP and BQ). Staff rights (a Supervisor with Board_Staff_Access, a Manager, an Admin) on Cards, subtasks, and attachments do not change; Decision B still keeps an Admin from commenting.
+#### Acceptance Criteria
+**Data**
+1. [PERM-01] THE migration of V18 SHALL add `created_by_id` (UUID, nullable, foreign key to `users.id`, `ON DELETE SET NULL`) to `subtasks` and `attachments`, leave it null for existing rows (Open Question 74), and set it to the actor on every new row. THE subtask and attachment payloads SHALL add `created_by_id` and `can_edit` (boolean, computed for the viewer).
+**Matrix**
+2. [PERM-02] THE Backend SHALL apply this matrix in the service layer (403 `FORBIDDEN` otherwise). "Assigned Member" is a Member who is the Card's assignee; "Other Member" is any other Member with Board_Access; "Staff" is a Supervisor with Board_Staff_Access, a Manager, or an Admin.
+| Action | Staff | Assigned Member | Other Member |
+|---|---|---|---|
+| Read the Card | yes | yes | yes |
+| Edit title, priority, dates, category, assignee | yes | no | no |
+| Edit description | yes | yes | no |
+| Move the Card (move route) | yes | yes | no |
+| Archive, restore, delete the Card | yes (Card_Creator rules stay) | no | no |
+| Add a subtask | yes | yes | no |
+| Rename, reorder, delete a subtask | yes | only `created_by_id` = self | no |
+| Check or uncheck a subtask | yes | yes, any subtask | no |
+| Add an attachment | yes | yes | no |
+| Delete an attachment | yes | only `created_by_id` = self | no |
+| Add a comment or reply | Manager; Supervisor with Board_Staff_Access; not Admin | yes | no |
+| Delete a comment | its author only (unchanged) | its author only | its author only |
+| Flag a priority comment | unchanged (Requirement 27) | unchanged | no |
+3. [PERM-03] `PATCH /api/cards/{id}` from an Assigned Member SHALL accept only `description`; any other field in the body SHALL make the whole request HTTP 403 with the message "Members can only edit the description" and change nothing (Open Question 75).
+4. [PERM-04] `PATCH /api/subtasks/{id}` from an Assigned Member who is not the creator SHALL accept only `is_done`; `title`, `order`, `prev`, or `next` SHALL be HTTP 403. `DELETE` SHALL be HTTP 403 unless the Member is the creator.
+5. [PERM-05] `POST /api/cards/{id}/comments` and the reply route SHALL return HTTP 403 "You cannot comment on this card" for an Admin, a Supervisor without Board_Staff_Access, and a Member who is not the assignee. Guests keep their V10 rules.
+**Frontend**
+6. [PERM-06] THE Card modal SHALL show only the controls the viewer may use: an Assigned Member sees the title, chips, and dates as read-only text; edit and delete controls of a subtask or attachment appear only when `can_edit` is true; a subtask checkbox is enabled for any Assigned Member. A viewer who may not comment SHALL see no composer and the line "Only the assignee and board staff can comment." THE Backend still enforces every rule.
+7. [PERM-07] THE seed data and the tests SHALL cover each row of the matrix (Property 83).
+
+### Requirement 70: Board Members Panel
+**User Story:** As a Board_Owner, I want to tell the people I can add from the people already on the Board, so that I do not add the wrong person.
+This requirement amends the Members view of Requirement 47 (NAV-08).
+#### Acceptance Criteria
+1. [MEMP-01] THE "Add people" search SHALL show its results in a popover under the search field (`--surface-raised`, `--shadow-lg`, the heading "Add to board"), never inline in the members list. EACH result row SHALL show the avatar, the name, the role badge, and an "Add" button; the current members list SHALL show "Remove" (owner only) and no "Add".
+2. [MEMP-02] THE members list SHALL sit below the search under the heading "Members (N)", separated by `--space-section`.
+3. [MEMP-03] AFTER a person is added, THE search field SHALL be cleared, the popover closed, focus returned to the search field, the list refreshed, and a success Toast "<Name> added" shown. AN error SHALL show an error Toast and keep the search text.
+
+### Requirement 71: Categories Palette and Refresh
+**User Story:** As a Board_Owner, I want more colours for categories and to see my changes on the Board at once, so that categories are useful.
+This requirement amends the Categories view of Requirement 47 and the category rules of Requirement 8 (Decision BR).
+#### Acceptance Criteria
+1. [CATP-01] THE Design_System SHALL define 18 category palette keys: `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`, each as `--cat-<key>-bg` and `--cat-<key>-fg` in light and dark themes, where the `fg` on `bg` contrast is at least 4.5:1 in both themes (Property 85). THE five V17 keys (`green`, `blue`, `red`, `purple`, `orange`) SHALL keep their names, so no data migration is needed.
+2. [CATP-02] THE Backend SHALL accept on category create and update only `color` in the palette keys or null, and SHALL return HTTP 400 `VALIDATION_ERROR` with `details.color` otherwise.
+3. [CATP-03] THE Categories view SHALL pick a colour with a swatch grid (6 by 3, each swatch a 32 pixel button with the colour name as its accessible name, the chosen one with a check and `aria-pressed="true"`), in a `BasePopover` from a swatch trigger beside the name field.
+4. [CATP-04] AFTER a category is created, renamed, recoloured, or deleted, THE open Board, List, Calendar, and Archived views and an open Card modal SHALL show the change without a reload: the Categories view SHALL update the shared Board state (`ShellContext` board categories and the Cards' `category` objects), and a deleted category SHALL be removed from every Card that had it. A success Toast SHALL confirm each change.
+### Requirement 72: Verification of V18
+**User Story:** As the product owner, I want V18 proved by tests and by a visual pass, so that the polish holds.
+#### Acceptance Criteria
+1. [V18-01] THE Backend tests SHALL cover: the Users order and paging (USRP-02, USRP-03), the Boards `q`, `sort`, `order` (BRDL-02), the Admin Dashboard scope (DASH-23), `/me/cards` 403 and the assignee role refusal (TASK-07, TASK-08), comments paging (CMV-07), every row of the permission matrix (PERM-02 to PERM-05), the palette validation (CATP-02), and the V18 migration up and down.
+2. [V18-02] THE Frontend tests SHALL cover: the toast helper and its use in at least one create, update, delete, and error path (TOAST-01 to TOAST-07), no option highlighted on open (DS-07), the Sidebar active rule (NAVB-03), the back arrow table (NAVB-05), the Users pagination bar (USRP-04), the Boards search and sort query string (BRDL-03), the filter card layout and labels in one row with no presets (DASH-25 to DASH-28), the logo toggle (NAVB-01), the header line and the centred Top_Menu (NAVB-07, NAVB-08), My Tasks hidden for Manager and Admin (TASK-06), the Column drag order and the menu fallback (COLD-03, COLD-04), the Card modal order and Load more (CMV-03, CMV-04, CMV-06), the controls hidden by the matrix (PERM-06), the members search reset (MEMP-03), and the categories refresh (CATP-04).
+3. [V18-03] `frontend/tests/design-system.test.ts` SHALL pass (DS-14 to DS-17, replacing the `check-tokens` script of DS-06), and `e2e/widths.mjs` SHALL pass at 360, 414, 960, and 1280 pixels on every V18 screen.
+4. [V18-04] THE owner's visual review SHALL check every screen against Requirement 61 and `design/reference/v2/`, and SHALL carry over the open V17 review (task 39.52).
+5. [V18-05] `backend/openapi.json` and `backend/API.md` SHALL be regenerated for the new parameters, shapes, and codes.

@@ -218,3 +218,8 @@ inclusion: always
 - **Rule:** `completed_at` is null for every Card archived from V17 on (a Done Card cannot be archived) and is recomputed when a Card is restored (treated as entering the first Column). A Column delete hard-deletes the Column row only; Boards and Cards stay soft-deleted.
   **Rationale:** Throughput still counts archived finished work.
   **Example:** archive a `Review` Card: `column_id` null; archive a `Done` Card: 409 `CARD_IN_DONE`.
+
+## V18 (draft, Requirement 69 and 71)
+- `subtasks.created_by_id` and `attachments.created_by_id`: UUID, nullable, FK `users.id` `ON DELETE SET NULL`; null for rows made before V18.
+- `categories.color`: one of the 18 palette keys (`red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `slate`) or null, validated in the schema.
+- A Manager or an Admin is never `cards.assignee_id` (refused on write; old rows kept).

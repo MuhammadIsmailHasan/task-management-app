@@ -1213,7 +1213,85 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
   - [ ] 39.52 Checkpoint: owner's visual review
     - The side-by-side review of V17-T13 at 1440 and 390 pixels; record each decision in `specs/CHANGELOG.md`; ask the owner before any server action (V17-T14).
     - _Requirements: V17-T13, V17-T14_
+- [x] 40. Toasts, design consistency, shell and lists, Dashboard access, Column drag, Card modal, Card permissions, Members and Categories panels (Decisions BK to BR, V18)
+  - Built on 2026-11-26; no commit was made. Only 40.20 (the owner's visual review) is open. Differences between the text and the build are in the changelog entry "Implementation of V18". Each phase ends with a gate (`pytest`, `vitest run`, `tsc --noEmit`, `next build`, `check-tokens`, and `openapi.json`/`API.md` regenerated when the API changed).
+  - [x] 40.1 Owner review of V18
+    - The owner approves Requirements 60 to 72 and the defaults of Open Questions 74 to 81.
+    - _Requirements: 60 to 72_
+  - **Phase 1: Design_System and Toasts**
+  - [x] 40.2 Scale tokens and the token check
+    - `styles/tokens.css`, `styles/globals.css` (`@theme`), `scripts/check-tokens.mjs`. Tests: the token check fails on `gap-[12px]`.
+    - _Requirements: 61.1, 61.6_
+  - [x] 40.3 `BaseToaster`, `lib/toast.ts`, `toastError`
+    - Add `sonner`; mount in the root layout; tests for success, error, validation skip, and the ConfirmDialog rule.
+    - _Requirements: 60.1 to 60.7_
+  - [x] 40.4 Lists: no default highlight, check mark, every select a `BaseCombobox`
+    - `components/ui/command.tsx`, `BaseCombobox`, every `BaseSelect` caller. Tests: nothing highlighted on open; hover and arrow key highlight; check on the chosen value.
+    - _Requirements: 61.7, 61.8_
+  - [x] 40.5 `BaseDateField` single and range modes, `BaseCheckbox`, inset focus ring
+    - _Requirements: 61.9, 61.10, 61.12_
+  - [x] 40.6 Apply the scales to every screen and replace inline results with Toasts
+    - Auth pages, Boards, Board and its views, Card modal, Dashboard, My Tasks, Users, Profile, panels, Share modal, 404. Chips, progress pill, toolbar search.
+    - _Requirements: 60.1, 61.2 to 61.5, 61.11_
+  - **Phase 2: Shell and lists**
+  - [x] 40.7 Sidebar logo, active subtree rule, back arrow (`parentOf`)
+    - `Sidebar.tsx`, `NavDrawer.tsx`, `AppHeader.tsx`, `navItems.ts`, `lib/routes.ts`. Tests: NAVB-03 table, NAVB-05 table.
+    - _Requirements: 62.1 to 62.6_
+  - [x] 40.8 Users order and paging (Backend) and the pagination bar (Frontend)
+    - `users/repository.py`, `service.py`, `schema.py`, `routes.py`; `UsersScreen`; Property 81.
+    - _Requirements: 63.1 to 63.5_
+  - [x] 40.9 Boards `q`, `sort`, `order` and the search and sort controls
+    - `boards/repository.py`, `schema.py`, `routes.py`; Column service touches `boards.updated_at`; Boards page; Property 82.
+    - _Requirements: 64.1 to 64.4_
+  - **Phase 3: Dashboard and My Tasks**
+  - [x] 40.10 Admin analytics scope, Sidebar, home page
+    - _Requirements: 65.1, 65.2_
+  - [x] 40.11 Dashboard filter card
+    - `DashboardView`, `DashboardWidgets`; labels, grid, range field, Reset filters, Due on field.
+    - _Requirements: 65.3 to 65.7_
+  - [x] 40.12 My Tasks for Member and Supervisor; assignee role refusal
+    - `cards/service._assign`, `/me/cards` role rule, `navItems.ts`, the `/app/my-tasks` redirect.
+    - _Requirements: 66.1 to 66.4_
+  - **Phase 4: Board and Card**
+  - [x] 40.13 `useDragSort` extraction and Column drag
+    - `hooks/useDragSort.ts`, `Board.tsx`, `ColumnHeader.tsx`; Property 86.
+    - _Requirements: 67.1 to 67.5_
+  - [x] 40.14 Migration `created_by_id` and `card_policy`
+    - `app/common/card_policy.py`, cards and comments services, DTOs (`can_edit`), tests for every matrix row (Property 83).
+    - _Requirements: 69.1 to 69.5, 69.7_
+  - [x] 40.15 Comments paging (Backend)
+    - `comments/repository.py`, `schema.py`, `routes.py`; Property 84.
+    - _Requirements: 68.7_
+  - [x] 40.16 Card modal: width, no Column chip, order, dates, Load more, permission-driven controls
+    - `CardModal`, `CardAttributes`, comments and activity panes.
+    - _Requirements: 68.1 to 68.6, 68.8, 69.6_
+  - [x] 40.17 Members panel popover and reset
+    - _Requirements: 70.1 to 70.3_
+  - [x] 40.18 Category palette, validation, swatch grid, shared refresh
+    - `lib/categories.ts`, tokens, `categories/schema.py`, `CategoriesView`, `ShellContext`; Property 85.
+    - _Requirements: 71.1 to 71.4_
+  - **Phase 5: Verification**
+  - [x] 40.21 Round 2 within V18: logo toggle, header line, centred Top_Menu, one-row Dashboard filters
+    - `Sidebar.tsx` (logo button replaces the toggle icon, `--space-section` below it), `AppHeader.tsx` (`border-b border-line`, three-part row with the Top_Menu centred), `DashboardView.tsx` (presets removed, four filters and Reset in one row). Tests: NAVB-01, NAVB-07, NAVB-08, DASH-27, DASH-28; the four-width check.
+    - _Requirements: 62.1, 62.2, 62.7, 62.8, 65.3, 65.5, 65.6_
+  - [x] 40.22 Round 2 within V18: one radius per role, one control look, no magic numbers
+    - `components/ui/input.tsx` (`controlClasses`), `BaseCombobox` trigger, `BaseDateField`, `ColorSwatchPicker`, `command.tsx`, every component whose radius breaks the DS-14 table; new `tests/design-system.test.ts` (DS-16, DS-17). Tests: the new test; the four-width check.
+    - _Requirements: 61.14, 61.15, 61.16, 61.17_
+  - [x] 40.23 Round 3 within V18: one radius, two paddings, full Card modal, inset focus ring
+    - `tokens.css` (`--radius-ui`, `--pad-surface`, `--pad-item`, `--space-10`, page gutter), every component's radius and surface padding, `dialog.tsx` (card size fills the viewport), `input.tsx` (`focus-ring-inset`), `CardModal.tsx` pane padding, `ActivityList.tsx`, `AppHeader.tsx`, `TopMenu.tsx`; `tests/design-system.test.ts` (DS-18, DS-19).
+    - _Requirements: 61.18, 61.19, 61.20, 62.7, 68.1, 68.2_
+  - [x] 40.24 Round 4 within V18: Column padding and gutter, seven text sizes, no Board meta line
+    - `Board.tsx` (inner padded row, Columns share the row from 960 px), `ColumnHeader.tsx`, `AddColumn.tsx`, `BoardHeader.tsx` (meta line removed, toolbar `text-sm`), `BaseChip.tsx`, `AppHeader.tsx` (brand below 960 px), `tokens.css` and `globals.css` (`--column-w-min`; `2xs`, `meta`, `card-*` text sizes removed), 23 components moved to the seven sizes; `tests/design-system.test.ts` (DS-22).
+    - _Requirements: 61.21, 61.22, 61.23_
+  - [x] 40.25 Round 5 within V18: Archived count, one heading scale, page frame, auth and landing
+    - `BoardView.tsx` (Archived count +1 outside the state updater), `ArchivedView.tsx` (page frame, Toast), every heading to its level (DS-24), `text-title` removed, page wrappers (DS-25), `AuthSplitLayout.tsx` and `AuthForm.tsx` (DS-26), `landing/sections.tsx`, `LandingHeader.tsx`, `app/page.tsx` (DS-27); `tests/design-system.test.ts` (DS-24), `v16-landing`, `v17-boards` tests.
+    - _Requirements: 61.24, 61.25, 61.26, 61.27_
+  - [x] 40.19 Tests, width check, documents
+    - _Requirements: 72.1 to 72.3, 72.5_
+  - [ ] 40.20 Checkpoint: owner's visual review (includes 39.52)
+    - _Requirements: 72.4_
 ## Notes
+- Group 40 (V18) is a draft: nothing in it is built until 40.1 is ticked. Phase 1 comes first because every later screen task uses its tokens, Toasts, and controls; 40.14 must come before 40.16; 40.15 before 40.16; 40.13 needs only Phase 1.
 - Group 39 (V17) is a draft: nothing in it is built until 39.1 is ticked. Phases run in order and each ends with a gate and one commit. 39.7 to 39.9 are one move (frontend routes, backend prefix, deploy files) and must ship together. 39.30 (migration 3 and the mail module) comes in Phase 6 because the email change needs it; Phase 9 reuses it. 39.19 adds `cards.board_id` (Open Question 53), which 39.36 and 39.38 read. 39.22 (`due_state`) comes before 39.23 to 39.25 and 39.36 to 39.38. Group 39 reworks ticked tasks of groups 16 to 19, 27, 33, 35, and 38; their checkboxes stay ticked and each task names what it reworks.
 - Group 38 progress (2026-11-23): implemented and tested on a laptop except 38.16 (the Playwright pass at 360, 414, 960, and 1280 pixels; the repository has no Playwright setup yet, so the width checks were done by eye in Chrome) and 38.18 (the owner's side-by-side review, `V16-T15`, and the browser recipe test `V16-T16` and screenshot run `V16-T17`, which need Playwright). 38.14 changed the deployment files only; nothing was run on the server.
 - Group 38 (V16) is a draft: nothing in it is built until 38.1 is ticked. 38.2 comes first for the Frontend and 38.4 for the Backend; 38.3 needs 38.2; 38.5 needs 38.4; 38.6 needs 38.3; 38.7 needs 38.6; 38.8 to 38.10 need 38.3 and 38.7; 38.11 needs 38.5 and 38.7; 38.12 needs 38.2; 38.13 needs 38.3 and 38.12; 38.14 needs 38.13. Group 38 reworks ticked groups 16 to 19, 26 to 31, 35, and 36; their checkboxes stay ticked and each 38.x task names what it replaces. The tasks of V16 do not touch the API of Requirements 1 to 37 except `done_delta` (38.4) and the two new routes (38.5).
@@ -1397,7 +1475,14 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
     { "id": 151, "tasks": ["39.47", "39.48"] },
     { "id": 152, "tasks": ["39.49"] },
     { "id": 153, "tasks": ["39.50", "39.51"] },
-    { "id": 154, "tasks": ["39.52"] }
+    { "id": 154, "tasks": ["39.52"] },
+    { "id": 155, "tasks": ["40.1"] },
+    { "id": 156, "tasks": ["40.2", "40.3", "40.4", "40.5"] },
+    { "id": 157, "tasks": ["40.6", "40.8", "40.9", "40.10", "40.12", "40.14", "40.15"] },
+    { "id": 158, "tasks": ["40.7", "40.11", "40.13", "40.16", "40.17", "40.18"] },
+    { "id": 159, "tasks": ["40.19"] },
+    { "id": 160, "tasks": ["40.21", "40.22"] },
+    { "id": 161, "tasks": ["40.20"] }
   ]
 }
 ```

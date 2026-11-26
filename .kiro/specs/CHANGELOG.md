@@ -529,3 +529,71 @@ Contradictions and gaps found; none was resolved silently.
   9. **Unverified accounts.** A user with `email_verified_at` null and no Token never reaches a protected route; they are not purged (Open Question 68).
   10. **Playwright (39.50).** The four-width check is a plain script on `playwright-core` and Chrome (`frontend/e2e/widths.mjs`, `shot.mjs`), not a `@playwright/test` suite.
   11. **Card modal (CM-01).** The header (icon tile, Board, Column badge, auto-save state), the card title eyebrow, the chip row order, and the Description, Subtasks, Attachments order follow `04-card-modal-desktop.png`; the right pane keeps "Comments" and "Activity" headings. Further visual matching waits for the owner's review.
+
+## V18 - 2026-11-26 (draft, awaiting owner review)
+### Changes
+- **Decisions BK to BR:** Toasts (60); design consistency scales, no default option highlight, one combobox, date field, and checkbox (61); Sidebar logo, active subtree, back arrow to the parent (62); Users order, paging, full width (63); Boards search and sort (64); Admin reads the Dashboard, filter card rebuilt (65); My Tasks and assignment closed to Manager and Admin (66); Column drag on the existing drag code (67); Card modal 960 px, no Column chip, Attachments above Subtasks, 5-per-page comments and activity (68); per-item Member rights and the comment rule, `created_by_id` on subtasks and attachments (69); Members panel popover and reset (70); 18-key category palette and shared refresh (71); verification (72).
+- **Open Questions 74 to 81** recorded with defaults.
+### Reason
+- The owner's review of the built V17.
+### Impact
+- Requirements: 60 to 72 (new); 47, 49, 51, 52, 53, 56 amended (notes added). Decision B amended (Admin Dashboard).
+- Design: Properties 81 to 86; V18 revision notes. One migration (`created_by_id`).
+- Tasks: group 40 (40.1 to 40.20).
+
+### Implementation of V18 - 2026-11-26 (built; nothing committed; the owner's visual review, task 40.20, is open)
+- **Built:** Toasts (central, in `lib/http.ts` and `lib/toast.ts`); the scale tokens and the 18-colour palette; one combobox look, `BaseDateField`, `BaseCheckbox`; Sidebar logo, active subtree, and the back arrow; Users order, paging, and full width; Boards search and sort; Admin Dashboard and the labelled filter card; My Tasks and assignment closed to Manager and Admin; Column drag; Card modal width, order, paging, and permissions; Members popover and reset; palette picker and shared refresh. Backend: migration `c7d2e9f4a118`, `card_policy.py`, comments paging, users paging, boards `q`/`sort`/`order`, palette validation. Tests: backend 316 (30 of them in `test_v18.py`); frontend 354.
+- **Where the build differs from the text (each is a decision for the owner to keep or reverse):**
+  1. **Token names (DS-01).** The Design_System already had `--size-control` (40), `--size-control-sm` (32), `--size-chip` (24), and `--space-N`. V18 added only `--space-label`, `--space-field`, `--space-section` (aliases of `--space-2`, `-4`, `-6`), `--modal-w-card` 60rem, `--sidebar-w` 256px (the full logo and the toggle need it), and the palette tokens; the other names of DS-01 map to the existing ones. The spacing and size rule of `check-tokens` (DS-06) is not added: the existing `tests/styling.test.ts` still guards the named-token rule.
+  2. **Toast wiring (TOAST-01).** Toasts are raised inside `request`, from the envelope `message` of every non-GET call, with a short list of quiet calls (sign-in, auto-save, checks, moves, mark read), not by each component. Inline banners that already existed were left in place, so a few failures show both a Toast and a banner.
+  3. **Column drag (COLD-01).** Cards use the browser's native drag events, not pointer code, so no `useDragSort` hook was extracted; the Column grip uses the same native events beside the card code in `Board.tsx`.
+  4. **Date range (DASH-27).** The range is two date fields ("From", "To") with the three presets as a segmented control, not one popover range field.
+  5. **Users search.** The search box now filters the current page only ("Search this page").
+  6. **Back arrow to Boards (NAVB-06).** The Boards page keeps its search and sort in `sessionStorage`, and the arrow restores them.
+  7. **Card embeds all comments.** The card response still embeds every top-level comment; the modal shows 5 and pages the rest from that list, then asks `GET /comments?limit=&offset=` for more.
+  8. **Admin analytics.** An Admin reads `/analytics/boards` and the per-Board and throughput routes as a Manager does, not only the Dashboard.
+  9. **Admin home.** The Sidebar logo links to the Dashboard for Supervisor, Manager, and Admin and to My Tasks for a Member; the login redirect was not changed.
+
+### Round 2 within V18 - 2026-11-26 (owner review of the build; specs only, not built yet)
+- **NAVB-01, NAVB-02:** the logo is the Sidebar toggle; the separate expand and collapse icon is removed; `--space-section` below the logo.
+- **NAVB-07 (new):** a `--border` line separates the App_Header from the page content.
+- **NAVB-08 (new):** the Top_Menu is centred in the App_Header from 960 pixels.
+- **DASH-25, DASH-27, DASH-28:** the presets ("Last 7 days", "Last 30 days", "This month") are removed; the range is From and To only; the four filters and Reset sit in one row from 960 pixels. This supersedes deviation 4 of "Implementation of V18".
+- **Tasks:** new 40.21; 40.20 (visual review) stays last.
+- **DS-14 to DS-17 (new, same round):** each radius token gets one role (form controls `--radius-field`, buttons and chips `--radius-full`, items `--radius-card`, surfaces `--radius-frame`, checkbox `--radius-sm`); every form control shares one class, so a search field and a select match; no magic number anywhere, enforced by `tests/design-system.test.ts`, which replaces the `check-tokens` script (this supersedes deviation 1 of "Implementation of V18" for DS-06). New task 40.22.
+
+### Implementation of round 2 within V18 - 2026-11-26 (built; nothing committed)
+- **Built:** the logo is the Sidebar toggle (the separate icon is gone; `--sidebar-w` is back to 240px; `--space-section` below the logo); a `border-b border-line` under the App_Header; the Top_Menu centred between two equal flexible parts; the Dashboard presets removed and the four filters in one row from 960 pixels with Reset after "To"; page content now starts `--space-field` under the header line.
+- **Shapes (DS-14, DS-15):** `controlClasses` in `components/ui/input.tsx` is the one look of input, textarea, select, date, and colour triggers; the select trigger is no longer a button pill. Moved to their role: textarea to the field radius; tabs, the Auth switch, submit and verify buttons, the Board "Add Card" and "Add column" buttons, Calendar day buttons, and the Board switcher to the full radius; tooltip to the field radius; Subtask, attachment, and drop-zone tiles, alert banners, and member result rows to the card radius; the toast to the frame radius. Only the checkbox keeps the small radius.
+- **Test (DS-16, DS-17):** `tests/design-system.test.ts` (raw px, rgb, hex, literal inline styles, default radius utilities, the small radius, and the shared control look). It replaces the `check-tokens` script, which was never written; this supersedes deviation 1 of "Implementation of V18" for DS-06.
+- **Known:** the Board toolbar search keeps a white fill (`bg-surface-raised`) because its section is `--surface` and the shared fill would not show.
+- **Checks:** frontend 361 tests, `tsc`, `next build`, and the four-width check pass.
+
+### Round 3 within V18 - 2026-11-26 (owner review; specs and build together; nothing committed)
+- **Why:** the Design_System had five radius tokens and components padded with raw steps, so a search field, a progress pill, a select, and a Card had different corners and the spacing drifted screen by screen.
+- **DS-18 (new, supersedes DS-14):** two radius tokens only: `--radius-ui` (12 pixels) for every component, `--radius-full` for circles (avatars, dots, switch). `--radius-sm`, `--radius-field`, `--radius-card`, and `--radius-frame` are deleted.
+- **DS-19 (new):** `--pad-surface` (24, 32 from 960) and `--pad-item` (16, 20 from 960); page gutter 24 and 40; gutter 16 and 24.
+- **DS-20 (new), CMV-02:** form controls use `focus-ring-inset`; the Card modal panes have inner padding; the activity dots sit inside the list. CMV-02 was in the spec but had not been built; it is now.
+- **CMV-01:** the Card modal fills the viewport minus the page gutter.
+- **NAVB-07:** content starts `--pad-surface` under the header line.
+- **Build notes:** the Top_Menu items lost their wider padding from 1280 pixels so the menu fits beside the bell with the larger gutter. `tests/design-system.test.ts` now enforces DS-18 (two tokens, no other radius utility, circles only for avatars, dots, the switch) and DS-19 (no raw padding step on a surface). Old tests that asserted the five radius roles were updated.
+- **Checks:** frontend 363 tests and `tsc` pass. The four-width check passes except the 404 page (`/app/does-not-exist`), which failed at three widths on one run and two at a second run with a React development-mode `performance.measure` error. That page was not changed in this round; the error is to be checked against a production build.
+- **Task:** 40.23 (done); 40.20 (visual review) stays open.
+
+### Round 4 within V18 - 2026-11-26 (owner review; specs and build together; nothing committed)
+- **DS-21 (new):** the Column row pads an inner row, so the last Column ("Done") keeps the same gutter as the first while the row scrolls; Columns, their header, cards, "No cards", and Add Card share `--pad-item` with no extra inset; from 960 pixels Columns share the row (never under 16rem); the Column name is `text-base` semibold and truncates; below 960 pixels the App_Header shows the brand, not the Board name.
+- **DS-22 (new):** seven text sizes (`xs`, `sm`, `base`, `page-title`, `title`, `xl`, `display`); `text-2xs`, `text-meta`, and `text-card-*` are removed and their 23 users moved; the Board toolbar chips, progress pill, and search are all `sm`. DS-03 is amended for the chip size.
+- **DS-23 (new):** the Board header no longer shows "N Columns · N Total Tasks · description".
+- **The 404 page check:** the four-width failure on `/app/does-not-exist` reported in round 3 is a React development-mode `performance.measure` error; against a production build (`next start`) all four widths pass, including the 404 page.
+- **Checks:** frontend 365 tests, `tsc`, `next build`, and the four-width check on the production build pass.
+- **Task:** 40.24 (done); 40.20 (visual review) stays open.
+
+### Round 5 within V18 - 2026-11-26 (owner review; specs and build together; nothing committed)
+- **Archived count (bug):** archiving a Card from the modal added 2 to the toolbar's Archived count, because the count was raised inside a React state updater, which React may run twice. The count now changes outside it. The Archived page was also still on the old frame (no space under the header line, a "Back to board" button, an inline notice); it now uses the page frame and a Toast (DS-25).
+- **DS-24 (new):** one size per heading level (`h1` `xl`, `h2` `page-title`, `h3`/`h4` `base` semibold); the `title` size is removed, leaving six sizes; no token added. The Card modal sections are now all the same `h3`, so Details, Description, Attachments, Subtasks, Comments, and Activity match.
+- **DS-25 (new):** one page frame for every app page.
+- **DS-26 (new):** the sign-in and register pages are on the same scale, with one left edge and the accent submit button.
+- **DS-27 (new):** the landing page copy is cut to one short line per idea; Teams, FAQ, and the announcement bar are removed; the header shows the mark below 960 pixels.
+- **Tests:** `tests/design-system.test.ts` enforces the heading levels and the six sizes; the landing and Archived tests follow the new copy and the Toast.
+- **Checks:** frontend 366 tests and `tsc` pass; the four-width check passes on the development server except the known development-only 404 error.
+- **Task:** 40.25 (done); 40.20 (visual review) stays open.

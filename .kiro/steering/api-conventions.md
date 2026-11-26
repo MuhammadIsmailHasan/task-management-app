@@ -157,3 +157,8 @@ inclusion: always
 - **Rule:** New endpoints: `GET /api/boards/slug/{slug}`, `PATCH /api/columns/{id}`, `PATCH /api/columns/{id}/move`, `DELETE /api/columns/{id}`, `POST /api/cards/{id}/restore`, `GET /api/boards/{id}/cards?archived=true`, `GET /api/analytics/dashboard?board=&member=&from=&to=`, `GET /api/me/cards`, `GET|PUT /api/me/notification-preferences`, `POST /api/auth/verify`, `POST /api/auth/resend-verification`, `POST /api/auth/me/email/resend`, `DELETE /api/auth/me/email/pending`. `DELETE /api/users/{id}` is 405. Card payloads carry `due_state`, `assignee_is_active`, and `assignee_is_available`; Board payloads carry `slug`; notifications carry `board_slug` and `action`; `POST /api/auth/register` returns `{ user, token: null }` (this amends the shared register and login shape above).
   **Rationale:** One list of the V17 contract.
   **Example:** `GET /api/boards/slug/design-dev`.
+
+## V18 (draft) paging shapes
+- Page-number lists (`GET /api/users`): `page`, `per_page` (max 100) and `data` of `{ items, page, per_page, total }`.
+- Offset lists (`GET /api/cards/{id}/comments` with `limit`): `limit`, `offset` and `data` of `{ items, total }`.
+- Cursor lists (activity, notifications) keep `limit` and `before`.
