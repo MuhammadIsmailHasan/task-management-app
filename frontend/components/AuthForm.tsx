@@ -99,8 +99,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         return;
       }
       setSession(result.token, result.user);
-      router.push(safeReturnPath(next));
-      router.refresh();
+      router.push(safeReturnPath(next)); // the app pages load fresh with the new session; no refresh to race the push
     } catch (err) {
       if (err instanceof ApiError && err.httpStatus === 429) {
         setWait(err.retryAfter ?? 60);

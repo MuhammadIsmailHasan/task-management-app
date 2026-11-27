@@ -70,13 +70,27 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
   const names = Object.fromEntries(members.map((m) => [m.id, m.full_name]));
   const columnNames = Object.fromEntries(columns.map((c) => [c.id, c.name]));
 
-  const merge = useCallback((update: (c: Card) => Card) => setCard((c) => (c ? update(c) : c)), []);
+  // The latest Card, updated in the same tick as every change. Saves and item edits finish in any order, so each one
+  // builds on this, never on the Card a render captured; the Board always receives the merged Card, so a late reply
+  // cannot undo another field (a priority save landing after a new subtask, or the reverse).
+  const latest = useRef<Card | null>(null);
+  const apply = useCallback(
+    (update: (c: Card) => Card, notify = true) => {
+      if (!latest.current) return;
+      const next = update(latest.current);
+      latest.current = next;
+      setCard(next);
+      if (notify) onChanged(next);
+    },
+    [onChanged],
+  );
+  const merge = useCallback((update: (c: Card) => Card) => apply(update, false), [apply]);
   const saved = useCallback(
     (response: Card, sent: string[]) => {
       // The server's normalised value (a trimmed title) replaces what was typed, for the fields that request sent only.
       const fresh = toDraft(response) as unknown as Record<string, unknown>;
       setDraft((d) => (d ? ({ ...d, ...Object.fromEntries(sent.map((k) => [k, fresh[k]])) } as Draft) : d));
-      onChanged(response);
+      if (latest.current) onChanged(latest.current); // `merge` has already applied the sent fields
     },
     [onChanged],
   );
@@ -84,6 +98,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   const load = useCallback(async () => {
     const fresh = await api.cards.get(cardId);
+    latest.current = fresh;
     setCard(fresh);
     setDraft(toDraft(fresh));
     // the card embeds every top-level comment, newest first: show the first page and total (CMV-06)
@@ -318,11 +333,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                     cardId={card.id}
                     attachments={card.attachments}
                     canEdit={canWork}
-                    onChange={(attachments) => {
-                      const next = { ...card, attachments };
-                      setCard(next);
-                      onChanged(next);
-                    }}
+                    onChange={(attachments) => apply((c) => ({ ...c, attachments }))}
                   />
                 </BaseCard>
 
@@ -331,11 +342,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
                     cardId={card.id}
                     subtasks={card.subtasks}
                     canEdit={canWork}
-                    onChange={(subtasks) => {
-                      const next = withSubtasks(card, subtasks);
-                      setCard(next);
-                      onChanged(next);
-                    }}
+                    onChange={(subtasks) => apply((c) => withSubtasks(c, subtasks))}
                   />
                 </BaseCard>
               </div>
