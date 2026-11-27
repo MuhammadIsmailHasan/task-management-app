@@ -116,10 +116,10 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
 
   return (
     <ShellContext.Provider value={state}>
-      <div className="relative flex h-screen overflow-hidden bg-surface lg:gap-4 lg:p-page">
+      <div className="relative flex h-screen overflow-clip bg-surface lg:gap-4 lg:p-page">
         <SkipLink />
         <Sidebar />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised lg:rounded-ui lg:shadow-card">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-clip bg-surface-raised lg:rounded-ui lg:shadow-card">
           <AppHeader board={current} drawerOpen={drawer} onToggleDrawer={() => setDrawer((d) => !d)} />
           <main id="main" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-y-auto focus:outline-none">
             {children}

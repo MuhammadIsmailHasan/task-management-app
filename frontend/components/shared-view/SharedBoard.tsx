@@ -40,7 +40,7 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
   const open = cards.find((c) => c.id === openId) ?? null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface lg:p-page">
+    <div className="flex h-screen overflow-clip bg-surface lg:p-page">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised lg:rounded-ui lg:shadow-card">
         <header className="flex min-h-touch shrink-0 items-center justify-between gap-field border-b border-line px-page py-2 lg:h-header">
           <span className="inline-flex items-center gap-2 font-heading text-page-title">
