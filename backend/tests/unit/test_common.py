@@ -201,6 +201,14 @@ def test_messages_carry_the_link_and_never_a_password(ctx):
     assert "2026-11-27 09:00 UTC" in changed.text and changed.html.endswith("<p>RevoBoard</p>")
 
 
+@pytest.mark.parametrize("base", ["", "revo.example"])
+def test_smtp_needs_a_public_base_url_with_a_scheme(base):
+    cfg = {"MAIL_BACKEND": "smtp", "SMTP_HOST": "h", "SMTP_PORT": "587", "SMTP_USER": "u", "SMTP_PASSWORD": "p", "MAIL_FROM": "f@x.co"}
+    with pytest.raises(RuntimeError, match="PUBLIC_BASE_URL"):
+        mail.check_config({**cfg, "PUBLIC_BASE_URL": base})
+    mail.check_config({**cfg, "PUBLIC_BASE_URL": "https://revo.example"})
+
+
 def test_build_has_a_text_and_an_html_part():
     mime = mail._build(mail.Message(to="a@x.co", subject="S", text="t", html="<p>h</p>"), "from@x.co")
     assert mime["From"] == "from@x.co" and mime.is_multipart()

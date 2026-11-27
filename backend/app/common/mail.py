@@ -13,6 +13,7 @@ log = logging.getLogger("revoboard.mail")
 
 RETRY_AFTER_SECONDS = 5
 SMTP_VARS = ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM")
+URL_SCHEMES = ("http://", "https://")
 
 outbox = []
 _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="mail")
@@ -84,6 +85,8 @@ def check_config(config):
         missing = [k for k in SMTP_VARS if not str(config.get(k) or "").strip()]
         if missing:
             raise RuntimeError(f"MAIL_BACKEND=smtp needs: {', '.join(missing)}")
+        if not str(config.get("PUBLIC_BASE_URL") or "").startswith(URL_SCHEMES):
+            raise RuntimeError("MAIL_BACKEND=smtp needs PUBLIC_BASE_URL to start with http:// or https://")
 
 
 def _html(body):
