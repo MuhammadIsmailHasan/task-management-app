@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 TMP=$(mktemp -d)
 export PUBLIC_BASE_URL=http://revoboard.belajardeploy.web.id:8082
 export TAG=smoke ENV_FILE="$TMP/env" UPLOADS="$TMP/uploads" COMPOSE_PROJECT_NAME=revoboard-smoke
+export BUILD_NETWORK=default
 mkdir -m 777 "$UPLOADS"
 PASSWORD=$(openssl rand -hex 12)
 cat > "$ENV_FILE" <<EOF

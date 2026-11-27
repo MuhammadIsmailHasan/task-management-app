@@ -17,7 +17,7 @@ x-backend: &backend
 services:
   backend:
     <<: *backend
-    build: { context: ./backend, network: host }
+    build: { context: ./backend, network: "${BUILD_NETWORK:-host}" }
     environment:
       APP_ENV: production
       UPLOAD_DIR: /data/uploads
@@ -44,7 +44,7 @@ services:
   frontend:
     <<: *service
     image: revoboard-frontend:${TAG:-local}
-    build: { context: ./frontend, network: host }
+    build: { context: ./frontend, network: "${BUILD_NETWORK:-host}" }
     environment:
       HOSTNAME: 127.0.0.1
       PORT: "3000"
