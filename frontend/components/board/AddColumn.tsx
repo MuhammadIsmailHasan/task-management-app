@@ -6,7 +6,6 @@ import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseInput } from "@/components/shared/BaseField";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-/** The "Add column" tile at the end of the Column row, on the Column recipe (`--surface-sunken`; COL-11, COL-13). */
 export function AddColumn({ onCreate }: { onCreate: (name: string) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");

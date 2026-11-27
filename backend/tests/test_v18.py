@@ -1,4 +1,3 @@
-"""V18: Users order and paging, Boards search, Admin analytics, assignee roles, comments paging, the Card permission matrix, palette."""
 import pytest
 
 from app.extensions import db
@@ -6,7 +5,6 @@ from app.models import Subtask
 from helpers import Env, UUID0, mkuser, hdr, reset_db
 
 
-# ---- Property 81: users order and paging (USRP-02, USRP-03) ----
 def test_users_are_ordered_by_role_then_name_and_paged(client):
     env = Env(client)
     for i in range(7):
@@ -35,7 +33,6 @@ def test_users_paging_validation(client, query):
     assert r.status_code == 400 and r.get_json()["error"]["code"] == "VALIDATION_ERROR"
 
 
-# ---- Property 82: Boards search (BRDL-02) ----
 def test_boards_search_and_sort(client):
     env = Env(client)
     m = env.h["manager"]
@@ -43,7 +40,7 @@ def test_boards_search_and_sort(client):
         client.post("/api/boards", headers=m, json={"name": name})
     names = lambda q="": [b["name"] for b in client.get(f"/api/boards{q}", headers=m).get_json()["data"]]
     assert set(names("?q=SALES")) == {"Sales plan"}
-    assert names("?q=%25") == ["100%_done"]  # % is text, not a wildcard
+    assert names("?q=%25") == ["100%_done"]
     assert names("?q=_") == ["100%_done"]
     assert names("?q=nothing") == []
     assert sorted(names("?sort=created_at&order=asc")) == sorted(names("?sort=created_at&order=desc")) == sorted(names())
@@ -67,7 +64,6 @@ def test_a_column_change_moves_the_board_updated_at(client):
     assert db.session.get(Board, __import__("uuid").UUID(env.bid)).updated_at.year == 2031
 
 
-# ---- DASH-23, TASK-06 to TASK-08 ----
 def test_admin_reads_the_dashboard_and_a_member_does_not(client):
     env = Env(client)
     assert client.get("/api/analytics/dashboard", headers=env.h["admin"]).status_code == 200
@@ -92,7 +88,6 @@ def test_my_tasks_and_assignment_are_closed_to_manager_and_admin(client):
         assert r.status_code == 400 and "assignee_id" in r.get_json()["error"]["details"]
 
 
-# ---- Property 84: comments paging (CMV-07) ----
 def test_comments_page_covers_every_comment_once(client):
     env = Env(client)
     card = env.card(assignee_id=env.uid("member"))
@@ -114,7 +109,6 @@ def test_comments_page_covers_every_comment_once(client):
     assert client.get(f"{url}?limit=51", headers=env.h["member"]).status_code == 400
 
 
-# ---- Property 83: the Card permission matrix (PERM-02 to PERM-05) ----
 def _post(client, who, env, path, body=None):
     return client.post(path, headers=env.h[who], json=body or {})
 
@@ -154,14 +148,12 @@ def test_subtask_rules_for_the_assigned_member(client, card_env):
     assert theirs["can_edit"] is True
     h = env.h["member"]
     own_id = own.get_json()["data"]["id"]
-    # check any subtask, rename and delete only their own
     assert client.patch(f"/api/subtasks/{theirs['id']}", headers=h, json={"is_done": True}).status_code == 200
     assert client.patch(f"/api/subtasks/{theirs['id']}", headers=h, json={"title": "no"}).status_code == 403
     assert client.patch(f"/api/subtasks/{theirs['id']}", headers=h, json={"is_done": True, "title": "no"}).status_code == 403
     assert client.delete(f"/api/subtasks/{theirs['id']}", headers=h).status_code == 403
     assert client.patch(f"/api/subtasks/{own_id}", headers=h, json={"title": "ok"}).status_code == 200
     assert client.delete(f"/api/subtasks/{own_id}", headers=h).status_code == 200
-    # an unassigned Member can do none of it, and staff can do all of it
     assert client.patch(f"/api/subtasks/{theirs['id']}", headers=env.h["member_other"], json={"is_done": False}).status_code == 403
     assert client.delete(f"/api/subtasks/{theirs['id']}", headers=env.h["owner"]).status_code == 200
 
@@ -205,7 +197,6 @@ def test_a_member_who_is_not_assigned_cannot_comment_or_reply(client, card_env):
     assert _post(client, "member", env, f"/api/comments/{top['id']}/replies", {"content": "r"}).status_code == 201
 
 
-# ---- Property 85 (server side): the palette (CATP-02) ----
 @pytest.mark.parametrize("color,status", [("teal", 201), ("slate", 201), (None, 201), ("#f00", 400), ("magenta", 400)])
 def test_category_color_is_a_palette_key(client, color, status):
     env = Env(client)
@@ -215,7 +206,6 @@ def test_category_color_is_a_palette_key(client, color, status):
         assert "color" in r.get_json()["error"]["details"]
 
 
-# ---- Property 86 (server side): Column move renumbers (COLD-03) ----
 def test_column_move_renumbers(client):
     env = Env(client)
     r = client.patch(f"/api/columns/{env.cols[0]}/move", headers=env.h["owner"], json={"position": 2})

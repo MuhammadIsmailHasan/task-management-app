@@ -28,18 +28,13 @@ interface CardAttributesProps {
   onChange: (patch: Partial<AttributeValues>) => void;
   categories: Category[];
   members: Member[];
-  /** The Card's own assignee name and avatar, for an assignee who is no longer on the member list. */
   assigneeFallback?: { name: string; avatar_url: string | null; inactive?: boolean; unavailable?: boolean } | null;
   columnName?: string;
-  /** May change category, priority, and dates. */
   canEdit: boolean;
-  /** May change the assignee (Supervisor, Manager, Admin). */
   canAssign: boolean;
   overdue: boolean;
-  /** Save state per field, shown beside it (Auto_Save). */
   status?: Partial<Record<FieldKey, FieldState>>;
   onRetry?: (field: FieldKey) => void;
-  /** The dates popover closed: save the pair if it changed and is valid. */
   onDatesClose?: () => void;
 }
 
@@ -48,7 +43,6 @@ const PRIORITIES: Priority[] = ["high", "medium", "low"];
 
 const row = "h-auto min-h-control-sm w-auto justify-start gap-2 rounded-ui px-4 text-sm font-medium text-ink";
 
-/** The icon and the text of one attribute row; every row has the same height, font, and icon size. */
 function RowContent({ icon: Icon, iconClass, lead, children }: { icon: LucideIcon; iconClass?: string; lead?: ReactNode; children: ReactNode }) {
   return (
     <>
@@ -68,7 +62,6 @@ function StaticRow({ icon, iconClass, lead, label, children, danger }: { icon: L
   );
 }
 
-/** The attribute chip row (CM-02): status (read-only), priority, assignee, dates, and category as pills; each editable chip opens a select or a popover and saves on its own. */
 export function CardAttributes({ value, onChange, categories, members, assigneeFallback, columnName, canEdit, canAssign, overdue, status = {}, onRetry, onDatesClose }: CardAttributesProps) {
   const state = (field: FieldKey) => <FieldStatus field={field} state={status[field]} onRetry={onRetry ? () => onRetry(field) : undefined} />;
   const [datesOpen, setDatesOpen] = useState(false);

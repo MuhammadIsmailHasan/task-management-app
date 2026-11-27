@@ -13,12 +13,10 @@ from app.common.validation import classify_identifier, is_email_shape, is_userna
 from app.extensions import db
 
 _hasher = PasswordHasher()
-# Verified for an unknown account so response time does not reveal whether it exists.
 _DUMMY_HASH = _hasher.hash("not-a-real-password")
 
 
 def duplicate_details(username, email, exclude_id=None):
-    """Field name to message for each taken value (two lookups on the lower-cased values)."""
     details = {}
     other = repo.get_by_username(username)
     if other is not None and other.id != exclude_id:
@@ -30,9 +28,6 @@ def duplicate_details(username, email, exclude_id=None):
 
 
 def create_account(full_name, username, email, password, role="member", verified=False):
-    """Insert a user or raise Conflict whose details name each duplicate field. The caller commits.
-
-    `verified` is true for an account an Admin makes and for the seed; a visitor's account confirms its email first (ACT-05)."""
     username, email = normalize_username(username), normalize_email(email)
     details = duplicate_details(username, email)
     if details:
@@ -41,12 +36,10 @@ def create_account(full_name, username, email, password, role="member", verified
         with db.session.begin_nested():
             return repo.create_user(full_name, username, email, _hasher.hash(password), role, verified)
     except IntegrityError:
-        # A race lost to a concurrent insert: the unique indexes are the final guard.
         raise Conflict("Username or email already registered", details=duplicate_details(username, email) or None)
 
 
 def register(data):
-    """Create the account unverified and mail the link; no Token is issued before the email is confirmed (ACT-02)."""
     user = create_account(data["full_name"], data["username"], data["email"], data["password"], "member")
     raw = email_tokens.create(user, "verify_email")
     db.session.commit()
@@ -66,7 +59,6 @@ def login(data, client_ip=None):
     if user is None:
         rate_limiter.record_login_failure(value, client_ip)
         raise Unauthorized("Invalid credentials")
-    # The password matched, so these two answers reveal nothing an attacker lacked; neither adds a failure row (ACT-01).
     if not user.is_active:
         raise AccountDisabled("This account is disabled")
     if user.email_verified_at is None:
@@ -76,7 +68,6 @@ def login(data, client_ip=None):
 
 
 def availability(username=None, email=None, client_ip=None):
-    """{ "username": {"available": bool}, "email": {...} } for the supplied parameters only."""
     if username is None and email is None:
         raise ValidationError("Supply a username or an email", details={"username": ["username or email is required"]})
     rate_limiter.hit_availability(client_ip)
@@ -110,7 +101,6 @@ def get_me(actor):
 
 
 def update_me(actor, data):
-    """full_name, username, email (a request: `email` changes only when the link is confirmed) and is_available (PRF-02 to PRF-04)."""
     user = _me(actor)
     changed, send_to = [], None
     if "full_name" in data:
@@ -140,9 +130,8 @@ def update_me(actor, data):
 
 
 def _request_email_change(user, email):
-    """Store the new address as pending and return the raw token to mail; None when nothing changes (PRF-03)."""
     if email == user.email:
-        user.pending_email = None  # asking for the address already in use cancels a pending change
+        user.pending_email = None
         email_tokens.invalidate(user.id, "change_email")
         return None
     other = repo.get_by_email(email)
@@ -175,7 +164,6 @@ def cancel_email_change(actor):
 
 
 def verify(data):
-    """Confirm an emailed link: the account's address, or its new address (ACT-03). It never signs anyone in."""
     row = email_tokens.consume(data["token"])
     user = repo.get_by_id(row.user_id)
     if user is None:
@@ -199,7 +187,6 @@ RESEND_MESSAGE = "If that address needs confirming, a new link was sent"
 
 
 def resend_verification(email, client_ip=None):
-    """Always the same answer, whether or not the address exists or is already verified (ACT-04)."""
     address = normalize_email(email)
     rate_limiter.hit_resend(address, client_ip)
     user = repo.get_by_email(address)

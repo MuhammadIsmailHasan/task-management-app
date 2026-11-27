@@ -17,7 +17,6 @@ interface AttachmentListProps {
   cardId: string;
   attachments: Attachment[];
   canEdit: boolean;
-  /** The list after an add or a remove; each change is sent at once (Auto_Save, Requirement 25 criterion 6). */
   onChange: (attachments: Attachment[]) => void;
 }
 
@@ -33,7 +32,6 @@ function TypeIcon({ kind }: { kind: "document" | "archive" | "link" }) {
   return <Icon className="size-icon shrink-0 text-ink-muted" aria-hidden="true" />;
 }
 
-/** Links open in a new tab; an expired signed file URL is re-issued first. Adding saves at once; removing asks in a modal first. */
 export function AttachmentList({ cardId, attachments, canEdit, onChange }: AttachmentListProps) {
   const [url, setUrl] = useState("");
   const [kind, setKind] = useState("link");
@@ -41,7 +39,6 @@ export function AttachmentList({ cardId, attachments, canEdit, onChange }: Attac
   const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null);
   const shown = attachments;
 
-  /** Run one call; a failure keeps the list and shows the message with a Retry beside the card. */
   async function attempt(action: () => Promise<void>, message: string) {
     setError(null);
     try {
@@ -56,7 +53,7 @@ export function AttachmentList({ cardId, attachments, canEdit, onChange }: Attac
   const remove = (id: string) => attempt(async () => { await api.attachments.remove(id); onChange(attachments.filter((x) => x.id !== id)); }, "Could not remove the attachment.");
 
   async function open(e: React.MouseEvent, a: Attachment) {
-    if (a.url || !a.file_url) return; // plain link: let the anchor do its job
+    if (a.url || !a.file_url) return;
     e.preventDefault();
     let href = absoluteFileUrl(a.file_url);
     try {

@@ -1,12 +1,3 @@
-"""v17: users.is_active, is_available, email_verified_at, pending_email, and email_tokens
-
-Revision ID: a3d8f1b7c629
-Revises: f1b6d8a2c405
-Create Date: 2026-11-26 12:00:00
-
-Every existing user stays active, available, and verified (email_verified_at is set to the migration time), so
-nobody is locked out. Nothing is deleted.
-"""
 import sqlalchemy as sa
 from alembic import op
 

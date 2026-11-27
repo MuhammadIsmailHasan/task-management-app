@@ -19,7 +19,6 @@ function NotValid() {
   );
 }
 
-/** Server page: look the invite up with the viewer's Token; one page for every kind of bad link (Requirement 24, criterion 25). */
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   let invite: InviteLookup;

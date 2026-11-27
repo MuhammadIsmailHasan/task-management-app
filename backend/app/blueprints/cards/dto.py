@@ -7,7 +7,6 @@ from app.common.signing import sign_file_url
 PRIORITIES = ("high", "medium", "low")
 
 
-# a description is sanitised HTML from the editor (round 6); this bounds what one Card stores
 MAX_DESCRIPTION_HTML = 20000
 
 
@@ -21,7 +20,6 @@ def _title(value):
 
 
 def validate_card_fields(data, partial):
-    """Return a dict of validated column values for the keys present in data."""
     out = {}
     if "title" in data or not partial:
         out["title"] = _title(data.get("title"))
@@ -47,7 +45,6 @@ def check_dates(start, end):
 
 
 def derive_progress(subtasks):
-    """(progress, done, total): progress is `(20 * done + total) // (2 * total)`, an integer 0 to 10, or None without Subtasks (Requirement 27)."""
     total = len(subtasks)
     done = sum(1 for s in subtasks if s.is_done)
     return ((20 * done + total) // (2 * total) if total else None), done, total
@@ -59,7 +56,6 @@ def progress_fields(subtasks):
 
 
 def item_can_edit(viewer, created_by_id, assignee_id):
-    """`can_edit` of a subtask or an attachment for this viewer (PERM-01). Staff: always; an assigned Member: own items."""
     if viewer is None:
         return False
     if viewer.role != "member":
@@ -114,7 +110,6 @@ def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, act
         "assignee_id": str(card.assignee_id) if card.assignee_id else None,
         "assignee_name": ident.full_name if ident else None,
         "assignee_avatar_url": (urls or {}).get(card.assignee_id) if card.assignee_id else None,
-        # an assignee who was deactivated or marked unavailable stays on the Card; the avatar says so (ADM-09)
         "assignee_is_active": ident.is_active if ident else None,
         "assignee_is_available": ident.is_available if ident else None,
         "title": card.title,
@@ -129,7 +124,6 @@ def serialize_card(card, viewer, subtasks=(), attachments=(), comments=None, act
         **progress_fields(subtasks),
         "attachments": [serialize_attachment(a, viewer=viewer, assignee_id=card.assignee_id) for a in attachments],
     }
-    # Guests never get comments or activity.
     if viewer is not None:
         if comments is not None:
             data["comments"] = comments

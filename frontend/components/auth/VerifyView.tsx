@@ -12,14 +12,12 @@ import { safeReturnPath } from "@/lib/return-path";
 import { loginPath, routes } from "@/lib/routes";
 import { isEmail } from "@/lib/validation";
 
-/** Where the register form left the address and the page to come back to (kept out of the URL, ACT-07 and ACT-12). */
 export const PENDING_KEY = "revoboard.pending-activation";
 
 export function rememberPending(email: string, next?: string | null) {
   try {
     sessionStorage.setItem(PENDING_KEY, JSON.stringify({ email, next: next ? safeReturnPath(next) : null }));
   } catch {
-    /* storage unavailable: the page asks for the address instead */
   }
 }
 
@@ -35,7 +33,6 @@ function readPending(): { email: string | null; next: string | null } {
 
 type State = { kind: "wait" } | { kind: "working" } | { kind: "done"; purpose: "verify_email" | "change_email" } | { kind: "failed"; expired: boolean };
 
-/** "Check your email" after register, and the page the emailed link opens (Requirement 59, ACT-07). */
 export function VerifyView({ token }: { token: string | null }) {
   const [state, setState] = useState<State>(token ? { kind: "working" } : { kind: "wait" });
   const [pending, setPending] = useState<{ email: string | null; next: string | null }>({ email: null, next: null });
@@ -50,7 +47,6 @@ export function VerifyView({ token }: { token: string | null }) {
     setPending(readPending());
   }, []);
 
-  // The link's token is read once, sent once, and removed from the address bar at once (the token must not leak).
   useEffect(() => {
     if (!token || ran.current) return;
     ran.current = true;

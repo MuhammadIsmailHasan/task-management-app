@@ -7,7 +7,6 @@ import type { Board } from "@/lib/types";
 
 export const metadata = { title: "Dashboard" };
 
-/** Supervisors see the Boards they own and Managers every Board; a Member goes back to Boards (Requirement 43, DASH-23). */
 export default async function DashboardPage() {
   const claims = decodeToken((await serverToken()) ?? "");
   if (!claims || claims.role === "member") redirect(routes.boards);

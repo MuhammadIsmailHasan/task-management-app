@@ -11,11 +11,6 @@ import { useShell } from "./ShellContext";
 
 const pill = "relative inline-flex min-h-control-sm cursor-pointer items-center gap-2 rounded-ui px-3 text-sm no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon-sm [&_svg]:shrink-0";
 
-/**
- * The board's menu in the App_Header, shown only while a Board is open (NAV-04): Board, List, and Calendar are routes;
- * Activity, Members, and Categories open the Side_Panel; Share opens the Share_Modal. Between 960 and 1280 pixels the
- * labels give way to icons with tooltips, so nothing is cut off (NAV-10).
- */
 export function TopMenu() {
   const { session, board, panel, toggleSidePanel, shareOpen, openShare, pendingRequests } = useShell();
   const pathname = usePathname();

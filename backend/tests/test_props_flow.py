@@ -1,4 +1,3 @@
-"""Properties 15, 16, 22-33, 35 (ordering, move, comments, activity, notifications, analytics, search)."""
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -9,11 +8,10 @@ from app.extensions import db
 from app.models import ActivityLog, Card, Comment, Notification
 from helpers import PROP, UUID0, Env, Ticker, hdr, mkuser
 
-# ---- Property 15: drop order and rebalance ----
 @PROP
 @given(inserts=st.lists(st.integers(0, 50), min_size=1, max_size=80))
 def test_property_15_drop_order_and_rebalance(inserts):
-    items = []  # orders, kept sorted by position, ids are the insertion index
+    items = []
     order = []
     for i, pos in enumerate(inserts):
         pos = pos % (len(order) + 1)
@@ -31,7 +29,6 @@ def test_property_15_drop_order_and_rebalance(inserts):
     assert ordering.position_for(None, None, []) == 1.0
 
 
-# ---- Property 16 and 11 (move part): move persists, logs once, stays on the board ----
 @PROP
 @given(ops=st.lists(st.tuples(st.integers(0, 3), st.integers(0, 4), st.integers(0, 9)), min_size=1, max_size=25))
 def test_property_16_move_persists_logs_once(client, ops):
@@ -72,7 +69,6 @@ def test_property_11_member_move_scope(client, assigned, actor):
     assert client.patch(f"/api/cards/{card['id']}/move", json={"column_id": env.cols[1]}).status_code == 401
 
 
-# ---- Property 22-27: comments ----
 @PROP
 @given(content=st.one_of(st.text(alphabet=" \t\n", max_size=5), st.text(min_size=1, max_size=40).filter(lambda s: s.strip())))
 def test_property_22_blank_comments_rejected(client, content):
@@ -131,7 +127,7 @@ def test_property_24_to_27_comment_listing(client, spec, flags, sort, viewer):
                 client.post(f"/api/comments/{t[0]}/replies", headers=env.h["member"], json={"content": "r"})
         url = f"/api/cards/{card['id']}/comments" + (f"?sort={sort}" if sort else "")
         got = client.get(url, headers=env.h[viewer]).get_json()["data"]["items"]
-        idx = {t[0]: i for i, t in enumerate(tops)}  # creation order = time order
+        idx = {t[0]: i for i, t in enumerate(tops)}
         prio = sorted((t for t in tops if t[3]), key=lambda t: -idx[t[0]])
         rest = [t for t in tops if not t[3]]
         rest.sort(key=(lambda t: (-t[2], -idx[t[0]])) if sort == "popular" else (lambda t: -idx[t[0]]))
@@ -141,7 +137,6 @@ def test_property_24_to_27_comment_listing(client, spec, flags, sort, viewer):
             assert c["is_priority"] == t[3] and c["reply_count"] == t[2] and len(c["replies"]) == t[2]
             assert [r["created_at"] for r in c["replies"]] == sorted(r["created_at"] for r in c["replies"])
             assert c["can_create_card"] == (viewer in ("owner", "manager", "admin") and t[1] == "manager")
-        # priority toggle round trip, Manager only
         first = tops[0][0]
         before = db.session.get(Comment, uuid.UUID(first)).is_priority
         client.patch(f"/api/comments/{first}/priority", headers=env.h["manager"])
@@ -151,7 +146,6 @@ def test_property_24_to_27_comment_listing(client, spec, flags, sort, viewer):
         assert client.patch(f"/api/comments/{first}/priority").status_code == 401
 
 
-# ---- Property 29, 30, 28: activity and guest privacy ----
 @PROP
 @given(ops=st.lists(st.sampled_from(["title", "priority", "move", "assign", "unassign", "archive", "unarchive", "subtask", "comment", "bad"]), min_size=1, max_size=14))
 def test_property_29_one_activity_row_per_change(client, ops):
@@ -177,7 +171,7 @@ def test_property_29_one_activity_row_per_change(client, ops):
         elif op == "move":
             target = (state["col"] + 1) % 5
             r = client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": env.cols[target]})
-            if state["archived"]:  # an archived Card cannot be moved (CARD_ARCHIVED)
+            if state["archived"]:
                 assert r.status_code == 409
                 delta = 0
             else:
@@ -193,9 +187,9 @@ def test_property_29_one_activity_row_per_change(client, ops):
             state["assigned"] = False
         elif op == "archive":
             r = client.post(f"/api/cards/{card['id']}/archive", headers=h)
-            if state["archived"]:  # idempotent: nothing changes, nothing is logged
+            if state["archived"]:
                 delta = 0
-            elif state["col"] == 4:  # the Done column (V17: CARD_IN_DONE)
+            elif state["col"] == 4:
                 assert r.status_code == 409
                 delta = 0
             else:
@@ -203,11 +197,11 @@ def test_property_29_one_activity_row_per_change(client, ops):
                 delta = 1
         elif op == "unarchive":
             r = client.post(f"/api/cards/{card['id']}/unarchive", headers=h)
-            if state["archived"]:  # a restored Card lands in the first Column (V17)
+            if state["archived"]:
                 state["archived"], state["col"] = False, 0
                 delta = 1
             else:
-                assert r.status_code == 409  # CARD_NOT_ARCHIVED
+                assert r.status_code == 409
                 delta = 0
         elif op == "subtask":
             r = client.post(f"/api/cards/{card['id']}/subtasks", headers=h, json={"title": "s"})
@@ -215,7 +209,7 @@ def test_property_29_one_activity_row_per_change(client, ops):
         elif op == "comment":
             r = client.post(f"/api/cards/{card['id']}/comments", headers=h, json={"content": "c"})
             delta = 1
-        else:  # a failing request must leave no row behind
+        else:
             r = client.patch(f"/api/cards/{card['id']}", headers=h, json={"priority": "nope"})
             delta = 0
             assert r.status_code == 400
@@ -255,7 +249,6 @@ def test_property_28_guest_never_sees_comments_or_activity(client, who, fields):
         assert "comments" in body and "activity" in body
 
 
-# ---- Property 31, 32: notifications ----
 @PROP
 @given(
     cards=st.lists(st.tuples(st.integers(-2, 2), st.booleans(), st.booleans()), min_size=1, max_size=6),
@@ -296,7 +289,7 @@ def test_property_32_inbox_isolation_and_read_marking(client, assign):
     for who in set(assign):
         inbox = client.get("/api/notifications", headers=env.h[who]).get_json()["data"]
         assigned = [n for n in inbox["items"] if n["type"] == "assigned"]
-        assert len(assigned) == assign.count(who) and inbox["unread_count"] == assign.count(who) + 1  # + board_added
+        assert len(assigned) == assign.count(who) and inbox["unread_count"] == assign.count(who) + 1
         assert all(db.session.get(Notification, uuid.UUID(n["id"])).user_id == env.users[who].id for n in inbox["items"])
     victim = next(iter(set(assign)))
     nid = client.get("/api/notifications", headers=env.h[victim]).get_json()["data"]["items"][0]["id"]
@@ -309,7 +302,6 @@ def test_property_32_inbox_isolation_and_read_marking(client, assign):
     assert client.get("/api/notifications", headers=env.h[victim]).get_json()["data"]["unread_count"] == 0
 
 
-# ---- Property 33: analytics ----
 @PROP
 @given(
     cards=st.lists(st.tuples(st.integers(0, 4), st.integers(-3, 3), st.booleans()), max_size=10),
@@ -340,7 +332,6 @@ def test_property_33_analytics_access_and_correctness(client, app, cards, actor)
     assert allb.status_code == (200 if actor in ("manager", "admin") else (401 if actor == "guest" else 403))
 
 
-# ---- Property 35: search and filter ----
 words = st.sampled_from(["fix", "Login", "bug", "docs", "API", "ui"])
 
 

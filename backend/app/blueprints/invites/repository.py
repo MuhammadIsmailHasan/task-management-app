@@ -5,7 +5,6 @@ from app.models import Board, BoardJoinRequest, User
 
 
 def board_by_invite_token(token):
-    """Equality lookup on the unique index; a soft-deleted Board counts as not found."""
     if not token:
         return None
     return db.session.scalars(db.select(Board).where(Board.invite_token == token, Board.deleted_at.is_(None))).first()
@@ -33,7 +32,6 @@ def get_request_for_update(request_id):
 
 
 def list_for_board(board_id, status):
-    """Requests with the requester's identity through one join: the Email is read here and never stored on the request."""
     q = (
         db.select(
             BoardJoinRequest.id, BoardJoinRequest.status, BoardJoinRequest.created_at,
@@ -64,7 +62,6 @@ def staff_ids():
 
 
 def delete_pending_of_user(user_id):
-    """Role-change cleanup: a new Manager or Admin keeps no pending request (Requirement 22, criterion 6)."""
     from app.models import Notification
 
     ids = list(db.session.scalars(db.select(BoardJoinRequest.id).where(BoardJoinRequest.user_id == user_id, BoardJoinRequest.status == "pending")))

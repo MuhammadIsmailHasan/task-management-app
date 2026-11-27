@@ -1,4 +1,3 @@
-"""Requirements 57 and 58 (V17): preferences, the five event types, the due-date job, and Properties 75 and 76."""
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -9,9 +8,9 @@ from app.extensions import db
 from app.jobs import due
 from app.models import PREFERENCE_TYPES, Card, Notification, NotificationPreference, User
 from tests.helpers import PROP, hdr, mkuser, reset_db
-from tests.test_api import col, mkcard, world  # noqa: F401  (the shared fixture)
+from tests.test_api import col, mkcard, world
 
-NOW = datetime(2026, 11, 26, 12, 0, tzinfo=timezone.utc)  # a Thursday
+NOW = datetime(2026, 11, 26, 12, 0, tzinfo=timezone.utc)
 URL = "/api/me/notification-preferences"
 
 
@@ -27,7 +26,6 @@ def put(w, who, prefs):
     return w.client.put(URL, headers=w.h[who], json={"preferences": prefs})
 
 
-# ---- endpoints (NPF-07) ----
 def test_defaults_are_all_on_in_order(world):
     got = world.client.get(URL, headers=world.h["member"]).get_json()["data"]["preferences"]
     assert got == [{"type": t, "enabled": True} for t in PREFERENCE_TYPES]
@@ -40,9 +38,9 @@ def test_put_upserts_and_returns_every_type(world):
     shown = {p["type"]: p["enabled"] for p in r.get_json()["data"]["preferences"]}
     assert shown["due_today"] is False and all(v for k, v in shown.items() if k != "due_today")
     put(world, "member", [{"type": "due_today", "enabled": True}, {"type": "subtask_on_assigned", "enabled": False}])
-    assert NotificationPreference.query.count() == 2  # upserted, never duplicated
+    assert NotificationPreference.query.count() == 2
     other = world.client.get(URL, headers=world.h["manager"]).get_json()["data"]["preferences"]
-    assert all(p["enabled"] for p in other)  # one user's switch never touches another's
+    assert all(p["enabled"] for p in other)
 
 
 def test_put_rejects_bad_bodies(world):
@@ -60,7 +58,6 @@ def test_put_rejects_bad_bodies(world):
     assert world.client.put(URL, json={"preferences": [{"type": "due_today", "enabled": True}]}).status_code == 401
 
 
-# ---- event notifications (NPF-03, NPF-04) ----
 def assigned_card(world):
     return mkcard(world, title="Plan", assignee_id=str(world.users["member"].id))
 
@@ -71,10 +68,10 @@ def test_a_comment_on_an_assigned_card_notifies_the_assignee_once(world):
     assert types(world).count("comment_on_assigned") == 1
     note = next(n for n in inbox(world) if n["type"] == "comment_on_assigned")
     assert note["card_title"] == "Plan" and note["actor_name"] == "Manager" and note["board_slug"] == "b"
-    assert "hello" not in str(note)  # no comment text in a notification (NPF-05)
+    assert "hello" not in str(note)
     first = world.client.post(f"/api/cards/{card['id']}/comments", headers=world.h["manager"], json={"content": "again"}).get_json()["data"]
     world.client.post(f"/api/comments/{first['id']}/replies", headers=world.h["supervisor"], json={"content": "reply"})
-    assert types(world).count("comment_on_assigned") == 3  # one per comment and reply, never refused as a duplicate
+    assert types(world).count("comment_on_assigned") == 3
 
 
 def test_the_actor_never_notifies_themselves_and_an_unassigned_card_notifies_no_one(world):
@@ -101,7 +98,7 @@ def test_move_archive_and_delete_carry_their_action_and_a_reorder_does_not_notif
     other = mkcard(world, title="other", assignee_id=str(world.users["member"].id))
     h = world.h["manager"]
     world.client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": col(world, 1)})
-    world.client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": col(world, 1), "prev": None, "next": None})  # same Column
+    world.client.patch(f"/api/cards/{card['id']}/move", headers=h, json={"column_id": col(world, 1), "prev": None, "next": None})
     world.client.post(f"/api/cards/{card['id']}/archive", headers=h)
     world.client.delete(f"/api/cards/{other['id']}", headers=h)
     actions = sorted(n["action"] for n in inbox(world) if n["type"] == "assigned_card_changed")
@@ -118,8 +115,8 @@ def test_subtask_changes_notify_but_a_reorder_alone_does_not(world):
     assert count() == 2
     world.client.patch(f"/api/subtasks/{sub['id']}", headers=h, json={"is_done": True})
     assert count() == 3
-    world.client.patch(f"/api/subtasks/{sub['id']}", headers=h, json={"is_done": True})  # nothing changed
-    world.client.patch(f"/api/subtasks/{two['id']}", headers=h, json={"prev": sub["id"], "next": None})  # a reorder
+    world.client.patch(f"/api/subtasks/{sub['id']}", headers=h, json={"is_done": True})
+    world.client.patch(f"/api/subtasks/{two['id']}", headers=h, json={"prev": sub["id"], "next": None})
     assert count() == 3
     world.client.delete(f"/api/subtasks/{sub['id']}", headers=h)
     assert count() == 4
@@ -140,7 +137,6 @@ def test_an_inactive_assignee_is_not_notified(world):
     st.booleans(), st.booleans(), st.booleans(), st.sampled_from(["actor", "other", "none"]),
 )
 def test_property_75_preferences_and_the_actor(client, events, enabled, active, assigned, who):
-    """A notification is created exactly when the Card has an assignee who is active, is not the actor, and has the type enabled."""
     reset_db()
     manager, sup, member = mkuser("manager"), mkuser("supervisor"), mkuser("member")
     h = hdr(manager)
@@ -174,7 +170,6 @@ def test_property_75_preferences_and_the_actor(client, events, enabled, active, 
         assert rows and all(r.user_id == member.id and r.actor_id == manager.id for r in rows)
 
 
-# ---- the due-date job (Requirement 58, Property 76) ----
 def run_job(now=NOW):
     return due.run(now)
 
@@ -191,7 +186,7 @@ def test_it_creates_due_today_and_due_tomorrow_and_a_second_run_creates_nothing(
     rows = Notification.query.filter(Notification.type.in_(("due_today", "due_tomorrow"))).all()
     assert sorted(r.type for r in rows) == ["due_today", "due_tomorrow"] and {r.notify_date for r in rows} == {date(2026, 11, 26)}
     assert all(r.actor_id is None and r.board_id for r in rows)
-    assert run_job() == (0, 0, 2)  # the same date again: nothing new
+    assert run_job() == (0, 0, 2)
     assert Notification.query.filter(Notification.type.in_(("due_today", "due_tomorrow"))).count() == 2
     assert sorted(n["type"] for n in inbox(world) if n["type"].startswith("due_")) == ["due_today", "due_tomorrow"]
 
@@ -199,7 +194,7 @@ def test_it_creates_due_today_and_due_tomorrow_and_a_second_run_creates_nothing(
 def test_the_next_day_creates_that_days_rows(world):
     assign_due(world, "friday", "2026-11-27")
     run_job()
-    run_job(NOW + timedelta(days=1))  # it is now due today
+    run_job(NOW + timedelta(days=1))
     got = sorted(r.type for r in Notification.query.filter(Notification.type.in_(("due_today", "due_tomorrow"))).all())
     assert got == ["due_today", "due_tomorrow"]
 
@@ -252,7 +247,6 @@ def test_the_cli_command_runs(app, world):
 @PROP
 @given(st.lists(st.tuples(st.integers(-1, 3), st.booleans(), st.sampled_from(["todo", "done", "archived", "deleted", "free"])), max_size=8), st.integers(1, 3))
 def test_property_76_the_due_job_is_idempotent(client, cards, runs):
-    """Running the job again on the same local date creates the same rows as running it once, none for a closed Card."""
     reset_db()
     manager, member = mkuser("manager"), mkuser("member")
     h = hdr(manager)
@@ -275,6 +269,5 @@ def test_property_76_the_due_job_is_idempotent(client, cards, runs):
         assert again[0] == again[1] == 0
     assert sorted(key(r) for r in Notification.query.filter(Notification.type.in_(("due_today", "due_tomorrow")))) == snapshot
     assert first[0] + first[1] == len(snapshot)
-    # exactly the open, assigned Cards due today or tomorrow, and nothing for a closed or unassigned one
     open_due = [c for c in Card.query.all() if c.deleted_at is None and c.archived_at is None and c.assignee_id and c.completed_at is None and c.end_date in (date(2026, 11, 26), date(2026, 11, 27))]
     assert len(snapshot) == len(open_due)

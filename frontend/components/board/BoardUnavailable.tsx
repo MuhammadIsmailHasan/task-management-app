@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 
-/** Shown when a Notification or a bookmark points at a Board the viewer cannot open (Requirement 28, criterion 9). */
 export function BoardUnavailable() {
   return (
     <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">

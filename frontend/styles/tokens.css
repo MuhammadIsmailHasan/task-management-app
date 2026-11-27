@@ -1,10 +1,5 @@
-/*
- * Design tokens: the single source of the look (Decision H, V7 look refresh).
- * Visual reference: a light project-management dashboard (white surfaces, navy brand,
- * pastel tags, flat columns, icon rail). Components use only these variables.
- */
 :root {
-  --surface-100: #f3f2ff; /* canvas and every tinted fill */
+  --surface-100: #f3f2ff;
   --surface-200: #ffffff;
   --ink: #0f193c;
   --ink-muted: #43474f;
@@ -27,7 +22,6 @@
   --label-purple-text: #4a3db5;
   --label-blue-bg: #dbe8ff;
   --label-blue-text: #1d4fb8;
-  /* V18 category palette: the five keys above, yellow, and these twelve (text on fill is at least 4.5:1) */
   --label-amber-bg: #fef3c7;
   --label-amber-text: #92400e;
   --label-lime-bg: #ecfccb;
@@ -53,7 +47,6 @@
   --label-slate-bg: #e2e8f0;
   --label-slate-text: #334155;
 
-  /* Solid hues for column dots and progress fills. */
   --tone-green: #22c08b;
   --tone-blue: #2f54d6;
   --tone-red: #ef5b5b;
@@ -84,15 +77,12 @@
   --space-10: 40px;
   --space-12: 48px;
 
-  /* V18 scales (Requirement 61): label to control, between fields, between sections */
   --space-label: var(--space-2);
   --space-field: var(--space-4);
   --space-section: var(--space-6);
-  /* V18 round 3 (DS-19): the inner padding of a surface (section, column, modal, filter card) and of an item (card tile, row) */
   --pad-surface: var(--space-6);
   --pad-item: var(--space-4);
 
-  /* One radius for every component (DS-18). `--radius-full` is only for circles: avatars, dots, the switch. */
   --radius-ui: 12px;
   --radius-full: 9999px;
 
@@ -103,14 +93,13 @@
   --shadow-modal: 0 25px 50px -12px rgba(15, 25, 60, 0.1);
   --shadow-panel: 0 25px 50px -12px rgba(15, 25, 60, 0.25);
   --shadow-float: 0 20px 50px rgba(15, 25, 60, 0.12);
-  --surface-sunken: #ebedff; /* hover and active fill, tags, progress track */
-  --surface-strong: #dce1ff; /* count badges, disabled fill, skeleton */
+  --surface-sunken: #ebedff;
+  --surface-strong: #dce1ff;
 
-  --sidebar-w: 240px; /* expanded: a 44px hit area, an icon, and a label */
-  --sidebar-w-collapsed: 72px; /* collapsed: the 44px hit area with the panel padding */
+  --sidebar-w: 240px;
+  --sidebar-w-collapsed: 72px;
 }
 
-/* ---- Extension tokens: sizes the reference implied but did not name ---- */
 :root {
   --on-brand: #ffffff;
   --on-brand-muted: #8cabe1;
@@ -166,7 +155,6 @@
   --lift: 2px;
 
   --container-auth: 420px;
-  /* The Column width is a share of the board row (its container): one Column and a peek of the next below 960px, three and a half from 960px; fewer Columns grow to fill the row (DS-21, round 6). */
   --column-w: calc((100cqw - var(--gutter)) / 1.15);
   --panel-w: 380px;
   --panel-w-sm: 320px;
@@ -193,7 +181,6 @@
   --size-logo-sm: 32px;
   --size-logo-md: 40px;
   --size-logo-lg: 64px;
-  /* The logo files' viewBox widths: shown no wider, so the embedded raster is never enlarged. */
   --logo-w-mark: 203px;
   --logo-w-full: 704px;
 
@@ -234,7 +221,6 @@
 
 }
 
-/* Page margins: the inner padding of the app frame and the gap between Columns and Cards. */
 :root {
   --page-x: var(--space-6);
   --gutter: var(--space-4);
@@ -251,4 +237,3 @@
     --pad-item: var(--space-5);
   }
 }
-

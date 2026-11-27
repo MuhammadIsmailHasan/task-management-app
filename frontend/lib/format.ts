@@ -1,4 +1,3 @@
-/** "2026-11-18" -> "Nov 18" (local, no timezone shift). */
 export function shortDate(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(`${iso}T00:00:00`);

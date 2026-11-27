@@ -14,13 +14,11 @@ import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useShell } from "./ShellContext";
 
-/** Lists notifications as the server returned them, one page at a time; nothing is computed client-side. */
 export function InboxView() {
   const { inbox, refreshInbox, closeSidePanel, adjustUnread } = useShell();
   const [version, setVersion] = useState(0);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [error, setError] = useState<string | null>(null);
-  // a row marked read while Unread shows stays until the next load, so the list does not jump (NAV-13)
   const list = usePagedList(async (page) => (await api.notifications.inbox(filter === "unread" ? { ...page, unread: true } : page)).items, [version, filter]);
 
   async function run(action: () => Promise<unknown>) {
@@ -34,7 +32,6 @@ export function InboxView() {
     }
   }
 
-  /** Open a row: mark it read without waiting, lower the count at once, and close the panel (Requirement 28, criterion 6). */
   function open(n: Notification) {
     closeSidePanel();
     if (n.is_read) return;
@@ -42,7 +39,6 @@ export function InboxView() {
     api.notifications.markRead(n.id).catch(() => void refreshInbox());
   }
 
-  // the switch stays on screen while a list loads, so its focus survives a change of filter
   const switcher = (
     <BaseSegmented
       label="Show notifications"

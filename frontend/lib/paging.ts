@@ -1,4 +1,3 @@
-/** Page size for the Inbox and activity lists: enough rows to fill the visible area, within the API's limits. */
 const ROW_HEIGHT_ESTIMATE = 56;
 const MIN_PAGE = 10;
 const MAX_PAGE = 100;

@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 const DESCRIPTION = "RevoBoard: kanban boards with drag and drop, subtasks, roles, private boards, and share links.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  // The landing page reads no header, cookie, or storage (LAND-01): the canonical URL comes from the environment only.
   const base = process.env.PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
   return {
     title: { absolute: "RevoBoard" },
@@ -19,7 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** The landing page (Requirement 41): served at `/`, the same origin as the app under `/app`. */
 export default function LandingPage() {
   return (
     <>

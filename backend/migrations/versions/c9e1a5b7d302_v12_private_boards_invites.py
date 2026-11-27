@@ -1,12 +1,3 @@
-"""V12: private boards, invite token, join requests, notification types
-
-Local-development reset (Decision Y): upgrade() empties every user-linked table when APP_ENV is development
-or testing. Anywhere else it never deletes: it runs only on an empty `users` table (Decision AN). After it, run `flask seed-data`.
-
-Revision ID: c9e1a5b7d302
-Revises: b7d2e4f6a801
-Create Date: 2026-11-21 10:00:00
-"""
 import os
 
 import sqlalchemy as sa

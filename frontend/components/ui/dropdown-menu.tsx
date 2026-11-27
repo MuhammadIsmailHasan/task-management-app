@@ -10,7 +10,6 @@ export const DropdownMenuTrigger = MenuPrimitive.Trigger;
 const SIDE_OFFSET = 8;
 const COLLISION_PADDING = 8;
 
-/** shadcn/ui DropdownMenu on Radix: arrow keys move, Escape closes, focus returns to the trigger. */
 export function DropdownMenuContent({ className, align = "end", sideOffset = SIDE_OFFSET, ...props }: ComponentProps<typeof MenuPrimitive.Content>) {
   return (
     <MenuPrimitive.Portal>

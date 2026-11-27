@@ -1,4 +1,3 @@
-"""Share links and the read-only shared routes (Requirement 18; Properties 40, 41)."""
 import io
 
 from app.models import ActivityLog, Board
@@ -12,21 +11,21 @@ def _share(client, env, who="manager", method="post", suffix=""):
 def test_share_lifecycle_and_roles(client):
     env = Env(client)
     assert _share(client, env, "member", "get").status_code == 403
-    assert _share(client, env, "sup_member").status_code == 403  # a BoardMember Supervisor is not enough
-    assert _share(client, env, "owner").status_code == 403  # nor is the Board_Owner (V12, Decision Z)
+    assert _share(client, env, "sup_member").status_code == 403
+    assert _share(client, env, "owner").status_code == 403
     assert _share(client, env, "owner", "get").status_code == 403
     assert client.post(f"/api/boards/{env.bid}/share").status_code == 401
     off = _share(client, env, "manager", "get").get_json()["data"]
     assert off == {"enabled": False, "token": None, "path": None}
     on = _share(client, env, "manager").get_json()["data"]
     assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/app/shared/{on['token']}"
-    assert _share(client, env, "manager").get_json()["data"]["token"] == on["token"]  # idempotent
+    assert _share(client, env, "manager").get_json()["data"]["token"] == on["token"]
     new = _share(client, env, "admin", suffix="/regenerate").get_json()["data"]
     assert new["token"] != on["token"]
     assert client.get(f"/api/shared/{on['token']}").status_code == 404
     assert client.get(f"/api/shared/{new['token']}").status_code == 200
     assert _share(client, env, "manager", "delete").get_json()["data"]["enabled"] is False
-    assert _share(client, env, "manager", "delete").status_code == 200  # already off
+    assert _share(client, env, "manager", "delete").status_code == 200
     assert client.get(f"/api/shared/{new['token']}").status_code == 404
     rows = ActivityLog.query.filter(ActivityLog.action.like("board.share_%")).all()
     assert sorted(r.action for r in rows) == ["board.share_disabled", "board.share_enabled", "board.share_regenerated"]
@@ -51,10 +50,8 @@ def test_shared_payloads_never_leak_discussion_or_people(client):
         assert banned not in blob
     assert client.get(f"/api/shared/{token}/categories").status_code == 200
     assert client.get(f"/api/shared/{token}/cards?filter[priority]=bogus").status_code == 400
-    # signed-in viewer with access sees has_board_access, an unusable Token reads as a Guest
     assert client.get(f"/api/shared/{token}", headers=env.h["member"]).get_json()["data"]["has_board_access"] is True
     assert client.get(f"/api/shared/{token}", headers={"Authorization": "Bearer junk"}).status_code == 200
-    # the normal routes stay closed to a Guest and a private board stays private to others
     assert client.get(f"/api/boards/{env.bid}").status_code == 401
     assert client.get(f"/api/boards/{env.bid}", headers=env.h["member_other"]).status_code == 403
 
@@ -74,9 +71,8 @@ def test_property_54_a_public_link_grants_no_write(client):
     )
     for method, path, body in writes:
         kw = {"json": body} if body is not None else {}
-        assert getattr(client, method)(path, **kw).status_code == 401, path  # Guest
-        assert getattr(client, method)(path, headers=env.h["member_other"], **kw).status_code == 403, path  # no access
-    # the link itself accepts nothing but GET
+        assert getattr(client, method)(path, **kw).status_code == 401, path
+        assert getattr(client, method)(path, headers=env.h["member_other"], **kw).status_code == 403, path
     for method in ("post", "patch", "put", "delete"):
         assert getattr(client, method)(f"/api/shared/{token}").status_code == 405
         assert getattr(client, method)(f"/api/shared/{token}/cards").status_code == 405
@@ -107,9 +103,9 @@ def test_shared_file_urls_are_scoped_and_die_with_the_link(client, app):
     assert "st=share:" in url and token not in url
     assert client.get(url).status_code == 200
     plain = att["file_url"]
-    assert client.get(plain).status_code == 200  # ordinary URL unaffected
+    assert client.get(plain).status_code == 200
     assert client.get(url.replace("st=share:", "st=share:0")).status_code == 403
-    assert client.get(plain + "&st=share:abcd").status_code == 403  # scope is inside the signature
+    assert client.get(plain + "&st=share:abcd").status_code == 403
     _share(client, env, "manager", suffix="/regenerate")
     assert client.get(url).status_code == 403
     assert client.get(plain).status_code == 200

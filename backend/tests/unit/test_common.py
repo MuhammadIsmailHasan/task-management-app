@@ -1,7 +1,3 @@
-"""Unit tests of the shared helpers in app/common: tokens, clock, signing, mail, files, fields, and small pure helpers.
-
-No database: `db.session` is a MagicMock where a helper touches it; SMTP is faked.
-"""
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -22,8 +18,6 @@ def fixed_clock():
     yield
     clock.set_now(None)
 
-
-# ---- clock, ids, images, responses, errors, http, slug, rich text --------------------------------------------------
 
 def test_clock_override_and_time_zone():
     assert clock.now() == NOW and clock.today("Asia/Jakarta") == date(2026, 11, 27)
@@ -77,8 +71,6 @@ def test_from_plain_text():
     assert rich_text.to_text(None) == ""
 
 
-# ---- signing and identities ----------------------------------------------------------------------------------------
-
 def test_file_signatures(ctx):
     path, exp = signing.sign_file_url("a1", NOW)
     sig = path.split("sig=")[1]
@@ -96,7 +88,7 @@ def test_avatar_signatures_and_api_prefix(ctx):
     url = signing.avatar_url("u1", NOW)
     exp, sig = url.split("exp=")[1].split("&sig=")
     assert signing.verify_avatar_signature("u1", exp, sig, NOW)
-    assert not signing.verify_file_signature("u1", exp, sig, NOW)  # an avatar signature never opens a file
+    assert not signing.verify_file_signature("u1", exp, sig, NOW)
     ctx.config["API_PUBLIC_PREFIX"] = "/app/api/"
     assert signing.api_base() == "/app/api"
 
@@ -111,8 +103,6 @@ def test_avatar_urls(ctx):
     assert out[a].startswith(f"/api/users/{a}/avatar") and out[b] is None
 
 
-# ---- auth helpers --------------------------------------------------------------------------------------------------
-
 def test_tokens_and_current_actor(ctx, session):
     token = auth.issue_token("00000000-0000-0000-0000-000000000001", "manager")
     session.scalar.return_value = True
@@ -126,7 +116,7 @@ def test_tokens_and_current_actor(ctx, session):
     with ctx.test_request_context(headers={"Authorization": f"Bearer {token}"}):
         with pytest.raises(errors.AccountDisabled):
             auth.current_actor()
-    auth._require_active("not-a-uuid")  # no lookup for an id that cannot exist
+    auth._require_active("not-a-uuid")
 
 
 def test_require_role(ctx, session):
@@ -148,8 +138,6 @@ def test_jwt_callbacks_answer_with_the_error_envelope(ctx):
             assert status == 401 and body.get_json()["error"]["code"] == "UNAUTHORIZED"
 
 
-# ---- email tokens --------------------------------------------------------------------------------------------------
-
 def test_email_tokens_are_stored_hashed_and_used_once(session):
     raw = email_tokens.create(SimpleNamespace(id=uuid.uuid4()), "verify_email")
     stored = session.add.call_args.args[0]
@@ -160,15 +148,13 @@ def test_email_tokens_are_stored_hashed_and_used_once(session):
     session.scalars.return_value.first.return_value = row
     assert email_tokens.consume(raw) is row and row.used_at == NOW
     with pytest.raises(errors.TokenInvalid):
-        email_tokens.consume(raw)  # already used
+        email_tokens.consume(raw)
     session.scalars.return_value.first.return_value = SimpleNamespace(used_at=None, expires_at=NOW - timedelta(seconds=1))
     with pytest.raises(errors.TokenExpired):
         email_tokens.consume(raw)
     with pytest.raises(errors.TokenInvalid):
         email_tokens.consume("")
 
-
-# ---- files ---------------------------------------------------------------------------------------------------------
 
 def test_file_store_round_trip(ctx):
     store = file_store.FileStore("avatars")
@@ -180,8 +166,6 @@ def test_file_store_round_trip(ctx):
         store.path("../etc/passwd")
     assert store.delete("../x") is False
 
-
-# ---- marshmallow fields ------------------------------------------------------------------------------------------
 
 class Form(BaseSchema):
     name = Text(required=True, max_length=5, min_length=2)
@@ -202,8 +186,6 @@ def test_text_fields_name_the_field_in_each_message():
     assert set(err.value.messages) == {"username", "email"}
     assert Text(max_length=4).metadata["maxLength"] == 4
 
-
-# ---- mail ----------------------------------------------------------------------------------------------------------
 
 def person():
     return SimpleNamespace(id="u1", full_name="Ann", email="a@x.co", pending_email="b@x.co")

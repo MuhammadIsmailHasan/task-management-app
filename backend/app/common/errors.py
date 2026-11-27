@@ -83,7 +83,6 @@ class ServiceUnavailable(AppError):
 
 
 def error_body(code, message, details=None):
-    """Error envelope: { status: false, message, error: { code, details? } }."""
     error = {"code": code}
     if details:
         error["details"] = details

@@ -37,7 +37,6 @@ check("upload volume is writable", (await fetch(`${O}/app/api/users/me/avatar`, 
 const big = await fetch(`${O}/app/api/users/me/avatar`, { method: "POST", headers: auth, body: Buffer.alloc(3.5 * 1024 * 1024) });
 check("3 MB body limit", big.status === 413);
 
-// One origin (Requirement 46): the landing page at `/`, the app under `/app`, the API under `/app/api`.
 const landing = await fetch(`${O}/`);
 const landingText = await landing.text();
 check("the landing page is at /", landing.status === 200 && landingText.includes("RevoBoard") && landingText.includes("Get started"));

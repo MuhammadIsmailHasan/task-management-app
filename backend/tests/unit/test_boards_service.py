@@ -1,4 +1,3 @@
-"""Unit tests of the boards service and its DTO: access rules, owner change, members, share link. Repositories mocked."""
 from datetime import datetime, timezone
 
 import pytest
@@ -21,8 +20,6 @@ def b(stub, session):
     repo.get_member.return_value = None
     return row(repo=repo, users=stub(boards, "users"), activity=stub(boards, "activity"), notifications=stub(boards, "notifications"), session=session)
 
-
-# ---- access ------------------------------------------------------------------------------------------------------
 
 def test_access_by_role_owner_and_membership(b):
     sup = actor("supervisor")
@@ -68,8 +65,6 @@ def test_load_board_and_details(b):
         boards.board_detail_by_slug(None, "alpha")
 
 
-# ---- create, update, archive, delete, list ---------------------------------------------------------------------------
-
 def test_create_board_adds_the_five_default_columns(b):
     made = board()
     b.repo.create_board.return_value = made
@@ -83,7 +78,7 @@ def test_update_board_owner_rules(b, monkeypatch):
     b.repo.get_by_id.return_value = x
     sup = row(id=new_id(), role="supervisor")
     b.users.get_by_id.return_value = sup
-    b.repo.is_member.return_value = True  # a Supervisor on the Board still cannot change its owner
+    b.repo.is_member.return_value = True
     with pytest.raises(Forbidden):
         boards.update_board(actor("supervisor"), str(x.id), {"owner_id": str(sup.id)})
     boards.update_board(actor("manager"), str(x.id), {"owner_id": str(sup.id)})
@@ -135,8 +130,6 @@ def test_archive_delete_and_list(b, ctx):
     assert boards.list_boards(actor("manager"), q="  ") == ([x], {})
     assert b.repo.list_visible.call_args.args[1] is None
 
-
-# ---- members -----------------------------------------------------------------------------------------------------
 
 def test_list_members_and_candidates(b):
     x = board()
@@ -197,8 +190,6 @@ def test_remove_member(b):
         boards.require_manage_members(actor("supervisor"), x)
 
 
-# ---- share link --------------------------------------------------------------------------------------------------
-
 def test_share_link_lifecycle(b):
     x = board()
     b.repo.get_by_id.return_value = x
@@ -206,7 +197,7 @@ def test_share_link_lifecycle(b):
     assert boards.get_share(m, str(x.id)) == {"enabled": False, "token": None, "path": None}
     first = boards.enable_share(m, str(x.id))
     assert first["enabled"] and first["path"] == f"/app/shared/{x.share_token}"
-    assert boards.enable_share(m, str(x.id)) == first  # already on: unchanged
+    assert boards.enable_share(m, str(x.id)) == first
     assert boards.regenerate_share(m, str(x.id))["token"] != first["token"]
     assert boards.disable_share(m, str(x.id))["enabled"] is False
     assert boards.disable_share(m, str(x.id))["enabled"] is False
@@ -214,8 +205,6 @@ def test_share_link_lifecycle(b):
     with pytest.raises(Forbidden):
         boards.get_share(actor("supervisor"), str(x.id))
 
-
-# ---- DTO ---------------------------------------------------------------------------------------------------------
 
 def test_clean_name_and_description():
     assert dto.clean_name("  Alpha ") == "Alpha"

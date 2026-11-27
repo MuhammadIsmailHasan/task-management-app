@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# One-time server setup without Docker; safe to run again. Usage: bash deploy/bare/setup.sh http://<server-ip>:8082
 set -euo pipefail
 PUBLIC_URL=${1:?usage: setup.sh <public url>}
 PUBLIC_URL=${PUBLIC_URL%/}
@@ -38,7 +37,7 @@ umask 077
 ENCODED=$(printf %s "$DB_PASSWORD" | python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read(),safe=""))')
 old() { sed -n "s/^$1=//p" "$HOME_DIR/.env" 2>/dev/null || true; }
 JWT=$(old JWT_SECRET); FILES=$(old FILE_URL_SECRET)
-MAIL_MODE=${MAIL_BACKEND:-$(old MAIL_BACKEND)}; MAIL_MODE=${MAIL_MODE:-console} # console until SMTP is configured, so the Backend can start
+MAIL_MODE=${MAIL_BACKEND:-$(old MAIL_BACKEND)}; MAIL_MODE=${MAIL_MODE:-console}
 cat > "$HOME_DIR/.env" <<EOF
 DATABASE_URL=postgresql+psycopg://revou:$ENCODED@127.0.0.1:5432/revoboard_db
 ALLOWED_ORIGINS=$PUBLIC_URL
@@ -63,7 +62,7 @@ chmod +x "$HERE"/bare/*.sh
 
 echo "== nginx"
 sudo install -m 644 "$HERE/nginx/revoboard.conf" /etc/nginx/sites-available/revoboard
-sudo find /etc/nginx/sites-enabled -mindepth 1 -maxdepth 1 -type l -delete # unlinks other sites; their files stay
+sudo find /etc/nginx/sites-enabled -mindepth 1 -maxdepth 1 -type l -delete
 sudo ln -s /etc/nginx/sites-available/revoboard /etc/nginx/sites-enabled/revoboard
 sudo nginx -t
 sudo service nginx start

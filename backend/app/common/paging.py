@@ -1,4 +1,3 @@
-"""Cursor paging for the three lists that grow without bound (Decision J)."""
 from marshmallow import fields, validate
 
 from app.common.fields import BaseSchema

@@ -23,7 +23,6 @@ interface SharedCardModalProps {
   onClose: () => void;
 }
 
-/** A read-only card: no footer, no edit controls, no comments or activity. Files open in a new tab with a fresh URL when needed. */
 export function SharedCardModal({ token, card, category, onClose }: SharedCardModalProps) {
   const [error, setError] = useState<string | null>(null);
 

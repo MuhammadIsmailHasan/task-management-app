@@ -6,11 +6,9 @@ import { cn } from "@/lib/utils";
 interface BaseSwitchProps extends Omit<ComponentProps<"button">, "onChange" | "role" | "aria-checked"> {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  /** The accessible name; a switch has no visible text of its own. */
   label: string;
 }
 
-/** The only switch in the app: `role="switch"`, space and enter toggle it, a 44 pixel hit area around a small track. */
 export function BaseSwitch({ checked, onCheckedChange, label, className, disabled, ...rest }: BaseSwitchProps) {
   return (
     <button

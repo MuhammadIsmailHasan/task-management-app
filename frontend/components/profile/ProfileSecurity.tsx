@@ -8,7 +8,6 @@ import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import { PASSWORD_MIN } from "@/lib/validation";
 
-/** The Security tab: the current password is required, the new one is typed twice, and a notice goes to the account's email (PRF-05). */
 export function ProfileSecurity() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");

@@ -47,7 +47,7 @@ describe("Profile layout and tabs (PRF-01)", () => {
     expect(screen.getByText("@ann")).toBeInTheDocument();
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["About", "Security", "Notifications"]);
     expect(screen.getByRole("tab", { name: "About" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { name: "Profile" })).toBeInTheDocument(); // one h1
+    expect(screen.getByRole("heading", { name: "Profile" })).toBeInTheDocument();
   });
 
   it("keeps the tab in the query and honours it on load", async () => {
@@ -87,13 +87,13 @@ describe("About tab (PRF-02 to PRF-04, PRF-10)", () => {
     await userEvent.clear(field);
     await userEvent.type(field, "ann");
     await new Promise((r) => setTimeout(r, 500));
-    expect(mocks.api.auth.availability).not.toHaveBeenCalled(); // your own name is available (PRF-10)
+    expect(mocks.api.auth.availability).not.toHaveBeenCalled();
     await userEvent.clear(field);
     await userEvent.type(field, "bob");
     expect(await screen.findByText("Username is taken", undefined, { timeout: 2000 })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(mocks.api.auth.updateMe).not.toHaveBeenCalled(); // a taken name is never sent
+    expect(mocks.api.auth.updateMe).not.toHaveBeenCalled();
   });
 
   it("a new email is a request: the page says it is waiting and offers Resend and Cancel", async () => {

@@ -17,7 +17,6 @@ interface SidePanelProps {
 const TITLE: Record<PanelView, string> = { inbox: "Inbox", activity: "Activity", members: "Members", categories: "Categories" };
 const ICON = { inbox: Bell, activity: History, members: Users, categories: Tags } as const;
 
-/** A floating panel on the right, inset from the viewport; one panel hosts Inbox, Activity, Members, and Categories (SHELL-26, NAV-07). */
 export function SidePanel({ view, onClose }: SidePanelProps) {
   const shown = view ?? "inbox";
   const Icon = ICON[shown];

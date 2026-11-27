@@ -20,7 +20,7 @@ const token = `h.${btoa(JSON.stringify({ sub: "u1", role: "member", exp: 9999999
 
 beforeEach(() => {
   vi.clearAllMocks();
-  window.history.pushState({}, "", "/app/login"); // the session cookie is Path=/app (PATH-06)
+  window.history.pushState({}, "", "/app/login");
   document.cookie = "kanban_token=; Max-Age=0; Path=/app";
   document.cookie = "kanban_token=; Max-Age=0; Path=/";
 });

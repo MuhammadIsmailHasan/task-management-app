@@ -4,7 +4,6 @@ import secrets
 
 import pytest
 
-# Random per run: no credential or secret literal is committed.
 TEST_PASSWORD = secrets.token_urlsafe(12)
 
 os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:3000")
@@ -14,13 +13,12 @@ os.environ.setdefault("APP_TIMEZONE", "UTC")
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_ENV"] = "testing"
 
-from app import create_app  # noqa: E402
-from app.extensions import db  # noqa: E402
+from app import create_app
+from app.extensions import db
 
 
 @pytest.fixture
 def app(tmp_path):
-    # the memory transport collects mail in `app.common.mail.outbox` (V17, ACT-08)
     app = create_app({"TESTING": True, "UPLOAD_DIR": str(tmp_path / "uploads"), "MAIL_BACKEND": "memory"})
     from app.common import mail
 
@@ -67,7 +65,6 @@ def auth(app):
 
 @pytest.fixture
 def make_app(tmp_path):
-    """Factory for apps with a given APP_ENV (docs gating tests)."""
     created = []
 
     def _make(app_env):
@@ -80,7 +77,6 @@ def make_app(tmp_path):
 
 @pytest.fixture(autouse=True)
 def fast_password_hashing(monkeypatch):
-    """Cheap argon2 parameters keep property tests fast; hashes stay valid argon2."""
     from argon2 import PasswordHasher
 
     cheap = PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)

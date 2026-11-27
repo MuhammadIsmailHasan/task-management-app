@@ -1,4 +1,3 @@
-"""Round 6 within V18: descriptions are sanitised HTML (DS-29)."""
 import pytest
 
 from app.common.rich_text import clean_html, from_plain_text, to_text

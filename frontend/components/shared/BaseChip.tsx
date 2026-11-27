@@ -2,7 +2,6 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 import { SOLID, type Tone } from "@/lib/tones";
 
-/** The category colour shows as a dot before the label; the chip itself follows the filter chip recipe. */
 const DOT = SOLID;
 
 interface BaseChipProps extends ComponentProps<"button"> {
@@ -10,7 +9,6 @@ interface BaseChipProps extends ComponentProps<"button"> {
   active?: boolean;
 }
 
-/** Filter chip: a 24 pixel white pill with a shadow; the active one is filled with the brand colour. */
 export function BaseChip({ tone, active = false, className, children, type = "button", ...rest }: BaseChipProps) {
   return (
     <button

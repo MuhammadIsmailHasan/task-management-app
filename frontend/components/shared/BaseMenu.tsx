@@ -15,27 +15,20 @@ import {
 export interface MenuEntry {
   label: string;
   icon?: LucideIcon;
-  /** A link item; otherwise `onSelect` runs. */
   href?: string;
   onSelect?: () => void;
-  /** Shown but not selectable; `hint` says why (the tooltip text and the title). */
   disabled?: boolean;
   hint?: string;
 }
 
 interface BaseMenuProps {
-  /** The element that opens the menu; a single focusable element. */
   trigger: ReactNode;
-  /** Accessible name of the menu itself. */
   label: string;
   items: MenuEntry[];
-  /** A heading row, for example who is signed in. */
   heading?: string;
-  /** Runs when the menu closes; call `preventDefault` to keep focus where the chosen item put it (an inline field, for example). */
   onCloseAutoFocus?: (event: Event) => void;
 }
 
-/** The only action menu in the app: a thin wrapper over the shadcn/ui DropdownMenu (Radix). */
 export function BaseMenu({ trigger, label, items, heading, onCloseAutoFocus }: BaseMenuProps) {
   return (
     <DropdownMenu>

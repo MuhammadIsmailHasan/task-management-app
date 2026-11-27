@@ -20,13 +20,11 @@ interface SharedBoardProps {
   board: SharedBoardT;
   cards: SharedCard[];
   categories: Category[];
-  /** The viewer carries a Token but has no access to this Board: the banner links Home instead of sign-in. */
   signedIn?: boolean;
 }
 
 const noop = () => undefined;
 
-/** The Shared_View: columns and cards with search and category chips only. No drag, add, edit, assign, comments, activity, or Inbox. */
 export function SharedBoard({ token, board, cards, categories, signedIn = false }: SharedBoardProps) {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -42,7 +40,6 @@ export function SharedBoard({ token, board, cards, categories, signedIn = false 
   const open = cards.find((c) => c.id === openId) ?? null;
 
   return (
-    // the same frame, header, toolbar, and Columns as the Board (DS-28, round 6): canvas, raised frame, one radius, the paddings
     <div className="flex h-screen overflow-hidden bg-surface lg:p-page">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised lg:rounded-ui lg:shadow-card">
         <header className="flex min-h-touch shrink-0 items-center justify-between gap-field border-b border-line px-page py-2 lg:h-header">

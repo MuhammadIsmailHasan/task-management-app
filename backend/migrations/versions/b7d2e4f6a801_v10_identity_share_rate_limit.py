@@ -1,12 +1,3 @@
-"""V10: username and email, share token, avatar path, rate limit attempts
-
-Local-development reset (Decision V): upgrade() empties every user-linked table when APP_ENV is development
-or testing. Anywhere else it never deletes: it runs only on an empty `users` table (Decision AN). After it, run `flask seed-users` or `flask seed-data`.
-
-Revision ID: b7d2e4f6a801
-Revises: a1c3f7e9b204
-Create Date: 2026-11-20 10:00:00
-"""
 import os
 
 import sqlalchemy as sa

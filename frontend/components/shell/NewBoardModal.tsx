@@ -16,11 +16,9 @@ import type { Board } from "@/lib/types";
 interface NewBoardModalProps {
   open: boolean;
   onClose: () => void;
-  /** Edit this Board's name and description instead of creating one (a Manager, an Admin, or the owner). */
   board?: Board;
 }
 
-/** The one Board form: "New board" creates (after a confirmation), "Edit board" saves the name and description at once. */
 export function NewBoardModal({ open, onClose, board }: NewBoardModalProps) {
   const router = useRouter();
   const editing = !!board;
@@ -29,9 +27,8 @@ export function NewBoardModal({ open, onClose, board }: NewBoardModalProps) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
-  const tooLong = htmlToText(description).length > 500; // the Backend counts the visible characters too
+  const tooLong = htmlToText(description).length > 500;
 
-  // Editing opens on the Board's current values every time.
   useEffect(() => {
     if (open && board) {
       setName(board.name);
@@ -54,7 +51,6 @@ export function NewBoardModal({ open, onClose, board }: NewBoardModalProps) {
     try {
       const saved = await api.boards.update(board.id, { name, description: htmlToText(description) ? description : "" });
       onClose();
-      // a rename moves the slug (OQ46); the shell reloads its Board list once the new address lands
       if (saved.slug !== board.slug) router.replace(boardPath(saved.slug));
       else router.refresh();
     } catch (err) {
@@ -70,7 +66,7 @@ export function NewBoardModal({ open, onClose, board }: NewBoardModalProps) {
       onClose();
       setName("");
       setDescription("");
-      router.push(boardPath(created.slug)); // the shell reloads its Board list once the new Board's address lands
+      router.push(boardPath(created.slug));
     } catch (err) {
       throw new Error(err instanceof ApiError ? (err.details?.name?.[0] ?? err.message) : "Could not create the board.");
     }

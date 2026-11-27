@@ -6,7 +6,6 @@ import { routes } from "@/lib/routes";
 
 export const metadata = { title: "Users" };
 
-/** Admin only: anyone else goes back to the boards (the Backend answers 403 to them anyway). 20 users a page, by role then name (USRP-02, USRP-03). */
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const claims = decodeToken((await serverToken()) ?? "");
   if (claims?.role !== "admin") redirect(routes.boards);

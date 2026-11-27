@@ -7,11 +7,9 @@ interface ActivityLineProps {
   entry: ActivityEntry;
   names?: Record<string, string>;
   columns?: Record<string, string>;
-  /** Show the card a subtask, attachment, or comment belongs to (the board feed does; the card's own log does not). */
   showContext?: boolean;
 }
 
-/** "<actor> <action> “<object>”" with where it went, and the time underneath. Plain rendering, no state. */
 export function ActivityLine({ entry, names, columns, showContext = false }: ActivityLineProps) {
   const p = describeActivity(entry, { names, columns });
   return (

@@ -10,6 +10,6 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
     css: false,
-    testTimeout: 20000, // the component tests are slow when the whole suite runs in parallel
+    testTimeout: 20000,
   },
 });

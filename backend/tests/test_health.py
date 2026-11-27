@@ -1,4 +1,3 @@
-"""GET /api/health (Requirement 35)."""
 import socket
 import time
 
@@ -26,7 +25,7 @@ def test_health_is_503_without_leaking_the_connection(app, client, monkeypatch):
 
 
 def test_health_answers_within_five_seconds_when_the_database_hangs():
-    with socket.socket() as silent:  # accepts the TCP connection and never replies
+    with socket.socket() as silent:
         silent.bind(("127.0.0.1", 0))
         silent.listen()
         app = create_app({"SQLALCHEMY_DATABASE_URI": f"postgresql+psycopg://probe@127.0.0.1:{silent.getsockname()[1]}/probe"})

@@ -2,7 +2,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-/** DS-14 to DS-17 (V18): one radius per role, one look for every form control, no magic number. */
 const ROOT = path.resolve(import.meta.dirname, "..");
 
 function files(dir: string): string[] {
@@ -14,7 +13,6 @@ function files(dir: string): string[] {
 
 const all = ["components", "app", "lib", "hooks"].flatMap((d) => files(path.join(ROOT, d))).map((f) => ({ file: path.relative(ROOT, f), text: readFileSync(f, "utf8") }));
 const outsideUi = all.filter((s) => !s.file.startsWith(path.join("components", "ui")));
-/** Comments are not code. */
 const code = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
 
 describe("no magic number (DS-16)", () => {
@@ -65,7 +63,6 @@ describe("padding from the two padding tokens (DS-19)", () => {
   it("pads every surface and item with p-surface or p-item, never a raw step", () => {
     const tsx = all.filter((s) => s.file.endsWith(".tsx") && !s.file.startsWith(path.join("components", "landing")));
     const literals = tsx.flatMap((s) => [...code(s.text).matchAll(/"[^"\n]*"|`[^`]*`/g)].map((m) => ({ file: s.file, text: m[0] })));
-    // a surface: a bordered or raised block with the one radius and an all-round padding
     const bad = literals.filter((l) => /rounded-ui\b/.test(l.text) && /(?:border|shadow-card|bg-surface)/.test(l.text) && /(?<![\w-])(?:lg:)?p-(?:3|4|5|6|8)\b/.test(l.text));
     expect(bad.map((b) => `${b.file}: ${b.text.slice(0, 70)}`)).toEqual([]);
   });

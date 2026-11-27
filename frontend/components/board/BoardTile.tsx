@@ -8,7 +8,6 @@ import { boardPath } from "@/lib/routes";
 
 const AVATARS = 3;
 
-/** A board on Home: name, description, progress, counts, and a few members. */
 export function BoardTile({ board, members }: { board: Board; members: Member[] }) {
   const cards = board.card_count ?? 0;
   const done = board.done_count ?? 0;

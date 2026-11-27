@@ -1,4 +1,3 @@
-"""Requirement 53 (V17): active and available flags, deactivation rules, pickers, and Properties 73 and 74."""
 import uuid
 
 from conftest import TEST_PASSWORD
@@ -7,7 +6,7 @@ from hypothesis import given, strategies as st
 from app.extensions import db
 from app.models import Card, User
 from tests.helpers import PROP, hdr, mkuser, reset_db
-from tests.test_api import col, mkcard, world  # noqa: F401  (the shared fixture)
+from tests.test_api import col, mkcard, world
 
 
 def patch(w, user, who="admin", **body):
@@ -18,7 +17,6 @@ def code(r):
     return r.get_json()["error"]["code"]
 
 
-# ---- the Admin screen (ADM-02, ADM-03) ----
 def test_the_user_list_carries_both_flags_and_no_pending_email(world):
     rows = world.client.get("/api/users", headers=world.h["admin"]).get_json()["data"]["items"]
     assert all(r["is_active"] is True and r["is_available"] is True for r in rows)
@@ -39,7 +37,6 @@ def test_only_an_admin_sets_the_flags(world):
     assert r.status_code == 200 and r.get_json()["data"]["is_available"] is False
 
 
-# ---- deactivation (ADM-05 to ADM-07) ----
 def test_an_idle_user_can_be_deactivated_and_reactivated(world):
     other = world.users["other_member"]
     off = patch(world, other, is_active=False)
@@ -75,7 +72,6 @@ def test_done_archived_and_deleted_cards_do_not_block(world):
     world.client.delete(f"/api/cards/{gone['id']}", headers=world.h["manager"])
     world.client.post(f"/api/cards/{old['id']}/archive", headers=world.h["manager"])
     assert patch(world, member, is_active=False).status_code == 200
-    # the Done card keeps its assignee, and the payload says that person is inactive (ADM-09)
     card = world.client.get(f"/api/cards/{done['id']}", headers=world.h["manager"]).get_json()["data"]
     assert card["assignee_id"] == str(member.id) and card["assignee_is_active"] is False and card["assignee_is_available"] is True
 
@@ -116,7 +112,6 @@ def test_an_admin_made_user_is_verified_and_signs_in(world):
     assert world.client.post("/api/auth/login", json={"identifier": "made", "password": TEST_PASSWORD}).status_code == 200
 
 
-# ---- pickers (ADM-08) ----
 def test_pickers_list_only_active_and_available_people(world):
     other = world.users["other_member"]
     url = f"/api/boards/{world.board['id']}/candidates"
@@ -130,7 +125,7 @@ def test_pickers_list_only_active_and_available_people(world):
 
 
 def test_the_assignee_picker_and_the_members_list(world):
-    member = world.users["member"]  # a member of the fixture's board
+    member = world.users["member"]
     url = f"/api/boards/{world.board['id']}/members"
     assignable = lambda: {m["id"] for m in world.client.get(url, headers=world.h["manager"], query_string={"assignable": "true"}).get_json()["data"]}
     assert str(member.id) in assignable()
@@ -138,7 +133,7 @@ def test_the_assignee_picker_and_the_members_list(world):
     assert str(member.id) not in assignable()
     everyone = world.client.get(url, headers=world.h["manager"]).get_json()["data"]
     row = next(m for m in everyone if m["id"] == str(member.id))
-    assert row["is_available"] is False and row["is_active"] is True  # the Members view tags them
+    assert row["is_available"] is False and row["is_active"] is True
 
 
 def test_an_assignment_or_direct_add_of_an_unavailable_user_is_a_400(world):
@@ -165,7 +160,6 @@ def test_a_current_assignee_who_became_unavailable_keeps_the_card_and_can_be_sav
 @PROP
 @given(st.lists(st.tuples(st.booleans(), st.booleans()), min_size=1, max_size=6))
 def test_property_73_pickers_list_assignable_people_only(client, flags):
-    """The candidate list holds exactly the people who are active and available (and otherwise eligible)."""
     reset_db()
     manager = mkuser("manager")
     board = client.post("/api/boards", headers=hdr(manager), json={"name": "P"}).get_json()["data"]
@@ -182,7 +176,6 @@ def test_property_73_pickers_list_assignable_people_only(client, flags):
 @PROP
 @given(st.lists(st.tuples(st.sampled_from(["todo", "done", "archived", "deleted"]), st.booleans()), max_size=5), st.booleans())
 def test_property_74_open_work_blocks_deactivation(client, cards, owns_board):
-    """A deactivation succeeds exactly when the user has no open Card assigned and owns no Board with an open Card."""
     reset_db()
     admin, manager, target = mkuser("admin"), mkuser("manager"), mkuser("supervisor")
     board = client.post("/api/boards", headers=hdr(manager), json={"name": "P"}).get_json()["data"]
@@ -207,4 +200,4 @@ def test_property_74_open_work_blocks_deactivation(client, cards, owns_board):
     r = client.patch(f"/api/users/{target.id}", headers=hdr(admin), json={"is_active": False})
     assert (r.status_code == 409) == expected_open
     db.session.expire_all()
-    assert db.session.get(User, target.id).is_active == expected_open  # still active exactly when it was refused
+    assert db.session.get(User, target.id).is_active == expected_open

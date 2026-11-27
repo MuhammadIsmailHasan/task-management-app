@@ -1,10 +1,7 @@
-"""Fractional ordering helpers shared by cards and subtasks."""
-
 GAP = 1e-6
 
 
 def position_for(prev, next_, siblings):
-    """New order between prev and next_ (floats or None). siblings = orders in the target list."""
     if not siblings:
         return 1.0
     if prev is None and next_ is None:
@@ -21,5 +18,4 @@ def needs_rebalance(prev, next_):
 
 
 def rebalance(siblings):
-    """Renumber 1.0, 2.0, ... preserving the current order of the given orders."""
     return [float(i) for i in range(1, len(siblings) + 1)]

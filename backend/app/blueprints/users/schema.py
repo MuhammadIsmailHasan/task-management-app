@@ -21,7 +21,7 @@ class UserPageSchema(BaseSchema):
 
 class CreateUserSchema(RegisterSchema):
     class Meta:
-        unknown = RAISE  # avatar_url and other undefined fields are a 400 (Req 19.27)
+        unknown = RAISE
 
     role = fields.String(validate=_role, load_default="member")
 

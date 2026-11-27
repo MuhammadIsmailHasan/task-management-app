@@ -19,12 +19,6 @@ interface CalendarViewProps {
   onOpen: (card: Card) => void;
 }
 
-/**
- * A month grid, Monday first, with each Card on its `end_date` (VIEW-03). A Card without an `end_date` is not shown.
- * From 960 pixels a day lists its Cards (and "+N more" in a popover); below it a day shows a count dot and the
- * selected day's Cards list under the grid (VIEW-04). The grid opens on the browser's current month and marks today
- * (a known limit: near midnight the server's APP_TIMEZONE date can differ).
- */
 export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
   const now = new Date();
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });

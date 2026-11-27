@@ -25,6 +25,5 @@ def add(board_id, name, color):
 
 
 def delete(category):
-    # Null the references explicitly so it also works where FK actions are not enforced.
     Card.query.filter_by(category_id=category.id).update({"category_id": None})
     db.session.delete(category)

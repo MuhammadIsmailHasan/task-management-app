@@ -1,7 +1,6 @@
 export type Role = "member" | "supervisor" | "manager" | "admin";
 export type Priority = "high" | "medium" | "low";
 
-/** The signed-in user, and Admin user rows. */
 export interface User {
   id: string;
   full_name: string;
@@ -9,32 +8,25 @@ export interface User {
   email: string;
   avatar_url: string | null;
   role?: Role;
-  /** An Admin turns an account off; an inactive user cannot sign in (V17). */
   is_active?: boolean;
-  /** The user or an Admin marks them unavailable; they leave the pickers. */
   is_available?: boolean;
-  /** A new address waiting for its confirmation link; the user's own payload only. */
   pending_email?: string | null;
 }
 
-/** A person as other users see them: never an email, except to board staff (members?include=email, candidates). */
 export interface Member {
   id: string;
   full_name: string;
   username: string;
   avatar_url: string | null;
   email?: string;
-  /** The Board_Owner row of GET /boards/{id}/members (V12). */
   is_owner?: boolean;
   role?: "member" | "supervisor";
-  /** On the board members list only: the Members view tags an inactive or unavailable person. */
   is_active?: boolean;
   is_available?: boolean;
 }
 
 export interface AuthResult {
   user: User;
-  /** Null after register: the email must be confirmed first (V17). */
   token: string | null;
 }
 
@@ -47,11 +39,9 @@ export interface Column {
 
 export interface Board {
   id: string;
-  /** Read-only, derived from the name; the app URL is /app/b/{slug} (V17). */
   slug: string;
   name: string;
   description?: string | null;
-  /** Computed counts: present on the board list only. */
   card_count?: number;
   done_count?: number;
   overdue_count?: number;
@@ -67,7 +57,6 @@ export interface Subtask {
   title: string;
   is_done: boolean;
   order: number;
-  /** Who added it (null for rows made before V18) and whether the viewer may rename, reorder, or delete it. */
   created_by_id?: string | null;
   can_edit?: boolean;
 }
@@ -114,13 +103,11 @@ export type DueState = "overdue" | "due_tomorrow" | null;
 
 export interface Card {
   id: string;
-  /** Null for an archived Card: it has no Column (V17). */
   column_id: string | null;
   category_id: string | null;
   assignee_id: string | null;
   assignee_name?: string | null;
   assignee_avatar_url?: string | null;
-  /** False once the assignee was deactivated; the avatar shows a marker (ADM-09). */
   assignee_is_active?: boolean | null;
   assignee_is_available?: boolean | null;
   title: string;
@@ -130,15 +117,12 @@ export interface Card {
   end_date: string | null;
   order: number;
   archived_at: string | null;
-  /** Computed by the Backend in APP_TIMEZONE; never from the browser date (VIEW-09). */
   due_state?: DueState;
   subtasks: Subtask[];
-  /** Derived from the Subtasks (0 to 10), null without Subtasks (V12). */
   progress?: number | null;
   subtask_done_count?: number;
   subtask_total_count?: number;
   attachments: Attachment[];
-  /** Absent for Guests: absence of the field is the access control. */
   comments?: Comment[];
   activity?: ActivityEntry[];
 }
@@ -171,7 +155,6 @@ export interface Notification {
   card_id: string | null;
   card_title: string | null;
   actor_name: string | null;
-  /** moved, archived, or deleted: only on assigned_card_changed. */
   action?: "moved" | "archived" | "deleted" | null;
   is_read: boolean;
   notify_date: string;
@@ -194,7 +177,6 @@ export interface Analytics {
 }
 
 export interface ThroughputWeek {
-  /** The Monday of the week, YYYY-MM-DD. */
   week_start: string;
   done: number;
 }
@@ -214,7 +196,6 @@ export interface SharedBoard {
   has_board_access: boolean;
 }
 
-/** A card as the Shared_View gets it: no comments or activity, assignee by name only. */
 export interface SharedCard extends Omit<Card, "comments" | "activity" | "assignee_avatar_url"> {
   assignee_name: string | null;
 }
@@ -235,11 +216,9 @@ export interface JoinRequest {
   id: string;
   status: "pending" | "approved" | "rejected";
   created_at: string;
-  /** The Email appears here and nowhere else (Decision S, V12 round 2). */
   user: { id: string; full_name: string; username: string; email: string; avatar_url: string | null };
 }
 
-/** The five Notification types a user can switch off (Requirement 57). */
 export type PreferenceType = "comment_on_assigned" | "due_today" | "due_tomorrow" | "assigned_card_changed" | "subtask_on_assigned";
 
 export interface NotificationPreference {
@@ -247,7 +226,6 @@ export interface NotificationPreference {
   enabled: boolean;
 }
 
-/** A Card as the Dashboard and My Tasks list it: a few fields, no description and no email (Requirements 51 and 52). */
 export interface TaskCard {
   id: string;
   title: string;

@@ -16,12 +16,10 @@ import { CalendarView } from "./CalendarView";
 import { ListView } from "./ListView";
 
 interface BoardViewProps {
-  /** Which view of the Board this page shows (Requirement 50); the toolbar, filters, and Card modal are shared. */
   view?: "board" | "list" | "calendar";
   board: BoardT;
   initialCards: Card[];
   initialCategories: Category[];
-  /** The number of archived Cards, for the toolbar's Archived link. */
   initialArchivedCount?: number;
 }
 
@@ -44,10 +42,8 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
   const [archivedCount, setArchivedCount] = useState(initialArchivedCount);
   const role = session?.role;
   const staff = role === "supervisor" || role === "manager" || role === "admin";
-  // the Board_Owner, a Manager, and an Admin manage Columns (COL-01)
   const canManageColumns = !!session && (role === "manager" || role === "admin" || board.owner_id === session.userId);
 
-  // Re-fetch the categories on a board switch, never from a hard-coded list.
   useEffect(() => {
     let live = true;
     api.categories.listForBoard(board.id).then((c) => live && setCategories(c)).catch(() => undefined);
@@ -56,7 +52,6 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     };
   }, [board.id]);
 
-  // The Categories panel changed something: reload the categories and the Cards (a deleted category leaves its Cards) (CATP-04).
   useEffect(() => {
     const onChanged = (e: Event) => {
       if ((e as CustomEvent<{ boardId: string }>).detail?.boardId !== board.id) return;
@@ -75,7 +70,6 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     };
   }, [board.id]);
 
-  // A Notification link: open the Card after the Board loads, or say why it cannot be opened (Requirement 28, criteria 7 and 8).
   useEffect(() => {
     if (!cardParam) return;
     let live = true;
@@ -93,12 +87,10 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardParam, board.id]);
 
   const failColumn = (err: unknown, fallback: string) => setError(err instanceof ApiError ? err.message : fallback);
 
-  /** Move a Column to a 0-based position at once, then reconcile; an error puts it back (COLD-03). */
   async function reorder(id: string, to: number) {
     const ordered = [...columns].sort((a, b) => a.order - b.order);
     const from = ordered.findIndex((c) => c.id === id);
@@ -135,7 +127,7 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
         onReorder: (id: string, to: number) => reorder(id, to),
         onDelete: async (id: string) => {
           setError(null);
-          await api.columns.remove(id); // a 409 keeps the dialog open with its message (COL-05)
+          await api.columns.remove(id);
           setColumns((all) => all.filter((c) => c.id !== id));
         },
         onAdd: async (name: string) => {
@@ -267,7 +259,6 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
           categories={categories}
           onClose={closeCard}
           onChanged={(card) => {
-            // the count changes outside the state updater: React may run an updater twice (archived count +2 bug)
             if (card.archived_at && cards.some((c) => c.id === card.id)) setArchivedCount((n) => n + 1);
             setCards((all) => (card.archived_at ? all.filter((c) => c.id !== card.id) : all.map((c) => (c.id === card.id ? { ...c, ...card } : c))));
           }}

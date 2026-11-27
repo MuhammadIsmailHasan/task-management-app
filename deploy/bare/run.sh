@@ -1,5 +1,4 @@
 #!/bin/sh
-# Started by supervisord: run.sh backend | scheduler | frontend. Reads /srv/revoboard/.env, runs the current release.
 set -e
 set -a; . /srv/revoboard/.env; set +a
 APP=/srv/revoboard/current

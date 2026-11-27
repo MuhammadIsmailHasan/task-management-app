@@ -1,4 +1,3 @@
-/** First letter of each of the first two words, upper-cased; one letter for a one-word name; "?" for a blank name. */
 export function initialsOf(name: string): string {
   const letters = name
     .trim()

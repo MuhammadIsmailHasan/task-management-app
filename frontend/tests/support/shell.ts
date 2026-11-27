@@ -1,7 +1,6 @@
 import { vi } from "vitest";
 import type { ShellState } from "@/components/shell/ShellContext";
 
-/** A complete ShellContext value for tests: every field has a harmless default, a test overrides what it reads. */
 export function shellValue(over: Partial<ShellState> = {}): ShellState {
   return {
     session: null,

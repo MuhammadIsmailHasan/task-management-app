@@ -9,25 +9,20 @@ import { fromIso, toIso } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 interface BaseDateFieldProps {
-  /** Accessible name of the field. */
   label: string;
-  /** ISO day (YYYY-MM-DD) or "". */
   value: string;
   onChange: (iso: string) => void;
   id?: string;
-  /** ISO days outside min..max cannot be picked. */
   min?: string;
   max?: string;
   placeholder?: string;
   disabled?: boolean;
-  /** Show a Clear control while a date is set. */
   clearable?: boolean;
   size?: "md" | "sm";
   invalid?: boolean;
   describedBy?: string;
 }
 
-/** The one date input (DS-09): a button that shows the date and opens a calendar. Never a native date input. */
 export function BaseDateField({ label, value, onChange, id, min, max, placeholder = "Pick a date", disabled, clearable, size = "md", invalid, describedBy }: BaseDateFieldProps) {
   const [open, setOpen] = useState(false);
   const day = value ? fromIso(value) : undefined;

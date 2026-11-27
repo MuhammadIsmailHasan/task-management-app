@@ -1,7 +1,6 @@
 from app.common.errors import ValidationError
 from app.common.rich_text import clean_html, to_text
 
-# the HTML of a 500 character description with its formatting fits well within this
 MAX_DESCRIPTION_HTML = 5000
 from app.common.http import iso
 
@@ -22,7 +21,6 @@ def serialize_column(col):
 
 
 def clean_description(value):
-    """Sanitised HTML from the editor (round 6); empty becomes None; at most 500 visible characters."""
     if value is None:
         return None
     if not isinstance(value, str):
@@ -34,7 +32,6 @@ def clean_description(value):
 
 
 def serialize_board(board, columns=None, viewer=None, counts=None):
-    # Guests never receive comments or activity_log; boards embed neither.
     data = {
         "id": str(board.id),
         "name": board.name,

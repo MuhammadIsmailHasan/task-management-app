@@ -1,4 +1,3 @@
-"""Column CRUD for the Board_Owner, a Manager, and an Admin (V17, Requirement 49)."""
 from app.blueprints.activity import repository as activity
 from app.blueprints.boards import repository as boards_repo
 from app.blueprints.boards import service as boards
@@ -17,7 +16,6 @@ def _is_done(name):
 
 
 def _manager(actor, board):
-    """Only the Board_Owner, a Manager, and an Admin; a Supervisor who is only a member is refused (COL-01)."""
     if actor is None:
         raise Unauthorized("Authentication required")
     boards.require_access(actor, board)
@@ -72,7 +70,6 @@ def rename(actor, column_id, data):
 
 
 def move(actor, column_id, data):
-    """Renumber the Board's Columns 0.0, 1.0, 2.0, ... in the new order, in one transaction (COL-03). Done may move."""
     column, board = _column(actor, column_id)
     ordered = list(repo.siblings(board.id))
     position = data.get("position")
@@ -98,7 +95,6 @@ def delete(actor, column_id):
     if count:
         raise ColumnNotEmpty(f"Move or archive its {count} card{'s' if count != 1 else ''} first.", details={"count": count})
     repo.detach_deleted_cards(column.id)
-    # logged on the Board: the Column row is gone, and the Board feed reads rows by the Board's current Column ids
     activity.add(to_uuid(actor.id), "column.deleted", "board", board.id, {"board_id": str(board.id), "name": column.name})
     repo.delete(column)
     board.updated_at = clock.now()

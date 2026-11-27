@@ -25,7 +25,6 @@ def _one(n, cards=None, boards=None, names=None, slugs=None):
 
 
 def serialize_many(rows):
-    """Names are loaded in three queries whatever the number of rows (Requirement 28, criterion 4)."""
     cards = repo.card_context({n.card_id for n in rows if n.card_id})
     board_ids = {n.board_id for n in rows if n.board_id} | {b for _, b in cards.values()}
     boards = repo.board_names(board_ids)
@@ -60,7 +59,6 @@ def mark_all_read(actor):
 
 
 def preferences(actor):
-    """Exactly the five types in order; `enabled` is true where no row exists (NPF-07)."""
     from app.models import PREFERENCE_TYPES, NotificationPreference
 
     uid = to_uuid(actor.id)
@@ -69,7 +67,6 @@ def preferences(actor):
 
 
 def set_preferences(actor, data):
-    """Upsert the listed types in one transaction; an unknown or repeated type is a 400 (NPF-07)."""
     from app.common.errors import ValidationError
     from app.models import NotificationPreference
 

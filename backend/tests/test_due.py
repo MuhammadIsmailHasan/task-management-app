@@ -1,4 +1,3 @@
-"""Requirement 50, VIEW-08 (V17): due_state on every Card payload, and Property 79."""
 from datetime import date, datetime, timedelta, timezone
 
 from hypothesis import given, strategies as st
@@ -6,7 +5,7 @@ from hypothesis import given, strategies as st
 from app.common import clock
 from app.common.due import due_state
 from tests.helpers import PROP
-from tests.test_api import col, mkcard, world  # noqa: F401  (the shared fixture)
+from tests.test_api import col, mkcard, world
 
 TODAY = date(2026, 11, 26)
 NOW = datetime(2026, 11, 26, 12, 0, tzinfo=timezone.utc)
@@ -24,7 +23,6 @@ def test_the_rule():
 @PROP
 @given(st.integers(-400, 400), st.sampled_from(["Todo", "In Progress", "Review", "Revision", "Done"]), st.booleans())
 def test_property_79_due_state(offset, column, has_date):
-    """overdue exactly when end < today and not Done; due_tomorrow exactly when end = today + 1 and not Done; else null."""
     end = TODAY + timedelta(days=offset) if has_date else None
     got = due_state(end, column, TODAY)
     if end is None or column == "Done":
@@ -46,7 +44,7 @@ def test_the_payload_carries_due_state_in_the_list_the_detail_and_the_shared_vie
         listed = {c["title"]: c["due_state"] for c in world.client.get(f"/api/boards/{world.board['id']}/cards", headers=world.h["manager"]).get_json()["data"]}
         assert listed == {"late": "overdue", "soon": "due_tomorrow", "done": None}
         assert world.client.get(f"/api/cards/{late['id']}", headers=world.h["manager"]).get_json()["data"]["due_state"] == "overdue"
-        assert soon["due_state"] == "due_tomorrow" and done["due_state"] is None  # the create response
+        assert soon["due_state"] == "due_tomorrow" and done["due_state"] is None
         share = world.client.post(f"/api/boards/{world.board['id']}/share", headers=world.h["manager"]).get_json()["data"]["token"]
         shared = {c["title"]: c["due_state"] for c in world.client.get(f"/api/shared/{share}/cards").get_json()["data"]}
         assert shared == listed

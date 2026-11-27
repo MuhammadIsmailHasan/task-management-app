@@ -1,4 +1,3 @@
-"""Requirement 48 (V17): board slugs, GET /api/boards/slug/{slug}, and Property 69."""
 import importlib.util
 import re
 import uuid
@@ -11,7 +10,7 @@ from app.common.slug import is_valid_slug, pick_free, slugify
 from app.extensions import db
 from app.models import Board
 from tests.helpers import PROP
-from tests.test_api import world  # noqa: F401  (the shared fixture)
+from tests.test_api import world
 
 
 def new_board(w, name, who="manager"):
@@ -53,7 +52,6 @@ def test_is_valid_slug():
 
 
 def test_every_board_has_a_slug_and_clashes_get_suffixes(world):
-    # the fixture's board is named "B"
     assert world.board["slug"] == "b"
     assert new_board(world, "B")["slug"] == "b-2"
     assert new_board(world, "b")["slug"] == "b-3"
@@ -65,7 +63,7 @@ def test_a_rename_moves_the_slug_and_the_old_one_is_gone(world):
     renamed = rename(world, world.board, "Roadmap 2027")
     assert renamed["slug"] == "roadmap-2027"
     assert by_slug(world, "roadmap-2027").status_code == 200
-    assert by_slug(world, "b").status_code == 404  # an old slug is never redirected (OQ46)
+    assert by_slug(world, "b").status_code == 404
 
 
 def test_a_rename_that_gives_the_same_slug_keeps_it(world):
@@ -81,7 +79,7 @@ def test_a_rename_never_takes_another_boards_slug(world):
 
 
 def test_the_slug_route_has_the_same_rules_as_the_id_route(world):
-    assert by_slug(world, "b", "member").status_code == 200  # a member of the board
+    assert by_slug(world, "b", "member").status_code == 200
     assert by_slug(world, "b", "other_member").status_code == 403
     assert by_slug(world, "b", "nobody").status_code == 401
     assert by_slug(world, "no-such-board").status_code == 404
@@ -117,7 +115,7 @@ def test_the_list_and_the_invite_lookup_carry_the_slug(world):
     lookup = world.client.get(f"/api/invite/{token}", headers=world.h["other_member"]).get_json()["data"]
     assert lookup["board"]["slug"] == "b"
     renamed = rename(world, world.board, "Renamed")
-    assert world.client.get(f"/api/invite/{token}", headers=world.h["other_member"]).get_json()["data"]["board"]["slug"] == renamed["slug"]  # tokens survive a rename
+    assert world.client.get(f"/api/invite/{token}", headers=world.h["other_member"]).get_json()["data"]["board"]["slug"] == renamed["slug"]
 
 
 def test_the_notification_payload_carries_board_slug(world):
@@ -138,7 +136,6 @@ def test_a_slug_named_like_a_sub_route_still_resolves(world):
 @PROP
 @given(st.lists(st.tuples(st.sampled_from(["create", "rename", "delete"]), st.text(max_size=12), st.integers(0, 8)), min_size=1, max_size=15))
 def test_property_69_slugs_are_unique_and_follow_the_rules(client, ops):
-    """Property 69: every Board has `slugify(name)` or that plus the lowest free `-n` (n >= 2); slugs are distinct, rename follows the name."""
     from tests.helpers import hdr, mkuser, reset_db
 
     reset_db()
@@ -171,7 +168,6 @@ def test_property_69_slugs_are_unique_and_follow_the_rules(client, ops):
 
 
 def test_the_migration_backfills_in_created_order_and_downgrades():
-    """The backfill gives the earliest Board the plain slug (SLUG-01)."""
     spec = importlib.util.spec_from_file_location("v17_slug", Path(__file__).resolve().parents[1] / "migrations" / "versions" / "e5a9c3d7f104_v17_board_slug.py")
     mig = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mig)

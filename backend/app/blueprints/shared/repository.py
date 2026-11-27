@@ -8,7 +8,6 @@ def board_by_token(token):
 
 
 def card_in_board(board_id, card_id):
-    """A live card whose column belongs to the board, with subtasks and attachments loaded."""
     from app.blueprints.cards import repository as cards_repo
 
     card = cards_repo.get_detail(card_id)
@@ -28,7 +27,6 @@ def attachment_in_board(board_id, attachment_id):
 
 
 def names_of(user_ids):
-    """Full names only, selected as columns so no email is ever loaded."""
     if not user_ids:
         return {}
     rows = db.session.execute(db.select(User.id, User.full_name).where(User.id.in_(user_ids))).all()

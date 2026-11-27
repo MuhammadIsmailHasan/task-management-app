@@ -29,7 +29,7 @@ describe("Landing_Page (Requirement 41)", () => {
   it("renders the parts in order with the ids the header links to (LAND-02)", () => {
     const { container } = page();
     const ids = Array.from(container.querySelectorAll("main section[id]")).map((s) => s.id);
-    expect(ids).toEqual(["features", "workflow", "roles"]); // round 5: Teams and FAQ removed, less text
+    expect(ids).toEqual(["features", "workflow", "roles"]);
   });
 
   it("has one h1 and links only to the app under /app, to `/`, and to its own anchors (LAND-04, LAND-12, PATH-12)", () => {

@@ -12,10 +12,6 @@ import { useShell } from "./ShellContext";
 
 const row = "relative flex shrink-0 cursor-pointer items-center rounded-ui no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
 
-/**
- * The left Sidebar from 960 pixels: the global places only (Dashboard, My Tasks, Boards, Users). Expanded it shows
- * each label; collapsed it shows icons with tooltips. The board's own places are in the Top_Menu (NAV-01, NAV-02, NAV-09).
- */
 export function Sidebar() {
   const { session, board } = useShell();
   const pathname = usePathname();
@@ -30,7 +26,6 @@ export function Sidebar() {
         expanded ? "w-sidebar" : "w-sidebar-collapsed",
       )}
     >
-      {/* the logo is the toggle (NAVB-01); the space below it separates it from the first item */}
       <BaseButton
         variant="ghost"
         aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
@@ -54,7 +49,6 @@ export function Sidebar() {
             {expanded && <span className="min-w-0 truncate">{item.label}</span>}
           </Link>
         );
-        // a tooltip only while collapsed: expanded rows already show their label
         return expanded ? (
           <div key={item.id} className="contents">
             {link}

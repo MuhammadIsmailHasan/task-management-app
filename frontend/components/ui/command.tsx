@@ -5,10 +5,6 @@ import { Search } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-/**
- * cmdk marks the first item selected as soon as the list opens, which reads as "already chosen" (DS-07). The keyboard
- * highlight (`aria-selected`) therefore shows only after a key was pressed (`data-kb`); the pointer highlight is ours (CommandItem).
- */
 export function Command({ className, onKeyDown, ...props }: ComponentProps<typeof CommandPrimitive>) {
   const [kb, setKb] = useState(false);
   return (
@@ -48,11 +44,9 @@ export function CommandEmpty({ className, ...props }: ComponentProps<typeof Comm
   return <CommandPrimitive.Empty className={cn("px-2 py-3 text-center text-sm text-ink-muted", className)} {...props} />;
 }
 
-/** The pointer highlight (`data-hovered`) follows the pointer and clears when it leaves; the keyboard highlight is `aria-selected`. */
 export function CommandItem({ className, ...props }: ComponentProps<typeof CommandPrimitive.Item>) {
   const ref = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
-  // cmdk sets its own pointer handlers on the item, so ours are native listeners
   useEffect(() => {
     const node = ref.current;
     if (!node) return;

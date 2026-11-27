@@ -10,7 +10,6 @@ import type { DashboardData, Priority, TaskCard } from "@/lib/types";
 
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
 
-/** One row of a card list: the title opens the Card over its Board; the rest is context (DASH-14). */
 function Row({ card }: { card: TaskCard }) {
   return (
     <li className="flex flex-col gap-1 rounded-ui bg-surface p-item text-sm">
@@ -52,7 +51,6 @@ function Widget({ label, icon: Icon, count, note, aside, empty, cards, more }: {
   );
 }
 
-/** Overdue, Due tomorrow (its own "Due on" date), Top 5 priority, and Finished on time / overdue (DASH-14 to DASH-17). */
 export function DashboardWidgets({ data, dueOn, onDueOn }: { data: DashboardData; dueOn: string; onDueOn: (value: string) => void }) {
   const shares = finishedShares(data.finished);
   const tomorrowTitle = data.due_tomorrow.due_on && dueOn ? `Due on ${shortDate(data.due_tomorrow.due_on)}` : "Due tomorrow";

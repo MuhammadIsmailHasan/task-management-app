@@ -1,9 +1,7 @@
 import { boardPath, boardByIdPath, cardPath, routes } from "./routes";
 import type { Notification } from "./types";
 
-/** Where a Notification leads (Requirement 28, criterion 5). */
 export function hrefFor(n: Notification): string {
-  // `board_slug` is the Board's current address; an id-only row falls back to the redirect-only route
   const board = n.board_slug ? boardPath(n.board_slug) : n.board_id ? boardByIdPath(n.board_id) : null;
   const card = n.board_slug && n.card_id ? cardPath(n.board_slug, n.card_id) : null;
   switch (n.type) {
@@ -15,18 +13,16 @@ export function hrefFor(n: Notification): string {
     case "subtask_on_assigned":
       return card ?? board ?? routes.boards;
     case "assigned_card_changed":
-      // a moved Card opens; an archived or deleted one is not available, so the Board shows it with the usual message (NPF-08)
       return n.action === "moved" ? (card ?? board ?? routes.boards) : (board ?? routes.boards);
     case "board_join_requested":
       return n.board_slug ? boardPath(n.board_slug, { invite: "1" }) : (board ?? routes.boards);
     case "board_added":
       return board ?? routes.boards;
     default:
-      return routes.boards; // board_join_rejected: the requester has no access to the Board
+      return routes.boards;
   }
 }
 
-/** One sentence naming the actor and the Board or Card (Requirement 28, criterion 11). Never an Email. */
 export function sentenceFor(n: Notification): string {
   const board = n.board_name ?? "a board";
   const actor = n.actor_name ?? "Someone";

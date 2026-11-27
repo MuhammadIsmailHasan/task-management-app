@@ -33,7 +33,6 @@ def _aid(actor):
 
 
 def load_card(actor, card_id):
-    """Return (card, board) after 404/401/403 checks. Soft-deleted cards/boards are 404."""
     cid = to_uuid(card_id)
     card = repo.get_card(cid) if cid else None
     if card is None:
@@ -49,7 +48,6 @@ def _require(allowed, message="You cannot do this on this card"):
 
 
 def _require_fields_edit(actor, card, board, keys):
-    """Staff edit any field; the assigned Member edits the description alone (PERM-03)."""
     if actor is None:
         raise Forbidden("Authentication required")
     if policy.is_staff(actor, board):
@@ -78,7 +76,6 @@ def present(card, actor):
 
 
 def _assignee_context(cards):
-    """Names and signed avatar URLs of every assignee of these cards: one query, one signature per distinct user."""
     idents = users.identities({c.assignee_id for c in cards if c.assignee_id})
     return idents, avatar_urls(idents, clock.now())
 
@@ -87,10 +84,6 @@ DONE = "Done"
 
 
 def completion_stamp(previous_name, target_name, current, now):
-    """The new `completed_at` of a Card entering `target_name` from `previous_name` (None when it is new).
-
-    Entering Done from another Column sets it, leaving Done clears it, and a reorder inside Done keeps it (Requirement 43).
-    """
     if target_name == DONE:
         return current if previous_name == DONE and current is not None else now
     return None
@@ -170,7 +163,6 @@ def _category_name(category_id):
 
 
 def _change(key, old, new):
-    """One entry of the `changes` metadata: old and new value, by name for a category, field name only for a description."""
     if key == "description":
         return {}
     if key == "category_id":
@@ -222,7 +214,6 @@ def delete_card(actor, card_id):
 
 
 def set_archived(actor, card_id, archived):
-    """Archive takes the Card out of its Column (an archived Card has none); restore puts it in the first Column."""
     card, board = load_card(actor, card_id)
     boards.require_staff(actor, board)
     if archived:
@@ -301,13 +292,11 @@ def move_card(actor, card_id, data):
             "card_title": card.title,
         },
     )
-    if source != target.id:  # a reorder inside the same Column notifies nobody (NPF-04)
+    if source != target.id:
         notif_repo.notify_assignee(card, "assigned_card_changed", _aid(actor), "moved")
     db.session.commit()
     return card
 
-
-# ---- subtasks ----------------------------------------------------------------
 
 def add_subtask(actor, card_id, data):
     card, board = load_card(actor, card_id)
@@ -340,7 +329,7 @@ def update_subtask(actor, subtask_id, data):
         _require(policy.can_edit_item(actor, card, board, sub.created_by_id), "You can only change subtasks you created")
     else:
         _require(policy.can_check_subtask(actor, card, board), "Only the assignee and board staff can check subtasks")
-    changed = False  # a reorder alone does not notify (NPF-04)
+    changed = False
     if "title" in data:
         if not isinstance(data["title"], str) or not data["title"].strip():
             raise ValidationError("title is required")
@@ -400,8 +389,6 @@ def delete_subtask(actor, subtask_id):
     notif_repo.notify_assignee(card, "subtask_on_assigned", _aid(actor))
     db.session.commit()
 
-
-# ---- attachments -------------------------------------------------------------
 
 def add_attachment(actor, card_id, json_data, upload):
     card, board = load_card(actor, card_id)
@@ -472,7 +459,6 @@ def attachment_file_path(attachment_id, exp, sig, st=None):
     card = repo.get_card(att.card_id)
     board = boards_repo.get_by_id(repo.board_id_of_card(card)) if card else None
     if st:
-        # A shared URL dies the moment the Share_Token is disabled or replaced (Req 18.16).
         if board is None or not board.share_token or st != share_scope(board.share_token):
             raise Forbidden("Invalid or expired file link")
     if board is None or not att.file_path:
@@ -480,10 +466,7 @@ def attachment_file_path(attachment_id, exp, sig, st=None):
     return os.path.join(current_app.config["UPLOAD_DIR"], att.file_path), att
 
 
-# ---- listing -----------------------------------------------------------------
-
 def parse_archived(args):
-    """`?archived=true` lists the archived Cards (V17); the default is false."""
     raw = args.get("archived")
     if raw is None:
         return False
@@ -493,7 +476,6 @@ def parse_archived(args):
 
 
 def parse_card_filters(args):
-    """Search and filter[...] query values as the repository filter dict; 400 on a bad value or an unknown key."""
     priority = assignee = category = None
     for key, value in args.items():
         if key in ("search", "archived"):
@@ -530,7 +512,6 @@ _PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 def group_key(end_date, today):
-    """One of MY_GROUPS for a Card's end date (TASK-02): This week runs to the Sunday of the current Monday-first week."""
     if end_date is None:
         return "no_due"
     if end_date < today:
@@ -544,7 +525,6 @@ def group_key(end_date, today):
 
 
 def my_cards(actor):
-    """The caller's open Cards in time groups, empty groups left out (Requirement 52). An Admin cannot be an assignee: empty."""
     today = clock.today(current_app.config["APP_TIMEZONE"])
     if actor.role in ("manager", "admin"):
         raise Forbidden("My tasks is for members and supervisors")

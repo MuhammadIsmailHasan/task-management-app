@@ -1,12 +1,3 @@
-"""v17: boards.slug
-
-Revision ID: e5a9c3d7f104
-Revises: d4f8b2c6e903
-Create Date: 2026-11-26 10:00:00
-
-Adds the unique slug and backfills it from each name in created_at, id order, so the earliest Board keeps the
-plain slug. Soft-deleted Boards get one too (the unique index covers every row). Nothing is deleted.
-"""
 import re
 
 import sqlalchemy as sa

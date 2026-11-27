@@ -14,7 +14,6 @@ export type BoardParams = { params: Promise<{ slug: string }> };
 
 const TITLE: Record<BoardPageView, string> = { board: "", list: " · List", calendar: " · Calendar", archived: " · Archived" };
 
-/** The tab title: the Board's name, with the view after it (Requirement 32). */
 export async function boardMetadata({ params }: BoardParams, view: BoardPageView): Promise<Metadata> {
   const { slug } = await params;
   try {
@@ -24,10 +23,6 @@ export async function boardMetadata({ params }: BoardParams, view: BoardPageView
   }
 }
 
-/**
- * One Server Component body for every view of a Board (Requirement 50): an unknown or former slug is the
- * Not_Found_Page, no access is the unavailable page, and an expired session goes to sign in.
- */
 export async function renderBoardPage({ params }: BoardParams, view: BoardPageView): Promise<ReactNode> {
   const { slug } = await params;
   try {

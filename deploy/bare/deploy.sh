@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Build the checked-out commit into releases/<sha>, switch to it, restart; on failure switch back (never the schema).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 REPO=$PWD
@@ -40,7 +39,7 @@ echo "== migrate"
 )
 
 echo "== switch"
-rm -rf "$REL.old"; [ ! -e "$REL" ] || mv "$REL" "$REL.old" # the same commit may already be live
+rm -rf "$REL.old"; [ ! -e "$REL" ] || mv "$REL" "$REL.old"
 mv "$TMP" "$REL"
 switch() { ln -sfn "$STATE/releases/$1" "$STATE/current.new" && mv -T "$STATE/current.new" "$STATE/current"; }
 switch "$SHA"

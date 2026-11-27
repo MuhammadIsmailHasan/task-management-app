@@ -1,4 +1,3 @@
-"""The single flask-smorest Api: envelope error rendering, OpenAPI config gated by APP_ENV."""
 import json
 import logging
 from http import HTTPStatus
@@ -46,7 +45,6 @@ _LOCATIONS = ("json", "query", "form", "files", "headers", "cookies", "path")
 
 
 def _details(messages):
-    """webargs messages ({location: {field: [text]}}) to {field: [text, ...]}."""
     if not isinstance(messages, dict):
         return {"_schema": [str(messages)]}
     flat = {}
@@ -55,7 +53,7 @@ def _details(messages):
             flat.update(_details(value))
         elif isinstance(value, (list, tuple)):
             flat[str(key)] = [x if isinstance(x, str) else str(x) for x in value]
-        elif isinstance(value, dict):  # nested field errors: keep the first text per sub-field
+        elif isinstance(value, dict):
             flat[str(key)] = [f"{k}: {v[0] if isinstance(v, list) and v else v}" for k, v in value.items()]
         else:
             flat[str(key)] = [str(value)]
@@ -82,7 +80,7 @@ class EnvelopeApi(Api):
     def handle_http_exception(self, error):
         status = error.code or 500
         data = getattr(error, "data", None) or {}
-        if status == 422:  # smorest/webargs validation failure -> 400, never 422
+        if status == 422:
             raw = data.get("messages") or data.get("errors") or data.get("message") or "Invalid request"
             return render_error(400, "VALIDATION_ERROR", "Validation failed", _details(raw))
         message = data.get("message") or HTTPStatus(status).phrase

@@ -1,13 +1,3 @@
-"""v17: cards.board_id, nullable cards.column_id
-
-Revision ID: f1b6d8a2c405
-Revises: e5a9c3d7f104
-Create Date: 2026-11-26 11:00:00
-
-An archived Card has no Column (Requirement 49), so a Card needs its own Board. board_id is added and backfilled
-from the Card's Column before column_id is nulled for every archived Card. Nothing is deleted. The downgrade puts
-each archived Card back in the first Column of its Board, because column_id becomes NOT NULL again.
-"""
 import sqlalchemy as sa
 from alembic import op
 

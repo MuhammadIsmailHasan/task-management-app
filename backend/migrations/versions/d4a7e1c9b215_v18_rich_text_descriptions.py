@@ -1,13 +1,3 @@
-"""v18 round 6: board and card descriptions become rich text (sanitised HTML)
-
-Revision ID: d4a7e1c9b215
-Revises: c7d2e9f4a118
-Create Date: 2026-11-27 10:00:00
-
-`boards.description` becomes TEXT (HTML is longer than the 500 visible characters it holds). Every existing plain-text
-description, on boards and cards, is escaped and wrapped in one paragraph with its line breaks kept, so it renders the
-same in the editor. Downgrade turns the HTML back into plain text and the column back into VARCHAR(500).
-"""
 import sqlalchemy as sa
 from alembic import op
 

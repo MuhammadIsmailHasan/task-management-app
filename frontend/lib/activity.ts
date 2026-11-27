@@ -1,7 +1,6 @@
 import { shortDate } from "./format";
 import type { ActivityEntry } from "./types";
 
-/** Legacy wording for rows written before the names were stored in `metadata`. */
 const VERBS: Record<string, string> = {
   "board.created": "created the board",
   "board.updated": "renamed the board",
@@ -44,7 +43,6 @@ const VERBS: Record<string, string> = {
   "comment.priority_toggled": "changed the priority flag of a comment on",
 };
 
-/** Wording for rows written before names were stored: there is no object to quote. */
 const NO_OBJECT: Record<string, string> = {
   "card.created": "created a card",
   "card.updated": "updated a card",
@@ -87,17 +85,13 @@ export type ActivityDetail =
 export interface ActivityParts {
   actor: string;
   verb: string;
-  /** The thing acted on (a card, subtask, or attachment title), shown in quotes. */
   object?: string;
-  /** The card a subtask, attachment, or comment event belongs to, for the board feed. */
   context?: string;
   details: ActivityDetail[];
 }
 
 interface Lookups {
-  /** user id -> name */
   names?: Record<string, string>;
-  /** column id -> name, for rows that stored ids only */
   columns?: Record<string, string>;
 }
 
@@ -109,7 +103,6 @@ function valueOf(field: string, v: unknown): string | undefined {
   return String(v);
 }
 
-/** One activity row as parts: the actor, the action, the object, and where it went. */
 export function describeActivity(entry: ActivityEntry, { names = {}, columns = {} }: Lookups = {}): ActivityParts {
   const meta = (entry.metadata ?? {}) as Record<string, unknown>;
   const actor = entry.actor_name ?? names[entry.actor_id] ?? "Someone";
@@ -176,7 +169,6 @@ export function describeActivity(entry: ActivityEntry, { names = {}, columns = {
   return { actor, verb, object, context, details };
 }
 
-/** Plain text of the parts, for tests and accessible names. */
 export function activityText(p: ActivityParts): string {
   let out = `${p.actor} ${p.verb}`;
   if (p.object) out += ` “${p.object}”`;

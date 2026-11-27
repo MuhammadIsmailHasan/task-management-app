@@ -13,18 +13,15 @@ import { UserMenu } from "./UserMenu";
 import { BOARDS_QUERY_KEY, homeFor, parentOf, routes } from "@/lib/routes";
 
 interface AppHeaderProps {
-  /** The Board the page shows, if any: below 960 pixels its name stands where the wordmark would. */
   board: Board | null;
   drawerOpen: boolean;
   onToggleDrawer: () => void;
 }
 
-/** The one header on every protected page, inside the app frame: logo, Top_Menu (on a Board), bell, User_Menu (NAV-10). */
 export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps) {
   const { session, user, inbox, toggleSidePanel } = useShell();
   const pathname = usePathname() ?? "";
   const parent = parentOf(pathname, session?.role);
-  // the Boards page leaves its search and sort in sessionStorage so the arrow restores them (NAVB-06)
   const [boardsQuery, setBoardsQuery] = useState("");
   useEffect(() => {
     try {
@@ -46,14 +43,12 @@ export function AppHeader({ board, drawerOpen, onToggleDrawer }: AppHeaderProps)
         </Link>
       )}
       <div className="flex min-w-0 items-center lg:hidden">
-        {/* the Board name is the page title below; the header shows the brand at every width (DS-21) */}
         <Link href={homeFor(session?.role)} className="inline-flex items-center gap-2 font-heading text-page-title text-ink" aria-label="RevoBoard home">
           <BrandLogo variant="mark" size="sm" decorative />
           RevoBoard
         </Link>
       </div>
       </div>
-      {/* from 960 pixels the Top_Menu is centred between two parts of equal flexible width (NAVB-08) */}
       <div className="flex shrink-0 justify-center">
         <TopMenu />
       </div>

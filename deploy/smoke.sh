@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# The production stack against a throwaway PostgreSQL, behind Nginx. For CI and laptops, never for the server.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ ! -e /srv/revoboard/.env ] || { echo "This looks like the server; refusing"; exit 1; }
@@ -33,7 +32,7 @@ for _ in $(seq 1 60); do
   docker exec revoboard-smoke-db pg_isready -q -h 127.0.0.1 && break
   sleep 1
 done
-for _ in 1 2; do # twice: the setup is idempotent
+for _ in 1 2; do
   { echo "\\set password '$PASSWORD'"; cat deploy/setup.sql; } | docker exec -i revoboard-smoke-db psql -qX -U postgres
 done
 

@@ -1,4 +1,3 @@
-"""Unit tests of the auth service: the repository, rate limiter, mail, and token issuer are faked; no database, no HTTP."""
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -17,7 +16,6 @@ def user(**over):
 
 @pytest.fixture
 def fakes(monkeypatch):
-    """Every collaborator of `login` replaced by an in-memory fake that records its calls."""
     calls = SimpleNamespace(failures=[], resets=[], checks=[], users={})
     monkeypatch.setattr(service.repo, "get_by_username", lambda v: calls.users.get(v))
     monkeypatch.setattr(service.repo, "get_by_email", lambda v: next((u for u in calls.users.values() if u.email == v), None))
@@ -63,7 +61,7 @@ def test_a_disabled_or_unconfirmed_account_is_refused_only_after_the_right_passw
     with pytest.raises(AccountNotActivated):
         login("new")
     with pytest.raises(Unauthorized):
-        login("new", "wrong-password")  # a wrong password never reveals the account state
+        login("new", "wrong-password")
     assert fakes.resets == []
 
 
@@ -83,15 +81,12 @@ def test_register_creates_an_unverified_member_mails_a_link_and_gives_no_token(m
     monkeypatch.setattr(service, "serialize_user", lambda u: {"id": u.id})
     result = service.register({"full_name": "Ann", "username": "ann", "email": "ann@example.com", "password": PASSWORD})
     assert result == {"user": {"id": "u1"}, "token": None}
-    assert made[0][-1] == "member"  # a role cannot be chosen at sign-up
+    assert made[0][-1] == "member"
     assert sent == [("mail", "ann@example.com", "raw-verify_email")]
 
 
-# ---- availability, profile, email change, verification, password ------------------------------------------------------
-
 @pytest.fixture
 def me(monkeypatch, session):
-    """The signed-in user's row, with tokens, mail, and the limiter recorded instead of written or sent."""
     calls = SimpleNamespace(sent=[], invalidated=[], created=[], hits=[])
     current = user(full_name="Ann", pending_email=None, is_available=True)
     monkeypatch.setattr(service.repo, "get_by_id", lambda uid: current)
@@ -154,7 +149,7 @@ def test_email_change_is_a_request_until_confirmed(me, session):
     service.update_me(ACTOR, {"email": " New@Example.com "})
     assert me.user.pending_email == "new@example.com" and me.user.email == "ann@example.com"
     assert me.sent == [("change", "raw-change_email")]
-    service.update_me(ACTOR, {"email": "ann@example.com"})  # the current address cancels the request
+    service.update_me(ACTOR, {"email": "ann@example.com"})
     assert me.user.pending_email is None
     session.scalar.return_value = 1
     with pytest.raises(Conflict):
@@ -178,7 +173,7 @@ def test_verify_confirms_the_account_or_the_new_address(me, monkeypatch):
     assert service.verify({"token": "t"}) == {"purpose": "verify_email"} and me.user.email_verified_at is not None
     token.purpose = "change_email"
     with pytest.raises(Conflict):
-        service.verify({"token": "t"})  # the change was cancelled
+        service.verify({"token": "t"})
     me.user.pending_email = "new@example.com"
     service.verify({"token": "t"})
     assert (me.user.email, me.user.pending_email) == ("new@example.com", None)
@@ -210,8 +205,6 @@ def test_change_password(me, monkeypatch):
     service.change_password(ACTOR, {"current_password": PASSWORD, "new_password": "new-password-1"})
     assert service._hasher.verify(me.user.password_hash, "new-password-1") and resets == ["u1"] and me.sent[-1][0] == "password"
 
-
-# ---- DTO ---------------------------------------------------------------------------------------------------------
 
 def test_user_serializers_hide_what_each_reader_must_not_see(ctx):
     from app.blueprints.auth import dto

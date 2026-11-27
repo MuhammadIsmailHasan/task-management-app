@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# One time, by hand: demo data. Only this command gets APP_ENV=development.
 set -euo pipefail
 STATE=${STATE:-/srv/revoboard}
 read -rsp "Password for the demo accounts (at least 8 characters): " SEED_PASSWORD; echo

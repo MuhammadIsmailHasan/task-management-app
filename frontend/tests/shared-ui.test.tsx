@@ -87,7 +87,6 @@ describe("Option hover highlight (FIX-05)", () => {
     expect(second).toHaveAttribute("data-hovered", "true");
     fireEvent.pointerLeave(second);
     expect(options.some((o) => o.hasAttribute("data-hovered"))).toBe(false);
-    // the pointer never moves the keyboard highlight, and the keyboard never sets the pointer one
     expect(options.some((o) => o.getAttribute("aria-selected") === "true" && o === second)).toBe(false);
     await userEvent.keyboard("{ArrowDown}");
     expect(options.some((o) => o.hasAttribute("data-hovered"))).toBe(false);

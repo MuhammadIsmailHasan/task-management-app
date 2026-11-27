@@ -11,14 +11,13 @@ class Board(TimestampMixin, db.Model):
     id = uuid_pk()
     name = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(300), nullable=False)
-    description = db.Column(db.Text, nullable=True)  # sanitised HTML (round 6)
+    description = db.Column(db.Text, nullable=True)
     share_token = db.Column(db.String(64), nullable=True)
     invite_token = db.Column(db.String(64), nullable=True)
     owner_id = uuid_fk("users.id", nullable=True)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     archived_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    # Relationships are lazy="raise": repositories load them explicitly (selectinload).
     columns = db.relationship("Column", back_populates="board", lazy="raise", order_by="Column.order")
     members = db.relationship(
         "BoardMember", back_populates="board", lazy="raise", order_by="BoardMember.created_at"
@@ -37,8 +36,6 @@ class BoardMember(TimestampMixin, db.Model):
 
 
 class BoardJoinRequest(TimestampMixin, db.Model):
-    """One request to join a Board through its Invite_Link (V12, Decision AA). No Email is stored here."""
-
     __tablename__ = "board_join_requests"
 
     id = uuid_pk()
@@ -75,7 +72,6 @@ db.Index("uq_boards_slug", Board.slug, unique=True)
 
 
 def taken_slugs(connection, base, exclude_id=None):
-    """Every stored slug equal to `base` or starting with `base-`, soft-deleted Boards included (SLUG-01)."""
     query = db.select(Board.slug).where(db.or_(Board.slug == base, Board.slug.like(f"{base}-%")))
     if exclude_id is not None:
         query = query.where(Board.id != exclude_id)
@@ -89,6 +85,5 @@ def unique_slug(connection, name, exclude_id=None):
 
 @event.listens_for(Board, "before_insert")
 def _set_slug(mapper, connection, target):
-    """Every creation path (the API, the seed, a test) gets a slug without naming one."""
     if not target.slug:
         target.slug = unique_slug(connection, target.name)

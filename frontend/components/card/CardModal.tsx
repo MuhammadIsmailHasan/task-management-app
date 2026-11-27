@@ -28,7 +28,6 @@ import { CommentThread, type CommentSort } from "./CommentThread";
 import { FieldStatus } from "./FieldStatus";
 import { SubtaskChecklist } from "./SubtaskChecklist";
 
-/** Comments and activity show this many at a time (CMV-06). */
 const COMMENT_PAGE = 5;
 
 interface CardModalProps {
@@ -42,10 +41,6 @@ interface CardModalProps {
   onCreateCardFromComment?: (comment: Comment) => Promise<void>;
 }
 
-/**
- * One two-pane modal for viewing and editing. There is no Save button and no draft of the Card: each field saves on
- * its own (Requirement 25, Decision AB). The input state here is only what the user is typing; `card` is what was saved.
- */
 export function CardModal({ cardId, board, columns, categories, onClose, onChanged, onDeleted, onCreateCardFromComment }: CardModalProps) {
   const { session } = useShell();
   const [card, setCard] = useState<Card | null>(null);
@@ -63,16 +58,12 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   const role = session?.role;
   const staff = role === "supervisor" || role === "manager" || role === "admin";
-  // PERM-02: staff edit every field; the assigned Member edits the description, adds and checks, and comments.
   const isAssignee = role === "member" && !!card && card.assignee_id === session?.userId;
   const canFields = staff;
   const canWork = staff || isAssignee;
   const names = Object.fromEntries(members.map((m) => [m.id, m.full_name]));
   const columnNames = Object.fromEntries(columns.map((c) => [c.id, c.name]));
 
-  // The latest Card, updated in the same tick as every change. Saves and item edits finish in any order, so each one
-  // builds on this, never on the Card a render captured; the Board always receives the merged Card, so a late reply
-  // cannot undo another field (a priority save landing after a new subtask, or the reverse).
   const latest = useRef<Card | null>(null);
   const apply = useCallback(
     (update: (c: Card) => Card, notify = true) => {
@@ -87,10 +78,9 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
   const merge = useCallback((update: (c: Card) => Card) => apply(update, false), [apply]);
   const saved = useCallback(
     (response: Card, sent: string[]) => {
-      // The server's normalised value (a trimmed title) replaces what was typed, for the fields that request sent only.
       const fresh = toDraft(response) as unknown as Record<string, unknown>;
       setDraft((d) => (d ? ({ ...d, ...Object.fromEntries(sent.map((k) => [k, fresh[k]])) } as Draft) : d));
-      if (latest.current) onChanged(latest.current); // `merge` has already applied the sent fields
+      if (latest.current) onChanged(latest.current);
     },
     [onChanged],
   );
@@ -101,7 +91,6 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
     latest.current = fresh;
     setCard(fresh);
     setDraft(toDraft(fresh));
-    // the card embeds every top-level comment, newest first: show the first page and total (CMV-06)
     setComments(fresh.comments?.slice(0, COMMENT_PAGE));
     setCommentTotal(fresh.comments?.length ?? 0);
     return fresh;
@@ -112,14 +101,11 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
   }, [load]);
 
   useEffect(() => {
-    // Board staff get each member's Email for the assignee picker; anyone else (or a 403) gets the plain list.
-    // `assignable`: only active and available people are offered; an assignee who is neither stays on the Card (ADM-08, ADM-09)
     const plain = () => api.boards.members(board.id, false, true).then(setMembers).catch(() => setMembers([]));
     if (staff) api.boards.members(board.id, true, true).then(setMembers).catch(plain);
     else void plain();
   }, [board.id, staff]);
 
-  /** Reload from the top, keeping as many rows as were showing. */
   const loadComments = useCallback(
     async (next: CommentSort, keep = COMMENT_PAGE) => {
       const page = await api.comments.list(cardId, next, { limit: Math.min(Math.max(keep, COMMENT_PAGE), 50) });
@@ -142,7 +128,6 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => (d ? { ...d, [key]: value } : d));
 
-  /** Send one field if it differs from the last saved value. */
   function commit(field: FieldKey, next: Draft | null = draft) {
     if (!card || !next) return;
     const body = buildPatch(field, toDraft(card), next);
@@ -164,7 +149,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
     if (!draft) return;
     const next = { ...draft, ...patch };
     setDraft(next);
-    if ("start_date" in patch || "end_date" in patch) return; // the dates save when the popover closes
+    if ("start_date" in patch || "end_date" in patch) return;
     commit(Object.keys(patch)[0] as FieldKey, next);
   }
 
@@ -177,7 +162,6 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
     commit("dates");
   }
 
-  /** Close after every pending save finished; a failed save asks first (Requirement 25, criteria 13 and 14). */
   async function requestClose() {
     if (closing) return;
     setClosing(true);
@@ -212,7 +196,7 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
 
   const canComment = role === "manager" || role === "supervisor" || isAssignee;
   const datesValid = !draft || isRangeValid(draft.start_date, draft.end_date);
-  const overdue = card?.due_state === "overdue"; // the server's rule, never the browser date (VIEW-09)
+  const overdue = card?.due_state === "overdue";
   const columnName = columns.find((c) => c.id === card?.column_id)?.name;
   const showRight = !!card && (comments !== undefined || !!card.activity);
 
@@ -225,7 +209,6 @@ export function CardModal({ cardId, board, columns, categories, onClose, onChang
     </div>
   );
 
-  // The open Card names the tab; closing it restores the Board title (Requirement 32, criterion 5).
   const cardName = draft ? draft.title.trim() || "Untitled card" : "";
   useEffect(() => {
     if (!cardName) return;

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-/** Seconds left of a wait (for example Retry-After); ticks once a second down to 0. Pass 0 or null for no wait. */
 export function useCountdown(seconds: number | null | undefined): number {
   const [left, setLeft] = useState(seconds && seconds > 0 ? seconds : 0);
   useEffect(() => {

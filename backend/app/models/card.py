@@ -14,7 +14,6 @@ class Category(TimestampMixin, db.Model):
     color = db.Column(db.String(64), nullable=True)
 
 
-# Unique by case-insensitive name within a board.
 db.Index("uq_categories_board_name_lower", Category.board_id, db.func.lower(Category.name), unique=True)
 
 
@@ -28,7 +27,6 @@ class Card(TimestampMixin, db.Model):
     )
 
     id = uuid_pk()
-    # An archived Card has no Column (V17, Requirement 49) but keeps its Board, so a Card reaches its Board without one.
     board_id = uuid_fk("boards.id", nullable=False)
     column_id = uuid_fk("columns.id", nullable=True)
     category_id = db.Column(
@@ -47,9 +45,7 @@ class Card(TimestampMixin, db.Model):
     order = db.Column(db.Float, nullable=False)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     archived_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    # Set when the Card enters a Column named Done, cleared when it leaves (V16, Requirement 43).
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    # Stretch columns (progress, views_count) are intentionally left for a later migration.
 
     subtasks = db.relationship("Subtask", back_populates="card", lazy="raise", order_by="Subtask.order")
     attachments = db.relationship(
@@ -92,7 +88,6 @@ db.Index("ix_cards_board_id", Card.board_id)
 
 @event.listens_for(Card, "before_insert")
 def _set_board(mapper, connection, target):
-    """A Card made with a Column (the API, the seed, a test) takes that Column's Board without naming it."""
     if target.board_id is None and target.column_id is not None:
         from app.models.board import Column
 

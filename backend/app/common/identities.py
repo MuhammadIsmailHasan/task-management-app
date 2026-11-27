@@ -1,4 +1,3 @@
-"""People as other users see them: name and avatar, never the email (V10, Decision U)."""
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -14,5 +13,4 @@ class Identity:
 
 
 def avatar_urls(identities: dict[UUID, Identity], now) -> dict[UUID, str | None]:
-    """One signature per distinct user per response; no database access."""
     return {uid: (avatar_url(uid, now) if i.avatar_path else None) for uid, i in identities.items()}

@@ -1,7 +1,6 @@
 import { deriveProgress } from "./progress";
 import type { Card, Category, Column, Priority } from "./types";
 
-/** The sample Board the landing page shows: typed like the Backend's data, so the preview uses the app's own components and functions (LAND-06). */
 export const SAMPLE_COLUMNS: Column[] = ["Todo", "In Progress", "Review", "Revision", "Done"].map((name, order) => ({ id: `col-${order}`, board_id: "sample", name, order }));
 
 export const SAMPLE_CATEGORIES: Category[] = [
@@ -61,7 +60,6 @@ export const SAMPLE_CARDS: SampleCard[] = SPECS.map((s, i) => {
   };
 });
 
-/** Every figure the preview shows, computed from the sample data (Property 68). */
 export function sampleFigures() {
   const doneColumn = SAMPLE_COLUMNS.find((c) => c.name === "Done")!;
   const cards = SAMPLE_CARDS.map((s) => s.card);

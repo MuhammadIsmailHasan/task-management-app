@@ -5,7 +5,6 @@ import { boardPath, routes } from "@/lib/routes";
 import { serverGet } from "@/lib/server";
 import type { Board } from "@/lib/types";
 
-/** Redirect-only (PATH-08, Open Question 65): an old `/boards/{id}` link becomes `/app/b/{slug}` with its query kept. */
 export default async function BoardByIdPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { id } = await params;
   const query = await searchParams;
@@ -17,7 +16,7 @@ export default async function BoardByIdPage({ params, searchParams }: { params: 
     if (err instanceof ApiError && err.httpStatus === 404) notFound();
     if (err instanceof ApiError && err.httpStatus === 403) return <BoardUnavailable />;
     if (err instanceof ApiError && err.httpStatus === 401) redirect(routes.login);
-    throw err; // includes a 400 for a value that is not an id
+    throw err;
   }
   redirect(boardPath(board.slug, flat));
 }

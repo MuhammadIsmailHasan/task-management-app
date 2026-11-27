@@ -13,7 +13,6 @@ import { AvatarUploader } from "./AvatarUploader";
 
 const CHECK_DELAY = 400;
 
-/** The About tab: picture, name, username with a live check, email (a change waits for its link), and availability (PRF-02 to PRF-04). */
 export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh: User) => void }) {
   const [fullName, setFullName] = useState(user.full_name);
   const [username, setUsername] = useState(user.username);
@@ -30,7 +29,6 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
   const usernameChanged = name !== user.username;
   const emailChanged = email.trim().toLowerCase() !== user.email && email.trim().toLowerCase() !== (user.pending_email ?? "");
 
-  // the live availability check; keeping your own name is "available" (PRF-10)
   useEffect(() => {
     if (!usernameChanged || !isUsername(name)) return setAvailable(null);
     const id = ++checkId.current;
@@ -38,7 +36,7 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
       api.auth
         .availability({ username: name })
         .then((r) => id === checkId.current && setAvailable(r.username?.available ?? null))
-        .catch(() => id === checkId.current && setAvailable(null)); // silent: the save answers authoritatively
+        .catch(() => id === checkId.current && setAvailable(null));
     }, CHECK_DELAY);
     return () => clearTimeout(t);
   }, [name, usernameChanged]);
@@ -49,7 +47,6 @@ export function ProfileAbout({ user, onChange }: { user: User; onChange: (fresh:
   else if (usernameChanged && available === false) problems.username = ["Username is taken"];
   if (emailChanged && !isEmail(email.trim().toLowerCase())) problems.email = ["Enter a valid email address."];
   const changed = fullName.trim() !== user.full_name || usernameChanged || emailChanged;
-  // a server answer for a field wins while it is there; editing the field clears it and the live check speaks again
   const shown: Record<string, string[]> = { ...problems };
   for (const [key, list] of Object.entries(errors)) if (list.length) shown[key] = list;
 

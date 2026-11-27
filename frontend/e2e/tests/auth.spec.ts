@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { signIn, submitLogin } from "../support";
 
-/** MVP end to end: sign in, sign out, register, and the rules around them (Requirements 1, 45, 59). */
 const unique = `e2e${Date.now()}`;
 
 test.describe("login", () => {
@@ -13,7 +12,7 @@ test.describe("login", () => {
     await page.getByRole("menuitem", { name: "Log out" }).click();
     await expect(page).toHaveURL(/\/app\/login|\/$/);
     await page.goto("/app/boards");
-    await expect(page).toHaveURL(/\/app\/login/); // the session is gone
+    await expect(page).toHaveURL(/\/app\/login/);
   });
 
   test("signs in with the username too, in any letter case", async ({ page }) => {

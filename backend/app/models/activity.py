@@ -20,8 +20,6 @@ class Comment(TimestampMixin, db.Model):
 
 
 class ActivityLog(db.Model):
-    """Append-only: created_at only, never updated or deleted."""
-
     __tablename__ = "activity_logs"
 
     id = uuid_pk()
@@ -29,15 +27,12 @@ class ActivityLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     target_type = db.Column(db.String(50), nullable=False)
     target_id = db.Column(db.UUID(as_uuid=True), nullable=False)
-    # "metadata" is reserved on declarative classes, so the attribute is renamed.
     metadata_ = db.Column("metadata", db.JSON, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now(), nullable=False)
 
 
-# The five types a user can switch off (V17, Requirement 57), in the order the Profile lists them.
 PREFERENCE_TYPES = ("comment_on_assigned", "due_today", "due_tomorrow", "assigned_card_changed", "subtask_on_assigned")
 CARD_NOTIFICATIONS = ("assigned", "deadline", *PREFERENCE_TYPES)
-# Once a day by nature: the unique index applies to these only, so an event is never refused as a duplicate (NPF-06).
 DEDUPED_NOTIFICATIONS = ("assigned", "deadline", "due_today", "due_tomorrow")
 BOARD_NOTIFICATIONS = ("board_join_requested", "board_added", "board_join_rejected")
 
@@ -63,7 +58,6 @@ class Notification(TimestampMixin, db.Model):
     join_request_id = uuid_fk("board_join_requests.id", nullable=True)
     is_read = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     notify_date = db.Column(db.Date, nullable=False)
-    # moved, archived, or deleted: only on assigned_card_changed (NPF-09)
     action = db.Column(db.String(20), nullable=True)
 
 
@@ -81,8 +75,6 @@ _partial(
 
 
 class NotificationPreference(TimestampMixin, db.Model):
-    """One user's switch for one preference type; a missing row means enabled (Requirement 57)."""
-
     __tablename__ = "notification_preferences"
 
     id = uuid_pk()

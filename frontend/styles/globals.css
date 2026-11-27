@@ -2,11 +2,6 @@
 @import "tw-animate-css";
 @import "./tokens.css";
 
-/*
- * Tailwind theme = an alias layer over styles/tokens.css (single source of the look).
- * `inline` makes utilities emit var(--token) directly, so nothing here defines a new value.
- * Defaults are cleared first: no default palette, spacing scale, radii, shadows, or breakpoints.
- */
 @theme inline {
   --color-*: initial;
   --spacing-*: initial;
@@ -19,8 +14,8 @@
   --ease-*: initial;
   --blur-*: initial;
 
-  --breakpoint-lg: 60rem; /* 960px: the Sidebar drawer / desktop switch */
-  --breakpoint-xl: 80rem; /* 1280px: three Home columns and the larger card text */
+  --breakpoint-lg: 60rem;
+  --breakpoint-xl: 80rem;
 
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
@@ -107,7 +102,6 @@
   --color-label-slate: var(--label-slate-bg);
   --color-label-slate-fg: var(--label-slate-text);
 
-  /* shadcn/ui variable names, aliased to the tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
@@ -243,7 +237,6 @@
   --ease-out: var(--ease-out);
 }
 
-/* Named layers, durations, opacities and the focus ring: components never write the numbers. */
 @utility z-header { z-index: var(--z-header); }
 @utility z-scrim { z-index: var(--z-scrim); }
 @utility z-sidebar { z-index: var(--z-sidebar); }
@@ -282,7 +275,6 @@
 }
 @utility bg-gradient-brand { background-image: var(--gradient-brand); }
 @utility bg-gradient-cta { background-image: var(--gradient-cta); }
-/* Controls shorter than 44 pixels keep a 44 pixel hit area below 960 pixels (DS-17). */
 @utility touch-target {
   position: relative;
   &::after {
@@ -305,7 +297,6 @@
 @utility rule-dashed { border-style: dashed; }
 @utility grid-cols-date-row { grid-template-columns: var(--size-checkbox) var(--size-date-label) 1fr; }
 
-/* shadcn/ui variables: aliases of the prototype tokens (defined once, here). */
 :root {
   --background: var(--surface-200);
   --foreground: var(--ink);
@@ -340,7 +331,6 @@
   border: var(--border-width-focus) solid var(--surface-200);
 }
 
-/* Rich text (round 6 within V18, DS-29): a description shown with the same space, sizes, and colours as the editor. */
 @layer components {
   .rich-text {
     overflow-wrap: anywhere;
@@ -385,13 +375,10 @@
   }
 }
 
-/* TinyMCE overrides: unlayered and raised by `:root`, because the editor skin is unlayered CSS loaded after ours (round 7). */
-/* The TinyMCE frame takes the shared control look: the one radius, the border token, and the inset focus ring. */
 :root .tox.tox-tinymce {
   border: var(--border-width-dashed) solid var(--border);
   border-radius: var(--radius-ui);
 }
-/* one focus ring on the frame; TinyMCE's own inner edit-area border is off (round 7) */
 :root .tox.tox-tinymce.tox-edit-focus {
   border-color: var(--ring);
   box-shadow: inset 0 0 0 var(--border-width-dashed) var(--ring);
@@ -403,12 +390,10 @@
   box-shadow: none;
   border-bottom: var(--border-width-dashed) solid var(--border);
 }
-/* the TinyMCE floating UI sits outside the modal, which turns pointer events off around it */
 :root .tox-tinymce-aux,
 :root .tox-dialog-wrap {
   pointer-events: auto;
 }
-/* its dialog takes the app look: the one radius, the fonts, the accent primary button */
 :root .tox .tox-dialog,
 :root .tox .tox-textfield,
 :root .tox .tox-listbox,

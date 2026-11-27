@@ -2,7 +2,6 @@ import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import type { Analytics } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-/** Totals across the boards a Supervisor owns or, for a Manager, every board. Only these roles may call the analytics API. */
 export function AnalyticsStrip({ rows }: { rows: Analytics[] }) {
   const sum = (pick: (a: Analytics) => number) => rows.reduce((n, a) => n + pick(a), 0);
   const stats = [

@@ -17,9 +17,6 @@ class LoginSchema(BaseSchema):
 
 
 class UpdateMeSchema(BaseSchema):
-    """full_name, username, email, and is_available (V17, PRF-09); any other field (role, is_active, pending_email,
-    email_verified_at, avatar_url, ...) is a 400. At least one must be sent."""
-
     class Meta:
         unknown = RAISE
 

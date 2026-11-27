@@ -69,7 +69,7 @@ describe("CardModal", () => {
     expect(screen.queryByText(/Someone/)).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Move to column")).not.toBeInTheDocument();
     for (const name of ["Archive"]) expect(screen.getByRole("button", { name })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Delete" })).toHaveLength(2); // the card, and the viewer's own comment
+    expect(screen.getAllByRole("button", { name: "Delete" })).toHaveLength(2);
     expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
     expect(screen.getByRole("dialog", { name: /Write the spec \| Board/ })).toBeInTheDocument();

@@ -1,12 +1,3 @@
-"""v16: cards.completed_at
-
-Revision ID: d4f8b2c6e903
-Revises: c9e1a5b7d302
-Create Date: 2026-11-23 20:00:00
-
-Adds the nullable completion time and backfills it from updated_at for every live Card that sits in a
-Column named Done. Nothing is deleted or truncated, so it is safe on a production database with data.
-"""
 import sqlalchemy as sa
 from alembic import op
 

@@ -1,7 +1,6 @@
 import type { ActivityEntry } from "@/lib/types";
 import { ActivityLine } from "./ActivityLine";
 
-/** Plain rendering of a card's own activity log. */
 export function ActivityList({ entries, names = {}, columns = {} }: { entries: ActivityEntry[]; names?: Record<string, string>; columns?: Record<string, string> }) {
   if (entries.length === 0) return <p className="text-ink-muted">No activity yet.</p>;
   return (

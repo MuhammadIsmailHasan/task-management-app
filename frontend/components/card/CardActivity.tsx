@@ -8,13 +8,11 @@ import { ActivityList } from "./ActivityList";
 
 interface CardActivityProps {
   cardId: string;
-  /** The first page the card response embedded. */
   initial: ActivityEntry[];
   names: Record<string, string>;
   columns: Record<string, string>;
 }
 
-/** The card's own log: the embedded first page, then Load more asks for older rows with `before`. */
 export function CardActivity({ cardId, initial, names, columns }: CardActivityProps) {
   const [extra, setExtra] = useState<ActivityEntry[]>([]);
   const [shown, setShown] = useState(PAGE);
@@ -25,7 +23,6 @@ export function CardActivity({ cardId, initial, names, columns }: CardActivityPr
   const hasMore = all.length > shown || !exhausted;
 
   async function loadMore() {
-    // five more rows: from what is already here first, then from the server with `before`
     if (all.length >= shown + PAGE || exhausted) return setShown((n) => n + PAGE);
     const last = all[all.length - 1];
     if (!last) return;
@@ -52,8 +49,6 @@ export function CardActivity({ cardId, initial, names, columns }: CardActivityPr
   );
 }
 
-/** Rows shown at a time (CMV-06). */
 const PAGE = 5;
 
-/** The card response embeds this many activity rows (the API default page). */
 const EMBEDDED_PAGE = 20;

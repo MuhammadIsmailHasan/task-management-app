@@ -20,7 +20,6 @@ import { ThroughputChart } from "./ThroughputChart";
 const ALL = "all";
 const NO_NOTE = "Not limited by the date range";
 
-/** A labelled filter: the label sits `--space-label` above its control (DASH-25, DS-04). */
 function FilterField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-label">
@@ -34,17 +33,11 @@ function FilterField({ label, htmlFor, children }: { label: string; htmlFor: str
 
 interface DashboardViewProps {
   role: Role;
-  /** The Boards this viewer may pick: the ones a Supervisor owns, or every Board for a Manager. */
   boards: { id: string; name: string }[];
 }
 
-/**
- * The Dashboard (Requirements 43 and 51): a greeting, the Board, Member, and date range filters, the overview, completed
- * per week, open work, the late and upcoming lists, and the Boards table or the recent activity. One endpoint feeds it,
- * and the filters live in the query string.
- */
 export function DashboardView({ role, boards }: DashboardViewProps) {
-  const manager = role === "manager" || role === "admin"; // both read every Board (DASH-23)
+  const manager = role === "manager" || role === "admin";
   const { user, toggleSidePanel } = useShell();
   const params = useSearchParams();
   const pathname = usePathname();
@@ -55,7 +48,6 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
   const [attempt, setAttempt] = useState(0);
   const [hello, setHello] = useState("Hello");
 
-  // the greeting uses the browser's local time, so it is written after mount: no hydration mismatch (DASH-10)
   useEffect(() => setHello(greeting(new Date(), user?.full_name)), [user?.full_name]);
 
   const boardValue = filters.board || (manager ? ALL : (boards[0]?.id ?? ""));
@@ -73,8 +65,6 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
     return () => {
       live = false;
     };
-    // the query string is the whole filter state
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, attempt, boards.length]);
 
   const change = useCallback(
@@ -211,7 +201,6 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
   );
 }
 
-/** The Manager's table of every Board (DASH-05): the figures of Requirement 10, rows stack as cards below 960 pixels. */
 function BoardsTable() {
   const [rows, setRows] = useState<Analytics[] | null>(null);
   useEffect(() => {

@@ -4,10 +4,6 @@ import { BrandLogo } from "@/components/shared/BrandLogo";
 import { routes } from "@/lib/routes";
 import { ProductPreview } from "./ProductPreview";
 
-/**
- * The landing page uses the app's own scale (DS-18, DS-19, DS-22, DS-24): one radius, the surface and item paddings,
- * h1 `display` for the hero only, h2 `page-title`, h3 `base`, body `sm`. Short copy: one line per idea (round 5).
- */
 const SECTION = "mx-auto flex max-w-site flex-col gap-section px-page py-surface";
 
 function SectionHead({ eyebrow, title, line }: { eyebrow: string; title: string; line?: string }) {

@@ -77,7 +77,6 @@ def update_user(actor, user_id, data):
 
 
 def _set_active(actor, user, active):
-    """Turn an account on or off (ADM-05 to ADM-07). Off is refused for oneself and while the user has open work."""
     if not active:
         if str(user.id) == actor.id:
             raise CannotDeactivateSelf("You cannot deactivate your own account")
@@ -98,7 +97,6 @@ def _set_active(actor, user, active):
 
 
 def _drop_board_access(actor, user):
-    """A new Manager or Admin sees every Board, so BoardMember rows and pending requests go (Requirement 22, criterion 6)."""
     from app.blueprints.boards import repository as boards_repo
     from app.blueprints.invites import repository as invites_repo
 
@@ -107,8 +105,6 @@ def _drop_board_access(actor, user):
         boards_repo.delete_member(member)
     invites_repo.delete_pending_of_user(user.id)
 
-
-# ---- avatar (V10, Decision R) --------------------------------------------------------------------
 
 _store = FileStore("avatars")
 
@@ -125,7 +121,6 @@ def _locked_user(actor):
 
 
 def set_avatar(actor, stream):
-    """Write the new file, switch the row under a lock, then delete the old file (best effort)."""
     if stream is None:
         raise _file_error("file is required")
     data = stream.read(MAX_AVATAR_BYTES + 1)

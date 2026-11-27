@@ -1,15 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signIn as submitSignIn } from "../support";
 
-/**
- * MVP end to end (project brief, section 3): a board with the five default columns, cards created and moved by drag
- * and drop with the position kept after a refresh, the one card modal for viewing and editing (priority, subtasks,
- * comments), archiving, and a Member without the staff controls.
- */
 const stamp = Date.now();
 const BOARD = `E2E board ${stamp}`;
 const CARD = `E2E card ${stamp}`;
-const BOARD_PATH = `/app/b/e2e-board-${stamp}`; // the slug of BOARD (SLUG-01)
+const BOARD_PATH = `/app/b/e2e-board-${stamp}`;
 
 async function signIn(page: Page, identifier: string) {
   await submitSignIn(page, identifier);
@@ -27,7 +22,7 @@ test("a Manager creates a board that starts with the five default columns", asyn
   await page.getByRole("button", { name: "New board" }).click();
   await page.locator("#board-name").fill(BOARD);
   await page.getByRole("button", { name: "Create board" }).click();
-  await page.getByRole("button", { name: "Create", exact: true }).click(); // the confirmation (FIX-07)
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${BOARD_PATH}$`));
   for (const name of ["Todo", "In Progress", "Review", "Revision", "Done"]) await expect(column(page, name)).toBeVisible();
 });
@@ -38,7 +33,7 @@ test("edits the board name and description in the same board modal", async ({ pa
   await page.getByRole("button", { name: "Edit board" }).click();
   const modal = page.getByRole("dialog", { name: "Edit board" });
   await expect(modal.locator("#edit-board-name")).toHaveValue(BOARD);
-  const renamed = BOARD.toUpperCase(); // the same slug, so BOARD_PATH stays valid for the next steps
+  const renamed = BOARD.toUpperCase();
   await modal.locator("#edit-board-name").fill(renamed);
   await modal.getByRole("button", { name: "Save changes" }).click();
   await expect(modal).toHaveCount(0);
@@ -75,7 +70,6 @@ test("edits the card in the one modal: title, priority, subtasks, and a comment"
 
   await modal.getByLabel("New subtask").fill("Write the copy");
   await modal.getByRole("button", { name: "Add", exact: true }).click();
-  // the box is ticked once the server answers (it is controlled by the saved subtask)
   await modal.getByRole("checkbox", { name: "Done: Write the copy" }).click();
   await expect(modal.getByRole("checkbox", { name: "Done: Write the copy" })).toBeChecked();
   await expect(modal.getByText("1 of 1")).toBeVisible();
@@ -90,14 +84,12 @@ test("edits the card in the one modal: title, priority, subtasks, and a comment"
 });
 
 test("a Member gets no staff controls in the card modal (PERM-02)", async ({ page }) => {
-  // the seeded Alpha Board has member@example.com as a BoardMember
   await signIn(page, "member@example.com");
   await page.goto("/app/b/alpha-board");
-  await expect(page.getByRole("button", { name: "Edit board" })).toHaveCount(0); // only a Manager, an Admin, or the owner
+  await expect(page.getByRole("button", { name: "Edit board" })).toHaveCount(0);
   await page.getByRole("button", { name: /^Open card / }).first().click();
   const modal = page.getByRole("dialog");
   await expect(modal).toBeVisible();
-  // a Member never gets the staff controls: no Archive or Delete, no title input
   await expect(modal.getByRole("button", { name: "Delete", exact: true })).toHaveCount(0);
   await expect(modal.getByRole("button", { name: "Archive", exact: true })).toHaveCount(0);
   await expect(modal.getByLabel("Title", { exact: true })).toHaveCount(0);

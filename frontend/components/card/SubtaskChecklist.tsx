@@ -18,7 +18,6 @@ interface SubtaskChecklistProps {
   onChange: (subtasks: Subtask[]) => void;
 }
 
-/** Flat checkbox list: one-click toggle, inline-editable titles, drag handle to reorder. */
 export function SubtaskChecklist({ cardId, subtasks, canEdit, onChange }: SubtaskChecklistProps) {
   const [title, setTitle] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);

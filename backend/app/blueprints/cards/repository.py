@@ -16,7 +16,6 @@ def get_column(column_id):
 
 
 def board_id_of_card(card):
-    """A Card keeps its Board for life, also when it has no Column (an archived Card, V17)."""
     return card.board_id
 
 
@@ -27,7 +26,6 @@ def max_order(column_id):
 
 
 def first_column(board_id):
-    """The Board's first Column by `order`: where a restored Card lands (OQ47)."""
     return db.session.scalars(db.select(Column).where(Column.board_id == board_id).order_by(Column.order, Column.id).limit(1)).first()
 
 
@@ -50,7 +48,6 @@ def get_category(category_id):
 
 
 def subtasks_of(card_id):
-    """Plain sibling list for reordering (no relationship access)."""
     return Subtask.query.filter_by(card_id=card_id).order_by(Subtask.order).all()
 
 
@@ -97,7 +94,6 @@ def _with_children(stmt):
 
 
 def get_detail(card_id):
-    """One card with subtasks and attachments loaded (2 extra queries, constant)."""
     return db.session.scalars(
         _with_children(
             db.select(Card).where(Card.id == card_id, Card.deleted_at.is_(None))
@@ -106,7 +102,6 @@ def get_detail(card_id):
 
 
 def assigned_open(user_id):
-    """The Cards assigned to this user that are open (not Done, archived, or deleted, on a live Board), with Board and Category names: one query."""
     from app.models import Board
 
     return db.session.execute(
@@ -120,11 +115,6 @@ def assigned_open(user_id):
 
 
 def list_for_board(board_id, filters, archived=False):
-    """Cards of a board with subtasks and attachments: 3 queries whatever the card count.
-
-    The default is the Board's live Cards in Column order; `archived` lists the archived ones (they have no Column),
-    newest archive first (V17, Requirement 50).
-    """
     stmt = (
         db.select(Card)
         .outerjoin(Column, Card.column_id == Column.id)

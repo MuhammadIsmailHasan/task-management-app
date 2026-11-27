@@ -6,28 +6,17 @@ import { BaseModal } from "@/components/shared/BaseModal";
 import { withoutErrorToast } from "@/lib/toast";
 
 interface ConfirmDialogProps {
-  /** The element that asks; it opens the dialog instead of acting. Focus returns to it on close. */
   trigger?: ReactElement<{ onClick?: (e: MouseEvent) => void }>;
-  /** Controlled mode, for a form that asks on submit: pass both and no trigger. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** What will happen, naming the item ("Delete column “Review”?" is the title; this is the body). */
   message: string;
-  /** Names the action and repeats the verb ("Delete", "Create"). */
   confirmLabel?: string;
-  /** Dialog title; defaults to the confirm label with a question mark. */
   title?: string;
-  /** "danger" for a delete or removal, "primary" for a create. */
   tone?: "danger" | "primary";
-  /** Extra lines under the message. */
   detail?: ReactNode;
   onConfirm: () => void | Promise<void>;
 }
 
-/**
- * The one confirmation in the app (Requirement 45): a modal with a title, a body, Cancel, and a primary action.
- * It stays open with the error when the action fails, and closes only after it succeeded.
- */
 export function ConfirmDialog({ trigger, message, confirmLabel = "Delete", title, tone = "danger", detail, onConfirm, open: openProp, onOpenChange }: ConfirmDialogProps) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -71,12 +60,10 @@ export function ConfirmDialog({ trigger, message, confirmLabel = "Delete", title
         onClose={close}
         describedBy={bodyId}
         onCloseAutoFocus={(event) => {
-          // Radix only restores focus to its own Trigger; ours is the element that was focused when we opened
           event.preventDefault();
           opener.current?.focus();
         }}
         onOpenAutoFocus={(event) => {
-          // a delete starts on Cancel (the safe choice); a create starts on its primary action
           event.preventDefault();
           (tone === "danger" ? cancelRef : confirmRef).current?.focus();
         }}

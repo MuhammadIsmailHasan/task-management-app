@@ -13,11 +13,9 @@ interface BaseTabsProps {
   tabs: BaseTab[];
   value: string;
   onValueChange: (value: string) => void;
-  /** The accessible name of the tab list. */
   label: string;
 }
 
-/** The only tab control in the app: a thin wrapper over the shadcn/ui Tabs (Radix). */
 export function BaseTabs({ tabs, value, onValueChange, label }: BaseTabsProps) {
   return (
     <Tabs value={value} onValueChange={onValueChange} className="flex flex-col gap-4">

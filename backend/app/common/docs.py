@@ -1,4 +1,3 @@
-"""Small helpers that attach OpenAPI metadata to smorest views."""
 from app.common.envelope import ErrorEnvelopeSchema
 
 _ERR = {
@@ -13,8 +12,6 @@ _ERR = {
 
 
 def endpoint(blp, summary, description=None, *, auth="required", errors=(400, 401, 403, 404), **doc):
-    """auth: 'required' | 'optional' (Guests allowed) | 'none'."""
-
     def deco(fn):
         extra = dict(doc)
         if auth == "required":

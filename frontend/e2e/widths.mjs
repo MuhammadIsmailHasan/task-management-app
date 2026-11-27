@@ -1,5 +1,3 @@
-// Four-width check (V17-T07): every page at 360, 414, 960, and 1280 pixels has no sideways scroll and no console error.
-// Usage: node e2e/widths.mjs [outDir]   (the Backend on :5001 and the Frontend on :3000 must be running, seeded with `flask seed-data`)
 import { chromium } from "playwright-core";
 import { mkdirSync } from "node:fs";
 

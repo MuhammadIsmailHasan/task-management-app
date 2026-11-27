@@ -1,4 +1,3 @@
-"""Read-only view of a Board through its Share_Token (V10, Decision K). No Comment, Activity, owner, member or user contact data."""
 from flask import current_app
 
 from app.blueprints.boards import service as boards
@@ -20,7 +19,7 @@ from app.common.signing import share_scope
 def _board(token):
     board = repo.board_by_token(token)
     if board is None:
-        raise NotFound("Not found")  # one answer for unknown, disabled, replaced and deleted (Req 18.10)
+        raise NotFound("Not found")
     return board
 
 

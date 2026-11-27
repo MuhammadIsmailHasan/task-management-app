@@ -17,7 +17,6 @@ const COPY: Record<PreferenceType, { title: string; text: string }> = {
 
 type Status = "saving" | "saved" | "error";
 
-/** One switch per type, each saved at once with its own status, rolled back on failure (PRF-06, NPF-07). In-app only. */
 export function ProfileNotifications() {
   const [prefs, setPrefs] = useState<NotificationPreference[] | null>(null);
   const [status, setStatus] = useState<Partial<Record<PreferenceType, Status>>>({});

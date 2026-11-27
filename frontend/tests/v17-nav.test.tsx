@@ -17,7 +17,6 @@ vi.mock("@/lib/api", () => ({ api: { boards: { members: vi.fn().mockResolvedValu
 
 const board = (n: number, over: Partial<Board> = {}): Board => ({ id: `b${n}`, slug: `board-${n}`, name: `Board ${n}`, owner_id: "u1", archived_at: null, card_count: 4, done_count: 1, ...over });
 
-/** A signed-in viewer on Board 1 (or on no Board with `open: false`). */
 const shell = (role: Role | null, over: Partial<ShellState> & { open?: boolean } = {}): ShellState => {
   const { open = true, ...rest } = over;
   const boards = [board(1), board(2)];

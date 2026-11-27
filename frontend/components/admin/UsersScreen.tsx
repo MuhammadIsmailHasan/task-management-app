@@ -50,7 +50,6 @@ interface BlockedDetails {
   boards_total: number;
 }
 
-/** What a staged row would change, in the words the confirmation lists (ADM-04). */
 interface Staged {
   role?: Role;
   is_active?: boolean;
@@ -69,7 +68,6 @@ function changesOf(user: AdminUser, staged: Staged): string[] {
 
 const label = (role: Role) => ROLES.find((r) => r.value === role)?.label ?? role;
 
-/** The pages to link to: the first, the last, and two on each side of the current one, with a gap marker between runs. */
 export function pageList(page: number, last: number): (number | "gap")[] {
   const keep = new Set([1, last, page - 2, page - 1, page, page + 1, page + 2].filter((n) => n >= 1 && n <= last));
   const sorted = [...keep].sort((a, b) => a - b);
@@ -81,7 +79,6 @@ export function pageList(page: number, last: number): (number | "gap")[] {
   return out;
 }
 
-/** "Showing 21 to 40 of 57", Previous and Next, and page numbers; the page lives in the query string (USRP-04). */
 function Pagination({ page, perPage, total }: { page: number; perPage: number; total: number }) {
   const last = Math.max(1, Math.ceil(total / perPage));
   const from = total === 0 ? 0 : (page - 1) * perPage + 1;
@@ -132,15 +129,10 @@ function Pagination({ page, perPage, total }: { page: number; perPage: number; t
   );
 }
 
-/**
- * Admin only (Requirement 53): a table of users with a Role select, an Active switch, an Available switch, and an Update
- * button per row. A change is staged in its row; Update lists the changes in a ConfirmDialog and saves them in one request.
- * There is no delete: an account is turned off, and not while the user has open work. Below 960 pixels each row is a card.
- */
 export function UsersScreen({ initial }: { initial: UsersPage }) {
   const router = useRouter();
   const [users, setUsers] = useState(initial.items);
-  useEffect(() => setUsers(initial.items), [initial.items]); // a refresh after a save brings the re-sorted page
+  useEffect(() => setUsers(initial.items), [initial.items]);
   const [staged, setStaged] = useState<Record<string, Staged>>({});
   const [confirming, setConfirming] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<{ user: AdminUser; details: BlockedDetails } | null>(null);
@@ -168,13 +160,13 @@ export function UsersScreen({ initial }: { initial: UsersPage }) {
       const saved = (await api.users.update(user.id, body)) as AdminUser;
       setUsers((all) => all.map((u) => (u.id === saved.id ? { ...u, ...saved } : u)));
       setStaged((all) => Object.fromEntries(Object.entries(all).filter(([id]) => id !== user.id)));
-      router.refresh(); // the order depends on the role: reload this page
+      router.refresh();
     } catch (err) {
       if (err instanceof ApiError && err.code === "USER_HAS_OPEN_WORK") {
         setBlocked({ user, details: err.details as unknown as BlockedDetails });
         return;
       }
-      throw err; // the ConfirmDialog keeps the message
+      throw err;
     }
   }
 
@@ -187,7 +179,6 @@ export function UsersScreen({ initial }: { initial: UsersPage }) {
   const set = (key: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement>) => setDraft((d) => ({ ...d, [key]: e.target.value }));
 
   function fail(err: unknown) {
-    // a field error stays by its field; anything else already raised a Toast (TOAST-06)
     if (err instanceof ApiError && err.details && Object.keys(err.details).length) setErrors(err.details);
   }
 

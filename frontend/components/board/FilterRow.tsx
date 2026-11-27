@@ -11,7 +11,6 @@ interface FilterRowProps {
   onCategory: (id: string | null) => void;
 }
 
-/** Category chips come from the board's own categories; there is no hard-coded list. */
 export function FilterRow({ categories, categoryId, onCategory }: FilterRowProps) {
   if (categories.length === 0) return <p className="text-xs text-ink-muted">No categories yet.</p>;
   return (

@@ -1,4 +1,3 @@
-"""Properties 1, 2, 6-14, 17-21 (auth, boards, columns, cards, subtasks, attachments, categories)."""
 import io
 import string
 import uuid
@@ -18,7 +17,6 @@ name = st.text(alphabet=string.ascii_letters + " ", min_size=1, max_size=30).fil
 pw = st.text(min_size=8, max_size=40)
 
 
-# ---- Property 1 and 2: auth ----
 @PROP
 @given(full=name, username=uname, mail=email, password=pw)
 def test_property_1_register_login_round_trip(client, full, username, mail, password):
@@ -27,7 +25,7 @@ def test_property_1_register_login_round_trip(client, full, username, mail, pass
     assert r.status_code == 201
     data = r.get_json()["data"]
     assert data["user"]["full_name"] == full.strip() and data["user"]["username"] == username.lower() and data["user"]["email"] == mail
-    assert "password" not in str(data) and data["token"] is None  # no Token before the email is confirmed (V17)
+    assert "password" not in str(data) and data["token"] is None
     assert client.post("/api/auth/login", json={"identifier": username, "password": password}).status_code == 403
     assert verify_email(client, mail).status_code == 200
     for ident in (username.swapcase(), mail.upper()):
@@ -56,11 +54,9 @@ def test_property_2_validation_and_unique_username_and_email(client, full, usern
         assert dup.status_code == 409 and set(dup.get_json()["error"]["details"]) == {"email"}
 
 
-# ---- Property 6, 7: board seeding and column order ----
 @PROP
 @given(
     board_name=name,
-    # names are unique ignoring case on a board and never `Done` (V17, COL-02, COL-10)
     extra=st.lists(name.filter(lambda n: n.strip().lower() not in {"done", "todo", "in progress", "review", "revision"}), max_size=6, unique_by=lambda n: n.strip().lower()),
 )
 def test_property_6_7_default_columns_and_append_order(client, board_name, extra):
@@ -75,7 +71,6 @@ def test_property_6_7_default_columns_and_append_order(client, board_name, extra
         last += 1
 
 
-# ---- Property 8, 9: soft delete and archive round trip ----
 @PROP
 @given(flags=st.lists(st.tuples(st.booleans(), st.booleans()), min_size=1, max_size=5))
 def test_property_8_9_board_soft_delete_and_archive(client, flags):
@@ -117,7 +112,6 @@ def test_property_8_9_card_soft_delete_hides_children(client, card_deleted, arch
         assert client.get(f"/api/boards/{env.bid}/cards", headers=env.h["manager"]).get_json()["data"] == []
 
 
-# ---- Property 18, 19: members and owner reassignment ----
 @PROP
 @given(ops=st.lists(st.tuples(st.sampled_from(["add", "remove"]), st.integers(0, 2)), max_size=10))
 def test_property_18_board_member_add_remove(client, ops):
@@ -128,7 +122,7 @@ def test_property_18_board_member_add_remove(client, ops):
         u = targets[i]
         if op == "add":
             r = client.post(f"/api/boards/{env.bid}/members", headers=env.h["manager"], json={"user_id": str(u.id)})
-            if u.role not in ("member", "supervisor"):  # Property 52: a Manager or an Admin is never a Board_Member
+            if u.role not in ("member", "supervisor"):
                 assert r.status_code == 400 and "user_id" in r.get_json()["error"]["details"]
                 continue
             assert r.status_code == (409 if u.id in model else 201)
@@ -158,7 +152,6 @@ def test_property_19_owner_reassignment(client, target, actor):
         assert r.status_code == 403
 
 
-# ---- Property 10, 11: card validation and edit scope ----
 @PROP
 @given(
     title=st.one_of(st.just(""), st.just("  "), name, st.text(alphabet="a", min_size=256, max_size=260)),
@@ -193,13 +186,12 @@ def test_property_11_member_edit_scope(client, assigned, field):
     card = env.card(assignee_id=env.uid("member") if assigned else None)
     value = {"title": "new", "priority": "low", "description": "d"}[field]
     r = client.patch(f"/api/cards/{card['id']}", headers=env.h["member"], json={field: value})
-    assert r.status_code == (200 if assigned and field == "description" else 403)  # V18: description only
+    assert r.status_code == (200 if assigned and field == "description" else 403)
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["member_other"], json={field: value}).status_code == 403
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["sup_other"], json={field: value}).status_code == 403
     assert client.patch(f"/api/cards/{card['id']}", headers=env.h["owner"], json={field: value}).status_code == 200
 
 
-# ---- Property 12: assignment ----
 @PROP
 @given(seq=st.lists(st.sampled_from(["member", "sup_member", None]), min_size=1, max_size=8))
 def test_property_12_assignment_effects(client, seq):
@@ -246,7 +238,6 @@ def test_property_52_removing_a_member_clears_assignments_without_notification(c
     assert ActivityLog.query.filter_by(target_id=uuid.UUID(card["id"]), action="card.unassigned").count() == 1
 
 
-# ---- Property 13: subtasks ----
 @PROP
 @given(titles=st.lists(name, min_size=1, max_size=6), toggles=st.lists(st.integers(0, 5), max_size=8), delete=st.integers(0, 5))
 def test_property_13_subtasks(client, titles, toggles, delete):
@@ -268,7 +259,6 @@ def test_property_13_subtasks(client, titles, toggles, delete):
     assert all(s["is_done"] == state[s["id"]] for s in got)
 
 
-# ---- Property 14: attachment validity ----
 EXT = {".pdf": "application/pdf", ".doc": "application/msword", ".rar": "application/x-rar-compressed"}
 
 
@@ -292,7 +282,6 @@ def test_property_14_attachment_validity(client, ext, mime_ok, link):
     assert client.post(url, headers=env.h["manager"], json={}).status_code == 400
 
 
-# ---- Property 20: signed URL ----
 @PROP
 @given(
     offset=st.integers(-2000, 2000),
@@ -314,7 +303,6 @@ def test_property_20_signed_url_validity_and_expiry(offset, tamper):
     assert verify_file_signature(att, e, s, now + timedelta(seconds=offset), secret) == expected
 
 
-# ---- Property 17: categories ----
 @PROP
 @given(names=st.lists(st.text(alphabet="abcABC", min_size=1, max_size=3), min_size=1, max_size=8))
 def test_property_17_categories_unique_and_scoped(client, names):
@@ -333,5 +321,4 @@ def test_property_17_categories_unique_and_scoped(client, names):
     client.delete(f"/api/categories/{victim['id']}", headers=env.h["owner"])
     assert db.session.get(Card, uuid.UUID(card["id"])).category_id is None
     assert Category.query.filter_by(board_id=uuid.UUID(env.bid)).count() == len(seen) - 1
-    # staff-only mutations, public-style read
     assert client.post(f"/api/boards/{env.bid}/categories", headers=env.h["member"], json={"name": "zzz"}).status_code == 403

@@ -29,10 +29,6 @@ def _args():
 
 
 def week_boundaries(weeks, now, tz_name):
-    """Start instants (UTC) of `weeks` weeks ending with the current one, plus the end of the current week.
-
-    A week runs Monday 00:00 to the next Monday 00:00 in the application time zone (DST-safe: built from local dates).
-    """
     tz = ZoneInfo(tz_name)
     today = now.astimezone(tz).date()
     monday = today - timedelta(days=today.weekday())
@@ -85,10 +81,8 @@ def all_boards(actor):
     return [_shape(r) for r in repo.summaries(today, week_ago)]
 
 
-# ---- Dashboard (V17, Requirement 51) ---------------------------------------------------------------------------
-
 DEFAULT_DAYS = 30
-MAX_DAYS = 182  # 26 weeks, the throughput limit (THR-07)
+MAX_DAYS = 182
 LIST_LIMIT = 10
 TOP_LIMIT = 5
 
@@ -119,7 +113,6 @@ def _card(row):
 
 
 def _scope(actor, board_id):
-    """The Board ids this viewer may read under the Requirement 10 rules, or a 403/404."""
     if actor.role not in ("supervisor", "manager", "admin"):
         raise Forbidden("Analytics not available for this role")
     if board_id is not None:
@@ -153,7 +146,6 @@ def dashboard(actor, board_id, member, date_from, date_to, due_on):
     dt_count, dt_rows = repo.due_on_cards(ids, member_id, due_on, LIST_LIMIT) if not empty else (0, [])
     top = repo.top_priority(ids, member_id, TOP_LIMIT) if not empty else []
 
-    # weeks that touch the range, Monday first, in APP_TIMEZONE; completion in the range (local days, end inclusive)
     first_monday = date_from - timedelta(days=date_from.weekday())
     last_monday = date_to - timedelta(days=date_to.weekday())
     n_weeks = (last_monday - first_monday).days // 7 + 1

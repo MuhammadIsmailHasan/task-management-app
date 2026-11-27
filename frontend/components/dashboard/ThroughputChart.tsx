@@ -3,7 +3,6 @@ import { barShares, formatWeek } from "@/lib/dashboard";
 import type { ThroughputWeek } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-/** Cards completed per week as pill bars: token colours, no chart library, a hidden table for assistive technology (DASH-04). */
 export function ThroughputChart({ weeks }: { weeks: ThroughputWeek[] }) {
   const shares = barShares(weeks);
   const total = weeks.reduce((n, w) => n + w.done, 0);

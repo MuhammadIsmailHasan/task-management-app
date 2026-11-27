@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# One time, by hand: demo data. Only this one-off container gets APP_ENV=development.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 TAG=$(cat "${STATE:-/srv/revoboard}/current")

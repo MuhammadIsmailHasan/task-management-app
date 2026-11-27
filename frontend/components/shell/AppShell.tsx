@@ -14,11 +14,9 @@ import { Sidebar } from "./Sidebar";
 import { NavDrawer } from "./NavDrawer";
 import { SkipLink } from "./SkipLink";
 
-/** Client shell: the canvas, the Sidebar, and one app frame holding the header and the page; the nav drawer, the side panel, and the Share_Modal live here (Requirement 47). */
 export function AppShell({ boards, children }: { boards: Board[]; children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  // The open Board comes from the slug in /app/b/{slug}[/view] (SLUG-08); the Boards list the layout loaded names it.
   const slug = /^\/app\/b\/([^/]+)/.exec(pathname)?.[1] ?? null;
   const current = boards.find((b) => b.slug === slug) ?? null;
   const boardId = current?.id ?? null;
@@ -35,8 +33,6 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     setUser(getStoredUser());
   }, [pathname]);
 
-  // A Board just created or renamed is not in the list this layout loaded: reload the layout once, after the navigation
-  // has landed (a refresh right after a push can refresh the page being left instead).
   useEffect(() => {
     if (slug && !current) router.refresh();
   }, [slug, current, router]);
@@ -54,7 +50,6 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     if (session) void refreshInbox();
   }, [session, refreshInbox]);
 
-  // The stored user can be stale (a signed avatar URL lives 15 minutes), so load it fresh once per session.
   useEffect(() => {
     if (!session) return;
     let live = true;
@@ -71,7 +66,6 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     };
   }, [session]);
 
-  // An open Inbox or Activity panel names the tab; closing it restores the page title (Requirement 32, criterion 4).
   useEffect(() => {
     if (!panel) return;
     const previous = document.title;
@@ -81,7 +75,6 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     };
   }, [panel, inbox?.unread_count]);
 
-  // The Board's views belong to the Board: leaving it closes them, and its pending count is its own.
   useEffect(() => {
     if (!boardId) setPanel((cur) => (cur && cur !== "inbox" ? null : cur));
     setShareOpen(false);
@@ -101,7 +94,6 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     };
   }, [boardId, decides]);
 
-  // `?invite=1` (the Inbox link of a join request) opens the Share_Modal once (SHR-04)
   useEffect(() => {
     if (boardId && new URLSearchParams(window.location.search).get("invite") === "1") setShareOpen(true);
   }, [boardId]);

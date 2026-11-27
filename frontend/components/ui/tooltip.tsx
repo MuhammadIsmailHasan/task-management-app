@@ -10,7 +10,6 @@ export const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const SIDE_OFFSET = 6;
 
-/** shadcn/ui Tooltip on Radix: opens on hover and keyboard focus, closes on leave, Escape, and click. */
 export function TooltipContent({ className, sideOffset = SIDE_OFFSET, ...props }: ComponentProps<typeof TooltipPrimitive.Content>) {
   return (
     <TooltipPrimitive.Portal>

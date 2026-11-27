@@ -5,7 +5,6 @@ import { SAMPLE_CARDS, SAMPLE_CATEGORIES, SAMPLE_COLUMNS, sampleFigures } from "
 
 const SHOWN = ["In Progress", "Review"];
 
-/** The product preview (LAND-06): the app's own Card tiles and the sample data, inert, with every figure computed. */
 export function ProductPreview() {
   const f = sampleFigures();
   return (

@@ -1,4 +1,3 @@
-"""Private file storage under UPLOAD_DIR. Names are generated; callers never pass a path."""
 import os
 import re
 
@@ -25,7 +24,6 @@ class FileStore:
             handle.write(data)
 
     def delete(self, name):
-        """Best effort: returns False (and logs nothing about the user) when the file could not be removed."""
         try:
             os.remove(self.path(name))
             return True

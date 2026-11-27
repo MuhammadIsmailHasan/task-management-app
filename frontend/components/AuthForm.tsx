@@ -27,7 +27,6 @@ const ICON: Record<keyof Values, typeof User> = { full_name: User, identifier: A
 const GENERIC_LOGIN_ERROR = "Invalid username, email or password.";
 type Values = { full_name: string; identifier: string; username: string; email: string; password: string };
 
-/** One form for both modes. Login takes a Username or Email; register takes both separately (Decisions M and N). */
 export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
   const router = useRouter();
   const copy = COPY[mode];
@@ -40,10 +39,8 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
   const [unconfirmed, setUnconfirmed] = useState(false);
   const left = useCountdown(wait);
   const blocked = left > 0;
-  // A blocked availability check stops the on-blur checks until the wait ends (Req 20.16).
   const availabilityPausedUntil = useRef(0);
 
-  // Editing a field clears that field's error at once, and only that field's (FIX-03).
   const set = (key: keyof Values) => (e: ChangeEvent<HTMLInputElement>) => {
     setValues((v) => ({ ...v, [key]: e.target.value }));
     setErrors((cur) => {
@@ -64,7 +61,6 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
       }
     } catch (err) {
       if (err instanceof ApiError && err.httpStatus === 429) availabilityPausedUntil.current = Date.now() + (err.retryAfter ?? 60) * 1000;
-      // any failure stays silent: the 409 on submit is authoritative
     }
   }
 
@@ -73,7 +69,6 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
     setErrors({});
     setFormError(null);
     setUnconfirmed(false);
-    // Validate every field before any request, show every error, and focus the first invalid field (FIX-04).
     const found = validateAuth(mode, values);
     const first = AUTH_FIELD_ORDER.find((id) => found[id]);
     if (first) {
@@ -93,13 +88,12 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
               password: values.password,
             });
       if (mode === "register" || !result.token) {
-        // no Token before the email is confirmed (ACT-02): the address and the page to come back to wait in sessionStorage, not the URL
         rememberPending(values.email.trim(), next);
         router.push(routes.verify);
         return;
       }
       setSession(result.token, result.user);
-      router.push(safeReturnPath(next)); // the app pages load fresh with the new session; no refresh to race the push
+      router.push(safeReturnPath(next));
     } catch (err) {
       if (err instanceof ApiError && err.httpStatus === 429) {
         setWait(err.retryAfter ?? 60);
@@ -109,9 +103,8 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         setFormError(err.message);
         setUnconfirmed(true);
       } else if (err instanceof ApiError && err.code === ACCOUNT_DISABLED) {
-        setFormError(err.message); // no resend: an Admin turned the account off
+        setFormError(err.message);
       } else if (err instanceof ApiError) {
-        // field errors come from error.details; anything else is a form-level message
         if (err.details && Object.keys(err.details).length) {
           setErrors(err.details);
           const firstServer = AUTH_FIELD_ORDER.find((id) => err.details?.[id]);

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Build and start the checked-out commit; on failure go back to the previous images (never the schema).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 STATE=${STATE:-/srv/revoboard}
@@ -10,7 +9,6 @@ flock 9
 TAG=$(git rev-parse HEAD)
 PREVIOUS=$(cat "$STATE/current" 2>/dev/null || true)
 export TAG
-# PUBLIC_BASE_URL lives in the server env file; compose hands it to the Frontend (Requirement 46).
 for v in PUBLIC_BASE_URL; do val=$(sed -n "s/^$v=//p" "$STATE/.env" 2>/dev/null || true); [ -z "$val" ] || export "$v=$val"; done
 
 echo "== backup"

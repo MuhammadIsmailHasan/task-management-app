@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 
-/** The public origin of the site: `PUBLIC_BASE_URL` when set, else the request's own host (never a path). */
 export async function publicBaseUrl(): Promise<string> {
   const configured = process.env.PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
   if (configured) return configured;

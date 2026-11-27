@@ -1,4 +1,3 @@
-/** Server Component data access: forwards the Token cookie, redirects to login on 401. */
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ACCOUNT_DISABLED, ApiError, request } from "./http";

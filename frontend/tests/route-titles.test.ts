@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn(), useRouter: vi.fn(), usePa
 
 const render = (t: unknown) => {
   const title = (t as { title: string }).title;
-  return `RevoBoard | ${title}`; // the root title.template
+  return `RevoBoard | ${title}`;
 };
 
 describe("one title per route (Requirement 32, TITLE-02)", () => {

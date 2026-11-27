@@ -36,13 +36,11 @@ def mkcard(w, title="t", who="supervisor", i=0, **extra):
     return r.get_json()["data"]
 
 
-# ---- auth ----
 def test_register_login_roundtrip(client):
     r = client.post("/api/auth/register", json={"full_name": " Ann ", "username": " Ann_1 ", "email": " Ann@X.com ", "password": TEST_PASSWORD})
     assert r.status_code == 201
     d = r.get_json()["data"]
     assert d["user"]["full_name"] == "Ann" and d["user"]["username"] == "ann_1" and d["user"]["email"] == "ann@x.com" and d["token"] is None
-    # no sign-in until the emailed link is confirmed (V17, ACT-01)
     refused = client.post("/api/auth/login", json={"identifier": "ann@x.com", "password": TEST_PASSWORD})
     assert refused.status_code == 403 and refused.get_json()["error"]["code"] == "ACCOUNT_NOT_ACTIVATED"
     assert verify_email(client, "ann@x.com").status_code == 200
@@ -73,16 +71,15 @@ def test_token_expiry_24h(app, make_user):
     assert t["exp"] - t["iat"] == 86400
 
 
-# ---- boards ----
 def test_board_defaults_and_access(world):
     names = [c["name"] for c in world.board["columns"]]
     assert names == ["Todo", "In Progress", "Review", "Revision", "Done"]
     bid = world.board["id"]
     c = world.client
-    assert c.get(f"/api/boards/{bid}").status_code == 401  # guest, private
+    assert c.get(f"/api/boards/{bid}").status_code == 401
     assert c.get(f"/api/boards/{bid}", headers=world.h["other_member"]).status_code == 403
     assert c.get(f"/api/boards/{bid}", headers=world.h["member"]).status_code == 200
-    assert c.get("/api/boards").status_code == 401  # a Guest has no board list (V10)
+    assert c.get("/api/boards").status_code == 401
     assert c.get("/api/boards", headers=world.h["other_member"]).get_json()["data"] == []
     assert len(c.get("/api/boards", headers=world.h["manager"]).get_json()["data"]) == 1
     assert c.post("/api/boards", headers=world.h["member"], json={"name": "x"}).status_code == 403
@@ -94,14 +91,14 @@ def test_owner_reassign_and_visibility_archive_delete(world):
     r = c.patch(f"/api/boards/{bid}", headers=world.h["manager"], json={"owner_id": str(world.users["member"].id)})
     assert r.status_code == 400
     assert c.patch(f"/api/boards/{bid}", headers=world.h["supervisor"], json={"owner_id": None}).status_code == 403
-    assert c.patch(f"/api/boards/{bid}", headers=world.h["supervisor"], json={"visibility": "public"}).status_code == 400  # V12: no visibility
-    assert c.get("/api/boards", headers=world.h["other_member"]).get_json()["data"] == []  # every Board is private
+    assert c.patch(f"/api/boards/{bid}", headers=world.h["supervisor"], json={"visibility": "public"}).status_code == 400
+    assert c.get("/api/boards", headers=world.h["other_member"]).get_json()["data"] == []
     assert c.post(f"/api/boards/{bid}/archive", headers=world.h["supervisor"]).status_code == 403
     assert c.post(f"/api/boards/{bid}/archive", headers=world.h["manager"]).status_code == 200
     assert c.post(f"/api/boards/{bid}/unarchive", headers=world.h["manager"]).status_code == 200
     assert c.delete(f"/api/boards/{bid}", headers=world.h["manager"]).status_code == 200
     assert c.get(f"/api/boards/{bid}", headers=world.h["manager"]).status_code == 404
-    assert c.get("/api/boards").status_code == 401  # a Guest has no board list (V10)
+    assert c.get("/api/boards").status_code == 401
     assert c.get("/api/boards", headers=world.h["other_member"]).get_json()["data"] == []
 
 
@@ -120,7 +117,6 @@ def test_members_and_columns(world):
     assert c.post(f"/api/boards/{bid}/columns", headers=world.h["other_sup"], json={"name": "Z"}).status_code == 403
 
 
-# ---- cards ----
 def test_card_crud_permissions_validation(world):
     c = world.client
     assert c.post(f"/api/columns/{col(world)}/cards", headers=world.h["member"], json={"title": "x"}).status_code == 403
@@ -132,11 +128,10 @@ def test_card_crud_permissions_validation(world):
     assert c.post(f"/api/columns/{col(world)}/cards", headers=world.h["supervisor"], json={"title": "x", "priority": "urgent"}).status_code == 400
     card = mkcard(world)
     cid = card["id"]
-    # member not assigned -> 403; assigned -> ok
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 403
     r = c.patch(f"/api/cards/{cid}", headers=world.h["supervisor"], json={"assignee_id": str(world.users["member"].id)})
     assert r.status_code == 200
-    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 403  # description only (PERM-03)
+    assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"title": "n"}).status_code == 403
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"description": "n", "title": "n"}).status_code == 403
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"description": "n"}).status_code == 200
     assert c.patch(f"/api/cards/{cid}", headers=world.h["member"], json={"assignee_id": None}).status_code == 403
@@ -145,7 +140,7 @@ def test_card_crud_permissions_validation(world):
     assert c.post(f"/api/cards/{cid}/unarchive", headers=world.h["supervisor"]).get_json()["data"]["archived_at"] is None
     assert c.delete(f"/api/cards/{cid}", headers=world.h["supervisor"]).status_code == 200
     assert c.get(f"/api/cards/{cid}", headers=world.h["manager"]).status_code == 404
-    assert db.session.get(Card, __import__("uuid").UUID(cid)).deleted_at is not None  # soft
+    assert db.session.get(Card, __import__("uuid").UUID(cid)).deleted_at is not None
 
 
 def test_assignment_notification_and_activity(world):
@@ -158,7 +153,7 @@ def test_assignment_notification_and_activity(world):
     actions = [a.action for a in ActivityLog.query.all()]
     assert "card.assigned" in actions and "card.unassigned" in actions and "card.created" in actions
     inbox = world.client.get("/api/notifications", headers=world.h["member"]).get_json()["data"]
-    assert inbox["unread_count"] == 2  # board_added when the member joined, then assigned
+    assert inbox["unread_count"] == 2
     nid = next(n["id"] for n in inbox["items"] if n["type"] == "assigned")
     assert world.client.patch(f"/api/notifications/{nid}/read", headers=world.h["other_member"]).status_code == 404
     assert world.client.patch(f"/api/notifications/{nid}/read", headers=world.h["member"]).status_code == 200
@@ -225,7 +220,7 @@ def test_attachments_and_signed_urls(world, app):
     assert ok.status_code == 201
     att = ok.get_json()["data"]
     assert "sig=" in att["file_url"]
-    assert c.get(att["file_url"]).data == b"%PDF"  # signature only, no token
+    assert c.get(att["file_url"]).data == b"%PDF"
     flipped = "1" if att["file_url"][-1] == "0" else "0"
     assert c.get(att["file_url"][:-1] + flipped).status_code == 403
     fresh = c.get(f"/api/attachments/{att['id']}/url", headers=world.h["member"])
@@ -250,10 +245,9 @@ def test_guest_on_board(world):
     assert c.patch(f"/api/cards/{card['id']}", json={"title": "z"}).status_code == 401
     signed = c.get(f"/api/cards/{card['id']}", headers=world.h["member"]).get_json()["data"]
     assert "comments" in signed and "activity" in signed
-    assert c.get(f"/api/cards/{card['id']}", headers=world.h["other_member"]).status_code == 403  # private
+    assert c.get(f"/api/cards/{card['id']}", headers=world.h["other_member"]).status_code == 403
 
 
-# ---- categories ----
 def test_categories(world):
     c, bid = world.client, world.board["id"]
     h = world.h["supervisor"]
@@ -269,16 +263,15 @@ def test_categories(world):
     assert c.get(f"/api/cards/{card['id']}", headers=h).get_json()["data"]["category_id"] is None
 
 
-# ---- comments ----
 def test_comments_flow(world):
     c = world.client
     card = mkcard(world)
     url = f"/api/cards/{card['id']}/comments"
-    assert c.post(url, headers=world.h["member"], json={"content": "x"}).status_code == 403  # not the assignee (PERM-05)
+    assert c.post(url, headers=world.h["member"], json={"content": "x"}).status_code == 403
     c.patch(f"/api/cards/{card['id']}", headers=world.h["supervisor"], json={"assignee_id": str(world.users["member"].id)})
     assert c.post(url, headers=world.h["member"], json={"content": "  "}).get_json()["error"]["details"]["content"][0] == "content is required"
     assert c.post(url, headers=world.h["admin"], json={"content": "x"}).status_code == 403
-    assert c.post(url, json={"content": "x"}).status_code == 401  # private board
+    assert c.post(url, json={"content": "x"}).status_code == 401
     m1 = c.post(url, headers=world.h["manager"], json={"content": "m1"}).get_json()["data"]
     m2 = c.post(url, headers=world.h["member"], json={"content": "m2"}).get_json()["data"]
     r1 = c.post(f"/api/comments/{m2['id']}/replies", headers=world.h["supervisor"], json={"content": "r1"}).get_json()["data"]
@@ -300,7 +293,6 @@ def test_comments_flow(world):
 
 
 def test_comment_and_activity_names(world):
-    """Comments and activity rows carry the author's display name, even for users who are not board members."""
     c = world.client
     card = mkcard(world)
     url = f"/api/cards/{card['id']}/comments"
@@ -320,7 +312,6 @@ def test_comment_and_activity_names(world):
 
 
 def test_activity_metadata_carries_names_and_changes(world):
-    """New rows hold the names and old/new values the UI needs (Req 8.9)."""
     c = world.client
     h = world.h["supervisor"]
     card = mkcard(world, "Plan launch")
@@ -364,7 +355,7 @@ def test_activity_and_inbox_paging_and_candidates(world):
     p1 = c.get(url + "?limit=4", headers=h).get_json()["data"]
     p2 = c.get(url + f"?limit=4&before={p1[-1]['id']}", headers=h).get_json()["data"]
     assert [r["id"] for r in p1 + p2] == [r["id"] for r in full] and len(p2) == 2
-    assert c.get(url, headers=h).get_json()["data"] == full  # default 20 covers all six
+    assert c.get(url, headers=h).get_json()["data"] == full
     for bad in ("limit=0", "limit=101", "limit=x"):
         r = c.get(f"{url}?{bad}", headers=h)
         assert r.status_code == 400 and r.get_json()["error"]["code"] == "VALIDATION_ERROR"
@@ -374,7 +365,6 @@ def test_activity_and_inbox_paging_and_candidates(world):
     board_rows = c.get(f"/api/boards/{world.board['id']}/activity?limit=3", headers=world.h["manager"]).get_json()["data"]
     assert len(board_rows) == 3
 
-    # inbox: assign the same member three cards; unread_count counts them all
     for _ in range(3):
         k = mkcard(world)
         c.patch(f"/api/cards/{k['id']}", headers=h, json={"assignee_id": str(world.users["member"].id)})
@@ -385,7 +375,6 @@ def test_activity_and_inbox_paging_and_candidates(world):
     assert len(rest["items"]) == 2 and rest["unread_count"] == 4
     assert c.get(f"/api/notifications?before={first['items'][0]['id']}", headers=world.h["other_member"]).status_code == 400
 
-    # candidates: non-members only, filtered, id and full_name only, role rules
     cand = c.get(f"/api/boards/{world.board['id']}/candidates?search=me", headers=world.h["manager"]).get_json()["data"]
     names = {x["full_name"] for x in cand}
     assert world.users["member"].full_name not in names or world.users["other_member"].full_name in names
@@ -399,7 +388,7 @@ def test_activity_and_inbox_paging_and_candidates(world):
     assert [x["email"] for x in hit] == [exact]
     assert c.get(f"/api/boards/{world.board['id']}/candidates", headers=world.h["member"]).status_code == 403
     assert c.get(f"/api/boards/{world.board['id']}/candidates", headers=world.h["other_sup"]).status_code == 403
-    assert c.get(f"/api/boards/{world.board['id']}/candidates?search=me", headers=h).status_code == 403  # the owner (V12)
+    assert c.get(f"/api/boards/{world.board['id']}/candidates?search=me", headers=h).status_code == 403
     assert c.get(f"/api/boards/{world.board['id']}/candidates").status_code == 401
 
 
@@ -419,7 +408,6 @@ def test_board_list_counts_and_description(world, app):
     row = next(b for b in c.get("/api/boards", headers=world.h["manager"]).get_json()["data"] if b["id"] == world.board["id"])
     assert (row["card_count"], row["done_count"], row["overdue_count"], row["member_count"]) == (3, 1, 1, 1)
     assert row["description"] is None
-    # description round trip, trimmed, empty becomes null, 500 limit, role rules
     url = f"/api/boards/{world.board['id']}"
     assert c.patch(url, headers=world.h["manager"], json={"description": "  Launch plan  "}).get_json()["data"]["description"] == "Launch plan"
     assert c.get(url, headers=world.h["manager"]).get_json()["data"]["description"] == "Launch plan"
@@ -456,7 +444,6 @@ def test_board_list_query_count_is_constant(world, app):
     assert large == small
 
 
-# ---- activity, search, analytics, users, deadlines ----
 def test_activity_endpoints(world):
     card = mkcard(world)
     c = world.client
@@ -473,7 +460,7 @@ def test_search_and_filter(world):
     mkcard(world, "Docs", priority="low")
     gone = mkcard(world, "Login gone", priority="high")
     c.delete(f"/api/cards/{gone['id']}", headers=world.h["supervisor"])
-    get = lambda q: [x["title"] for x in c.get(f"/api/boards/{bid}/cards{q}", headers=world.h["member"]).get_json()["data"]]  # noqa: E731
+    get = lambda q: [x["title"] for x in c.get(f"/api/boards/{bid}/cards{q}", headers=world.h["member"]).get_json()["data"]]
     assert get("?search=LOGIN") == ["Fix Login"]
     assert get("?search=bug") == ["Fix Login"]
     assert get("?filter[priority]=low") == ["Docs"]
@@ -491,10 +478,10 @@ def test_analytics(world):
     c.patch(f"/api/cards/{prog['id']}/move", headers=world.h["supervisor"], json={"column_id": col(world, 1)})
     d = c.get(f"/api/boards/{bid}/analytics", headers=world.h["manager"]).get_json()["data"]
     assert (d["total"], d["done"], d["in_progress"], d["overdue"], d["done_delta"]) == (3, 1, 1, 1, 1)
-    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["supervisor"]).status_code == 200  # owner
+    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["supervisor"]).status_code == 200
     assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["other_sup"]).status_code == 403
     assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["member"]).status_code == 403
-    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["admin"]).status_code == 200  # V18: an Admin reads analytics
+    assert c.get(f"/api/boards/{bid}/analytics", headers=world.h["admin"]).status_code == 200
     assert c.get(f"/api/boards/{bid}/analytics").status_code == 401
     assert len(c.get("/api/analytics/boards", headers=world.h["manager"]).get_json()["data"]) == 1
     assert c.get("/api/analytics/boards", headers=world.h["supervisor"]).status_code == 403
@@ -506,12 +493,10 @@ def test_due_job_once_in_timezone(world, app):
     app.config["APP_TIMEZONE"] = "Asia/Jakarta"
     card = mkcard(world, end_date="2026-03-02", assignee_id=str(world.users["member"].id))
     mkcard(world, "unassigned", end_date="2026-03-02")
-    # 2026-03-01 18:00 UTC is already 03-02 01:00 in Jakarta
     now = datetime(2026, 3, 1, 18, 0, tzinfo=timezone.utc)
     assert run(now) == (1, 0, 0)
-    assert run(now) == (0, 0, 1)  # the same local date again inserts nothing
+    assert run(now) == (0, 0, 1)
     assert Notification.query.filter_by(type="due_today").count() == 1
-    # earlier the same UTC day it is still 03-01 in Jakarta: the Card is due tomorrow, not today
     assert run(datetime(2026, 3, 1, 10, 0, tzinfo=timezone.utc)) == (0, 1, 0)
 
 
@@ -531,9 +516,7 @@ def test_user_admin(world):
     assert c.get("/api/users", headers=world.h["admin"]).get_json()["data"]["total"] >= 7
 
 
-# ---- cross-cutting ----
 def test_mutating_routes_401_without_token_and_403_for_member(app, world):
-    """Sweep: every mutating route rejects no-token (401) unless public/signature-gated or per-resource."""
     public = {"auth.register", "auth.login", "auth.logout", "auth.verify", "auth.resend_verification", "comments.create", "comments.reply"}
     c = world.client
     for rule in app.url_map.iter_rules():
@@ -573,7 +556,6 @@ def test_no_query_outside_repository_and_env_not_tracked():
         for p in (root / "app" / "blueprints").rglob("*.py")
         if p.name in ("service.py", "repository.py") and any(b in p.read_text() for b in banned)
     ]
-    # services/repositories stay free of Flask, smorest and marshmallow (only config access via current_app is allowed)
     assert [x for x in layering if "from flask import current_app" not in (root / x).read_text()] == []
     views = []
     for p in (root / "app" / "blueprints").glob("*/routes.py"):
@@ -591,20 +573,18 @@ def test_no_query_outside_repository_and_env_not_tracked():
 
 
 def test_inbox_unread_filter(world):
-    """NAV-13 (V17): `unread=true` lists only unread rows, pages from a row that has since been read, and keeps unread_count."""
     member = world.users["member"]
     for n in range(3):
         mkcard(world, title=f"n{n}", assignee_id=str(member.id))
     url, h = "/api/notifications", world.h["member"]
     allrows = world.client.get(url, headers=h).get_json()["data"]
     rows = allrows["items"]
-    assert allrows["unread_count"] == len(rows) >= 4  # three assignments and the board_added of the fixture
+    assert allrows["unread_count"] == len(rows) >= 4
     world.client.patch(f"/api/notifications/{rows[1]['id']}/read", headers=h)
     only = world.client.get(url, headers=h, query_string={"unread": "true"}).get_json()["data"]
     assert [i["id"] for i in only["items"]] == [r["id"] for i, r in enumerate(rows) if i != 1]
     assert only["unread_count"] == len(rows) - 1
     assert all(not i["is_read"] for i in only["items"])
-    # paging from a row that was read after it was shown still works
     after = world.client.get(url, headers=h, query_string={"unread": "true", "limit": 1, "before": rows[1]["id"]})
     assert after.status_code == 200 and [i["id"] for i in after.get_json()["data"]["items"]] == [rows[2]["id"]]
     assert world.client.get(url, headers=h, query_string={"unread": "maybe"}).status_code == 400

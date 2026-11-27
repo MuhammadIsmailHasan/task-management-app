@@ -14,7 +14,6 @@ import { notifyCategoriesChanged } from "@/lib/categories";
 import { categoryTone, PALETTE, TONE_CYCLE, type Tone } from "@/lib/tones";
 import type { Category } from "@/lib/types";
 
-/** Add, rename, recolor, and delete the categories of the open Board in the Side_Panel (the API enforces who may; NAV-07). */
 export function CategoriesView() {
   const { boardId } = useShell();
   if (!boardId) return <p className="text-sm text-ink-muted">Open a board to see its categories.</p>;
@@ -40,7 +39,7 @@ function CategoriesList({ boardId }: { boardId: string }) {
     setError(null);
     try {
       await action();
-      notifyCategoriesChanged(boardId); // the Board, its views, and an open Card show the change at once (CATP-04)
+      notifyCategoriesChanged(boardId);
     } catch (err) {
       setError(err instanceof ApiError ? (err.details?.name?.[0] ?? err.message) : "Something went wrong.");
     }

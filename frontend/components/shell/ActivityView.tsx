@@ -7,7 +7,6 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { api } from "@/lib/api";
 import { useShell } from "./ShellContext";
 
-/** The board feed from GET /boards/{id}/activity, one page at a time. Renders only what the API returned. */
 export function ActivityView() {
   const { boardId } = useShell();
   const [names, setNames] = useState<Record<string, string>>({});

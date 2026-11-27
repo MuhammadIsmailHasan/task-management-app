@@ -13,7 +13,7 @@ class BoardListQuerySchema(BaseSchema):
 
 class CreateBoardSchema(BaseSchema):
     class Meta:
-        unknown = ma.RAISE  # a posted `visibility` is a 400: every Board is private (V12)
+        unknown = ma.RAISE
 
     name = Text(required=True, max_length=255)
     description = fields.String(allow_none=True, metadata={"description": "HTML from the editor, sanitised; at most 500 visible characters"})

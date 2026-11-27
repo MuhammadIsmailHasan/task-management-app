@@ -87,7 +87,6 @@ def test_property_39_comment_list_query_count_constant(app, make_user):
     for n in (5, 50):
         board, col = seed_board(n, make_user)
         card_ids = [c.id for c in Card.query.filter_by(column_id=col.id).all()]
-        # one card with many comments: add n extra top-level comments to the first card
         for i in range(n):
             db.session.add(Comment(card_id=card_ids[0], author_id=Comment.query.first().author_id, content="x"))
         db.session.commit()
@@ -131,6 +130,6 @@ def test_static_models_have_no_to_dict_and_relationships_are_strict():
     models_src = "".join(p.read_text() for p in (ROOT / "app" / "models").glob("*.py"))
     assert "to_dict" not in models_src
     rels = re.findall(r"db\.relationship\((.*?)\)\n", models_src, re.S)
-    assert len(rels) == 10  # five relationships plus their five inverses
+    assert len(rels) == 10
     for r in rels:
         assert 'lazy="raise"' in r and "back_populates" in r and "cascade" not in r and "backref" not in r

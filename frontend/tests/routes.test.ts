@@ -94,7 +94,7 @@ describe("proxy guard and headers (PATH-05, PATH-07)", () => {
   it("marks every /app response noindex and no other", () => {
     expect(call("/app/login").headers.get("x-robots-tag")).toBe("noindex");
     expect(call("/app/dashboard", valid).headers.get("x-robots-tag")).toBe("noindex");
-    expect(call("/app/boards").headers.get("x-robots-tag")).toBe("noindex"); // the redirect too
+    expect(call("/app/boards").headers.get("x-robots-tag")).toBe("noindex");
     expect(call("/").headers.get("x-robots-tag")).toBeNull();
   });
 

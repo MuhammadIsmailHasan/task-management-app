@@ -10,7 +10,6 @@ interface FileDropZoneProps {
   onFile: (file: File) => void;
 }
 
-/** A dashed drop target: drag a file onto it, or click (or press Enter) to open the file picker. */
 export function FileDropZone({ onFile }: FileDropZoneProps) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);

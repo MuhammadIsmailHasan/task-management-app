@@ -15,7 +15,6 @@ import type { Board, Card, Category, Priority } from "@/lib/types";
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
 const archivedOn = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" }) : "");
 
-/** The Board's archived Cards, newest first, with Restore for those who may archive (VIEW-05 to VIEW-07). Restore asks nothing: it is neither a create nor a delete. */
 export function ArchivedView({ board, initialCards, categories: initialCategories }: { board: Board; initialCards: Card[]; categories: Category[] }) {
   const [categories, setCategories] = useState(initialCategories);
   useEffect(() => {
@@ -35,16 +34,14 @@ export function ArchivedView({ board, initialCards, categories: initialCategorie
       const saved = await api.cards.restore(card.id);
       setCards((all) => all.filter((c) => c.id !== card.id));
       const column = board.columns?.find((c) => c.id === saved.column_id);
-      toast.success(`Card restored to ${column?.name ?? "the first column"}`); // VIEW-07
+      toast.success(`Card restored to ${column?.name ?? "the first column"}`);
     } catch {
-      // the error Toast is raised by the request itself (TOAST-01)
     }
   }
 
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-section overflow-y-auto px-page pt-surface pb-surface">
-      {/* the back arrow and the Top_Menu lead back to the Board; the result of Restore is a Toast (TOAST-01) */}
       <h1 className="font-heading text-xl">Archived cards</h1>
       {cards.length === 0 ? (
         <p className="rounded-ui bg-surface p-surface text-sm text-ink-muted">No archived cards.</p>

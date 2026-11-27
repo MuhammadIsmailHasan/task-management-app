@@ -1,4 +1,3 @@
-"""Requirement 43 (V16): completed_at and the weekly throughput endpoints."""
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -10,9 +9,9 @@ from app.common import clock
 from app.extensions import db
 from app.models import Card
 from tests.helpers import PROP
-from tests.test_api import col, mkcard, world  # noqa: F401  (the shared fixture)
+from tests.test_api import col, mkcard, world
 
-NOW = datetime(2026, 11, 25, 12, 0, tzinfo=timezone.utc)  # a Wednesday; its Monday is 2026-11-23
+NOW = datetime(2026, 11, 25, 12, 0, tzinfo=timezone.utc)
 
 
 def row(card_id):
@@ -49,7 +48,7 @@ def test_stamp_invariant_over_any_move_sequence(columns):
         assert (stamp is not None) == (name == "Done")
 
 
-def test_create_and_move_set_and_clear_completed_at(world):  # noqa: F811
+def test_create_and_move_set_and_clear_completed_at(world):
     c = world.client
     created = mkcard(world, "in done", i=4)
     card = row(created["id"])
@@ -62,7 +61,7 @@ def test_create_and_move_set_and_clear_completed_at(world):  # noqa: F811
     assert first is not None
     c.patch(f"/api/cards/{moved['id']}/move", headers=world.h["supervisor"], json={"column_id": col(world, 4), "prev": created["id"]})
     db.session.expire_all()
-    assert row(moved["id"]).completed_at == first  # a reorder inside Done keeps it
+    assert row(moved["id"]).completed_at == first
     c.patch(f"/api/cards/{moved['id']}/move", headers=world.h["supervisor"], json={"column_id": col(world, 2)})
     db.session.expire_all()
     assert row(moved["id"]).completed_at is None
@@ -71,13 +70,12 @@ def test_create_and_move_set_and_clear_completed_at(world):  # noqa: F811
 def test_week_boundaries_are_mondays_in_the_zone():
     starts, bounds = week_boundaries(3, NOW, "Asia/Jakarta")
     assert starts == [date(2026, 11, 9), date(2026, 11, 16), date(2026, 11, 23)]
-    assert len(bounds) == 4 and bounds[0] == datetime(2026, 11, 8, 17, 0, tzinfo=timezone.utc)  # Monday 00:00 at UTC+7
-    # 23:59 Sunday local belongs to the previous week, 00:00 Monday to the next
+    assert len(bounds) == 4 and bounds[0] == datetime(2026, 11, 8, 17, 0, tzinfo=timezone.utc)
     sun, mon = datetime(2026, 11, 22, 16, 59, tzinfo=timezone.utc), datetime(2026, 11, 22, 17, 0, tzinfo=timezone.utc)
     assert bounds[1] <= sun < bounds[2] and bounds[2] <= mon < bounds[3]
 
 
-def test_throughput_lists_every_week_oldest_first(world):  # noqa: F811
+def test_throughput_lists_every_week_oldest_first(world):
     clock.set_now(lambda: NOW)
     try:
         a, b = mkcard(world, "a"), mkcard(world, "b")
@@ -89,12 +87,12 @@ def test_throughput_lists_every_week_oldest_first(world):  # noqa: F811
         assert [w["done"] for w in d["weeks"]] == [0, 1, 0, 1]
         assert [w["week_start"] for w in d["weeks"]] == ["2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23"]
         assert d["total"] == 2
-        assert len(series(world).get_json()["data"]["weeks"]) == 8  # the default
+        assert len(series(world).get_json()["data"]["weeks"]) == 8
     finally:
         clock.set_now(None)
 
 
-def test_deleted_cards_and_old_cards_are_not_counted(world):  # noqa: F811
+def test_deleted_cards_and_old_cards_are_not_counted(world):
     clock.set_now(lambda: NOW)
     try:
         gone, old = mkcard(world, "gone"), mkcard(world, "old")
@@ -106,19 +104,19 @@ def test_deleted_cards_and_old_cards_are_not_counted(world):  # noqa: F811
         clock.set_now(None)
 
 
-def test_weeks_validation_and_roles(world):  # noqa: F811
+def test_weeks_validation_and_roles(world):
     for bad in ("0", "27", "abc"):
         r = series(world, weeks=bad)
         assert r.status_code == 400 and r.get_json()["error"]["code"] == "VALIDATION_ERROR" and "weeks" in r.get_json()["error"]["details"]
-    assert series(world, "supervisor").status_code == 200  # owner
+    assert series(world, "supervisor").status_code == 200
     assert series(world, "other_sup").status_code == 403
     assert series(world, "member").status_code == 403
-    assert series(world, "admin").status_code == 200  # V18: an Admin reads analytics
+    assert series(world, "admin").status_code == 200
     assert world.client.get(f"/api/boards/{world.board['id']}/analytics/throughput").status_code == 401
     assert series(world, path="/api/boards/00000000-0000-0000-0000-000000000000/analytics/throughput").status_code == 404
 
 
-def test_cross_board_series_is_manager_only_and_lists_every_board(world):  # noqa: F811
+def test_cross_board_series_is_manager_only_and_lists_every_board(world):
     world.post("/api/boards", "manager", json={"name": "Second"})
     r = series(world, path="/api/analytics/throughput", weeks=2)
     assert r.status_code == 200
@@ -128,12 +126,12 @@ def test_cross_board_series_is_manager_only_and_lists_every_board(world):  # noq
     assert world.client.get("/api/analytics/throughput").status_code == 401
 
 
-def test_query_count_does_not_depend_on_the_number_of_boards(world):  # noqa: F811
+def test_query_count_does_not_depend_on_the_number_of_boards(world):
     from sqlalchemy import event
 
     def count_for():
         n = []
-        listener = lambda *a, **k: n.append(1)  # noqa: E731
+        listener = lambda *a, **k: n.append(1)
         event.listen(db.engine, "before_cursor_execute", listener)
         try:
             series(world, path="/api/analytics/throughput")
@@ -147,7 +145,7 @@ def test_query_count_does_not_depend_on_the_number_of_boards(world):  # noqa: F8
     assert count_for() == one
 
 
-def test_done_delta_counts_recent_completions_only(world):  # noqa: F811
+def test_done_delta_counts_recent_completions_only(world):
     clock.set_now(lambda: NOW)
     try:
         recent, old = mkcard(world, "recent", i=4), mkcard(world, "old", i=4)

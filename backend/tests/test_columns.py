@@ -1,4 +1,3 @@
-"""Requirements 49 and 50 (V17): column CRUD, archived Cards without a Column, restore, and Properties 70 to 72."""
 import uuid
 
 from hypothesis import given, strategies as st
@@ -6,7 +5,7 @@ from hypothesis import given, strategies as st
 from app.extensions import db
 from app.models import Card, Column
 from tests.helpers import PROP, hdr, mkuser, reset_db
-from tests.test_api import col, mkcard, world  # noqa: F401  (the shared fixture)
+from tests.test_api import col, mkcard, world
 
 
 def cols(w, who="manager"):
@@ -25,9 +24,8 @@ def done_id(w):
     return next(c["id"] for c in cols(w) if c["name"] == "Done")
 
 
-# ---- permissions (COL-01) ----
 def test_the_owner_a_manager_and_an_admin_manage_columns(world):
-    for who in ("supervisor", "manager", "admin"):  # the supervisor owns the fixture's board
+    for who in ("supervisor", "manager", "admin"):
         assert add(world, f"Col {who}", who).status_code == 201, who
 
 
@@ -48,7 +46,6 @@ def test_a_supervisor_who_is_only_a_member_cannot_manage_columns(world):
     assert add(world, "X", "other_sup").status_code == 403
 
 
-# ---- create, rename, names (COL-02, COL-10) ----
 def test_names_are_trimmed_unique_ignoring_case_and_never_done(world):
     created = add(world, "  QA  ")
     assert created.status_code == 201 and created.get_json()["data"]["name"] == "QA"
@@ -72,7 +69,6 @@ def test_rename_and_the_locked_done_column(world):
     assert world.client.patch(f"/api/columns/{uuid.uuid4()}", headers=world.h["manager"], json={"name": "X"}).status_code == 404
 
 
-# ---- reorder (COL-03) ----
 def test_move_renumbers_without_gaps_and_done_may_move(world):
     first = col(world, 0)
     r = world.client.patch(f"/api/columns/{first}/move", headers=world.h["supervisor"], json={"position": 4})
@@ -90,7 +86,6 @@ def test_move_rejects_a_position_out_of_range(world):
         assert r.status_code == 400, position
 
 
-# ---- delete (COL-05, COL-06) ----
 def test_a_column_with_active_cards_is_not_deleted(world):
     mkcard(world, i=0)
     mkcard(world, title="two", i=0)
@@ -122,7 +117,7 @@ def test_archived_and_soft_deleted_cards_do_not_block_a_delete(world):
     r = world.client.delete(f"/api/columns/{col(world, 1)}", headers=world.h["manager"])
     assert r.status_code == 200
     detached = db.session.get(Card, uuid.UUID(one["id"]))
-    assert detached.column_id is None and detached.board_id is not None  # the soft-deleted Card keeps its row and its Board
+    assert detached.column_id is None and detached.board_id is not None
     assert db.session.get(Card, uuid.UUID(two["id"])).archived_at is not None
 
 
@@ -131,7 +126,6 @@ def test_the_done_column_is_not_deleted(world):
     assert r.status_code == 409 and code(r) == "COLUMN_LOCKED"
 
 
-# ---- archived Cards have no Column (COL-07 to COL-09, COL-14, VIEW-05 to VIEW-07) ----
 def test_archiving_takes_the_card_out_of_its_column_and_keeps_its_board(world):
     card = mkcard(world, i=2)
     r = world.client.post(f"/api/cards/{card['id']}/archive", headers=world.h["supervisor"])
@@ -152,7 +146,6 @@ def test_the_default_list_hides_archived_cards_and_archived_true_lists_only_them
     assert [c["id"] for c in live] == [keep["id"]]
     assert [c["id"] for c in arch] == [gone["id"]]
     assert world.client.get(url, headers=world.h["manager"], query_string={"archived": "maybe"}).status_code == 400
-    # the board payload counts only live Cards (COL-09)
     listed = world.client.get("/api/boards", headers=world.h["manager"]).get_json()["data"]
     assert next(b for b in listed if b["id"] == world.board["id"])["card_count"] == 1
 
@@ -188,7 +181,7 @@ def test_restore_follows_the_first_column_after_a_reorder(world):
     world.client.post(f"/api/cards/{card['id']}/archive", headers=world.h["manager"])
     world.client.patch(f"/api/columns/{col(world, 3)}/move", headers=world.h["manager"], json={"position": 0})
     data = world.client.post(f"/api/cards/{card['id']}/unarchive", headers=world.h["manager"]).get_json()["data"]
-    assert data["column_id"] == col(world, 3)  # the Board's first column now
+    assert data["column_id"] == col(world, 3)
 
 
 def test_archived_cards_are_outside_analytics_and_the_default_views(world):
@@ -203,7 +196,6 @@ def test_archived_cards_are_outside_analytics_and_the_default_views(world):
 @PROP
 @given(st.lists(st.tuples(st.sampled_from(["create", "rename", "move", "delete", "card", "archive", "restore"]), st.integers(0, 6), st.text(max_size=6)), min_size=1, max_size=18))
 def test_properties_70_to_72_columns_and_archived_cards(client, ops):
-    """Done is never renamed or deleted; a Column with live Cards is never deleted; archived Cards have no Column."""
     reset_db()
     manager = mkuser("manager")
     h = hdr(manager)
@@ -244,7 +236,6 @@ def test_properties_70_to_72_columns_and_archived_cards(client, ops):
                 assert (r.status_code == 409) == (was_done and row.archived_at is None) or row.archived_at is not None
             else:
                 client.post(f"/api/cards/{cid}/unarchive", headers=h)
-    # the invariants over the final state
     db.session.expire_all()
     names = [c.name for c in Column.query.all()]
     assert names.count("Done") == 1 and [n for n in names if n.lower() == "done"] == ["Done"]

@@ -1,4 +1,3 @@
-"""Invite_Link and Join_Requests (V12, Decision AA). The token never reaches a log line or Activity_Log metadata; no Email is copied."""
 import secrets
 
 from sqlalchemy.exc import IntegrityError
@@ -63,7 +62,7 @@ def disable(actor, board_id):
 def _board(token):
     board = repo.board_by_invite_token(token)
     if board is None:
-        raise NotFound("Not found")  # one answer for unknown, disabled, replaced and deleted (INV-07)
+        raise NotFound("Not found")
     return board
 
 

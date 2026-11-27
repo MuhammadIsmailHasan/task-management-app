@@ -13,7 +13,6 @@ interface BaseButtonProps extends Omit<ComponentProps<"button">, "size"> {
 
 const VARIANT = { primary: "default", dark: "dark", secondary: "secondary", ghost: "ghost", danger: "destructive" } as const;
 
-/** The only button in the app: a thin wrapper over the shadcn/ui Button, themed from the design tokens. */
 export function BaseButton({ variant = "primary", size = "md", block = false, className, type = "button", ...rest }: BaseButtonProps) {
   return (
     <Button

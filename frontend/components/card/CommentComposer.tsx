@@ -12,7 +12,6 @@ interface CommentComposerProps {
   onCancel?: () => void;
 }
 
-/** Posts independently of the card form: the modal stays open. */
 export function CommentComposer({ label = "Write a comment", submitLabel = "Comment", onSubmit, onCancel }: CommentComposerProps) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);

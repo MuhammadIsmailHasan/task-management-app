@@ -1,4 +1,3 @@
-/** Typed client used by Client Components. Components never call fetch directly. */
 import { ACCOUNT_DISABLED, ApiError, request, type RequestOptions } from "./http";
 import { routes } from "./routes";
 import { clearSession, getToken } from "./session";
@@ -34,12 +33,10 @@ async function call<T>(method: string, path: string, opts: RequestOptions = {}):
     return await request<T>(method, path, { token: getToken(), ...opts });
   } catch (err) {
     if (err instanceof ApiError && err.httpStatus === 401 && typeof window !== "undefined" && getToken()) {
-      // an expired or invalid Token: drop it and go to login (never loop on the login call itself)
       clearSession();
       window.location.assign(routes.login);
     }
     if (err instanceof ApiError && err.code === ACCOUNT_DISABLED && typeof window !== "undefined") {
-      // an Admin turned the account off: it is a lost session (ADM-07)
       clearSession();
       window.location.assign(routes.sessionExpired);
     }
@@ -63,7 +60,6 @@ export interface CardInput {
   assignee_id?: string | null;
 }
 
-/** Paging for the Inbox and the activity lists (Decision J). */
 export interface PageQuery {
   limit?: number;
   before?: string;
@@ -88,7 +84,6 @@ export interface DashboardQuery {
 }
 
 export interface CardFilters {
-  /** `true` lists the archived Cards only; they have no Column (V17). */
   archived?: boolean;
   search?: string;
   priority?: string;
@@ -123,12 +118,10 @@ export const api = {
       return call<User>("POST", "/users/me/avatar", { form });
     },
     removeAvatar: () => del<User>("/users/me/avatar"),
-    /** Always clears the session and goes to /login, even when the call fails (Req 1.34). */
     logout: async () => {
       try {
         await request<null>("POST", "/auth/logout", { token: getToken() });
       } catch {
-        /* the Token is discarded on the client either way */
       }
       clearSession();
       if (typeof window !== "undefined") window.location.assign(routes.login);
@@ -186,7 +179,6 @@ export const api = {
     move: (id: string, body: { column_id: string; prev?: string | null; next?: string | null }) =>
       patch<Card>(`/cards/${id}/move`, body),
     archive: (id: string) => post<Card>(`/cards/${id}/archive`),
-    /** Puts an archived Card back at the end of the Board's first Column. */
     restore: (id: string) => post<Card>(`/cards/${id}/unarchive`),
     remove: (id: string) => del<null>(`/cards/${id}`),
   },

@@ -1,4 +1,3 @@
-"""Append-only: `add` is the only write function."""
 from app.common import clock
 from app.extensions import db
 from app.models import ActivityLog, Card, Column, User
@@ -14,7 +13,6 @@ def add(actor_id, action, target_type, target_id, metadata=None):
 
 
 def _page(query, limit, before):
-    """Newest first, then id. `before` is a row of this feed; rows strictly after it in that order are returned."""
     from app.common.errors import ValidationError
 
     query = query.order_by(ActivityLog.created_at.desc(), ActivityLog.id)
@@ -47,7 +45,6 @@ def for_board(board_id, limit=None, before=None):
 
 
 def actor_names(rows):
-    """Display names of the actors of these rows: one query whatever the row count."""
     ids = {r.actor_id for r in rows}
     if not ids:
         return {}

@@ -42,7 +42,6 @@ jobs:
 
   deploy:
     needs: [test, smoke]
-    # Turn on with the repository variable DEPLOY_ENABLED=true, after the first manual deploy works.
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-24.04
     environment: production
@@ -56,7 +55,6 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-          # deploy/bare/deploy.sh (no Docker) by default; set the repository variable DEPLOY_SCRIPT=deploy/deploy.sh for Docker
           DEPLOY_SCRIPT: ${{ vars.DEPLOY_SCRIPT || 'deploy/bare/deploy.sh' }}
         run: |
           install -m 700 -d ~/.ssh

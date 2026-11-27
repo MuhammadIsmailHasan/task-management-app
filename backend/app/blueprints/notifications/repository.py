@@ -14,7 +14,6 @@ def _insert():
 
 
 def insert_ignore(user_id, card_id, type_, notify_date):
-    """INSERT ... ON CONFLICT DO NOTHING on the unique (user, card, type, date)."""
     import uuid
 
     stmt = (
@@ -26,16 +25,10 @@ def insert_ignore(user_id, card_id, type_, notify_date):
 
 
 def preference_enabled(user_id, type_):
-    """A missing row means enabled (NPF-01)."""
     return db.session.scalar(db.select(NotificationPreference.enabled).where(NotificationPreference.user_id == user_id, NotificationPreference.type == type_)) is not False
 
 
 def notify_assignee(card, type_, actor_id, action=None):
-    """One event notification for the Card's assignee (Requirement 57, NPF-03).
-
-    Nobody is notified when the Card has no assignee, when the actor is the assignee, when the assignee is inactive, or
-    when they switched this type off. The row is added in the caller's transaction; it holds no text (NPF-05).
-    """
     import uuid
 
     uid = card.assignee_id
@@ -53,7 +46,6 @@ def notify_assignee(card, type_, actor_id, action=None):
 
 
 def add_board(user_id, board_id, type_, actor_id=None, join_request_id=None):
-    """A Board-scoped Notification (no card). INSERT ... ON CONFLICT DO NOTHING against the partial unique indexes."""
     import uuid
 
     stmt = (
@@ -72,10 +64,6 @@ def cards_due(today):
 
 
 def list_for_user(user_id, limit=None, before=None, unread=False):
-    """Newest first, then id; `before` is one of the user's notifications and the next older rows are returned.
-
-    The anchor may be a row that was read after the page loaded, so it is looked up before `unread` filters.
-    """
     from app.common.errors import ValidationError
 
     base = Notification.query.filter_by(user_id=user_id)
@@ -108,7 +96,6 @@ def mark_all_read(user_id):
 
 
 def card_context(card_ids):
-    """card id -> (title, board_id) in one query."""
     if not card_ids:
         return {}
     rows = db.session.execute(
@@ -130,7 +117,6 @@ def board_names(board_ids):
 
 
 def user_names(user_ids):
-    """Full names only (never the Email), selected as columns."""
     if not user_ids:
         return {}
     return dict(db.session.execute(db.select(User.id, User.full_name).where(User.id.in_(user_ids))).all())

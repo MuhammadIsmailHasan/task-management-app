@@ -5,7 +5,6 @@ import { useMemo } from "react";
 
 interface RichTextEditorProps {
   id?: string;
-  /** Accessible name of the editing area. */
   label: string;
   value: string;
   onChange: (html: string) => void;
@@ -16,11 +15,6 @@ interface RichTextEditorProps {
 
 const shielded = new WeakSet<Element>();
 
-/**
- * TinyMCE renders its dialogs and menus in a floating container outside every modal. A modal's focus trap listens on
- * the document and would pull focus back from the link dialog's fields; stopping the focus events at that container
- * keeps them from reaching the trap, while TinyMCE's own handlers on the container still run (round 7).
- */
 function shieldFloatingUi() {
   for (const aux of Array.from(document.querySelectorAll(".tox-tinymce-aux"))) {
     if (shielded.has(aux)) continue;
@@ -29,15 +23,10 @@ function shieldFloatingUi() {
   }
 }
 
-/** Reads a design token, so the editor's content area uses the app's own font, size, colour, and space (DS-29). */
 function token(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-/**
- * The one rich-text editor (round 6 within V18): TinyMCE, self-hosted from /tinymce (no cloud key; GPL licence key).
- * A short toolbar matching the Backend allowlist; the content area is styled from the tokens at runtime, never literals.
- */
 export function RichTextEditor({ id, label, value, onChange, onBlur, placeholder, disabled }: RichTextEditorProps) {
   const contentStyle = useMemo(() => {
     if (typeof window === "undefined") return "";

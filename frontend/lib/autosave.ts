@@ -1,7 +1,6 @@
 import type { CardInput } from "./api";
 import type { Card } from "./types";
 
-/** The Card fields a modal field can save. "dates" saves start_date and end_date together. */
 export type FieldKey = "title" | "description" | "priority" | "category_id" | "assignee_id" | "dates";
 
 export interface Draft {
@@ -24,7 +23,6 @@ export const toDraft = (c: Card): Draft => ({
   assignee_id: c.assignee_id ?? "",
 });
 
-/** The one PATCH body for one field, or null when it equals the last saved value (a request is sent only for a change). */
 export function buildPatch(field: FieldKey, saved: Draft, draft: Draft): CardInput | null {
   switch (field) {
     case "title": {
@@ -46,7 +44,6 @@ export function buildPatch(field: FieldKey, saved: Draft, draft: Draft): CardInp
   }
 }
 
-/** Merge into the displayed Card only the fields the request sent, so a late response never overwrites another field (SAVE-09). */
 export function mergeSent(card: Card, saved: Card, sent: string[]): Card {
   const next: Card = { ...card };
   for (const key of sent) {

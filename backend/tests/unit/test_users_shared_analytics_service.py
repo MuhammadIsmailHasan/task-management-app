@@ -1,4 +1,3 @@
-"""Unit tests of the users, shared (public link), and analytics services: repositories and Board checks mocked."""
 import io
 from uuid import UUID
 from datetime import date, datetime, timedelta, timezone
@@ -15,7 +14,7 @@ from app.common.signing import avatar_url
 from app.models import User
 from tests.unit.support import actor, new_id, row
 
-NOW = datetime(2026, 11, 27, 9, tzinfo=timezone.utc)  # a Friday
+NOW = datetime(2026, 11, 27, 9, tzinfo=timezone.utc)
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 16
 
 
@@ -26,8 +25,6 @@ def fixed_clock():
     clock.set_now(None)
 
 
-# ---- users -------------------------------------------------------------------------------------------------------
-
 def person(**over):
     base = dict(id=new_id(), full_name="Ann", username="ann", email="ann@x.co", role="member", is_active=True, is_available=True, avatar_path=None)
     return row(**{**base, **over})
@@ -36,7 +33,7 @@ def person(**over):
 @pytest.fixture
 def us(stub, session):
     auth_repo = stub(users, "auth_repo")
-    auth_repo.User = User  # the avatar lock builds a real SELECT ... FOR UPDATE; the mocked session never runs it
+    auth_repo.User = User
     auth_service = stub(users, "auth_service")
     auth_service.duplicate_details.return_value = {}
     repo = stub(users, "repo")
@@ -109,12 +106,12 @@ def test_avatar_set_replace_and_clear(us, ctx, stub):
     store.delete.assert_called_once_with("old.png")
     users.clear_avatar(actor())
     assert u.avatar_path is None
-    users.clear_avatar(actor())  # nothing to clear
+    users.clear_avatar(actor())
     us.session.rollback.assert_called_once()
     us.session.scalars.return_value.first.return_value = None
     with pytest.raises(NotFound):
         users.set_avatar(actor(), io.BytesIO(PNG))
-    store.delete.assert_called_with(store.save.call_args.args[0])  # the new file is removed when the switch fails
+    store.delete.assert_called_with(store.save.call_args.args[0])
 
 
 @pytest.mark.parametrize("data,message", [(None, "required"), (b"", "empty"), (b"x" * (2_097_152 + 1), "2 MB"), (b"GIF89a....", "PNG")])
@@ -137,8 +134,6 @@ def test_open_avatar(us, ctx):
     with pytest.raises(NotFound):
         users.open_avatar(str(u.id), exp, sig)
 
-
-# ---- shared (public link) ----------------------------------------------------------------------------------------
 
 @pytest.fixture
 def sh(stub, ctx):
@@ -186,8 +181,6 @@ def test_shared_categories_and_attachment_url(sh):
     with pytest.raises(NotFound):
         shared.attachment_url("tok", str(link.id))
 
-
-# ---- analytics ---------------------------------------------------------------------------------------------------
 
 @pytest.fixture
 def an(stub, ctx):

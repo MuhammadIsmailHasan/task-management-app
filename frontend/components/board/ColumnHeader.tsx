@@ -15,27 +15,23 @@ interface ColumnHeaderProps {
   column: Column;
   tone: Tone;
   count: number;
-  /** The Board_Owner, a Manager, and an Admin manage Columns; everyone else sees the plain header (COL-11). */
   canManage: boolean;
   isFirst: boolean;
   isLast: boolean;
   onRename: (name: string) => Promise<void>;
   onMove: (delta: -1 | 1) => Promise<void>;
   onDelete: () => Promise<void>;
-  /** Drag handlers of the grip; the Column itself is dragged by it (COLD-01). */
   grip?: { onDragStart: (e: React.DragEvent<HTMLElement>) => void; onDragEnd: () => void };
 }
 
 const LOCKED = "The Done column is locked";
 
-/** A Column's title row: name, card count, and for those who manage it a menu with Rename, Move left, Move right, and Delete. */
 export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, onRename, onMove, onDelete, grip }: ColumnHeaderProps) {
   const locked = column.name === "Done";
   const [renaming, setRenaming] = useState(false);
   const [value, setValue] = useState(column.name);
   const [deleting, setDeleting] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  // true from choosing Rename until the menu has finished closing: focus moves around then and must not count as leaving the field
   const menuClosing = useRef(false);
 
   async function save() {
@@ -45,7 +41,7 @@ export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, 
     try {
       await onRename(next);
     } catch {
-      setValue(column.name); // the Board shows the error
+      setValue(column.name);
     }
   }
 
@@ -90,7 +86,6 @@ export function ColumnHeader({ column, tone, count, canManage, isFirst, isLast, 
         <div className="ml-auto">
           <BaseMenu
             label={`Column ${column.name}`}
-            // the menu closing would hand focus back to its button and blur the field it just opened
             onCloseAutoFocus={(e) => {
               menuClosing.current = false;
               if (input.current) {

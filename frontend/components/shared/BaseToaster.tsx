@@ -2,7 +2,6 @@
 
 import { Toaster } from "sonner";
 
-/** The one Toaster (TOAST-01 to TOAST-05): bottom right, at most 3 visible, tokens only. */
 export function BaseToaster() {
   return (
     <Toaster

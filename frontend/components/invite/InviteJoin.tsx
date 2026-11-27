@@ -9,7 +9,6 @@ import { ApiError } from "@/lib/http";
 import type { InviteLookup } from "@/lib/types";
 import { boardPath } from "@/lib/routes";
 
-/** The four states of an invitation: ask, waiting, already in, or staff (Requirement 24, criteria 23 and 24). */
 export function InviteJoin({ token, invite }: { token: string; invite: InviteLookup }) {
   const [state, setState] = useState(invite.state);
   const [sent, setSent] = useState(false);

@@ -5,8 +5,7 @@ from app.models import Board, Card, Column, User
 
 
 def summaries(today, week_ago, board_id=None):
-    """One grouped query: per-board counts, no per-card data."""
-    has_card = Card.id.isnot(None)  # the outer join yields NULL card rows for empty columns
+    has_card = Card.id.isnot(None)
     done = db.and_(has_card, Column.name == "Done")
     q = (
         db.select(
@@ -33,12 +32,6 @@ def summaries(today, week_ago, board_id=None):
 
 
 def throughput(boundaries, board_id=None):
-    """Completed Cards per week: one grouped query, rows of (board id, name, week index or None, count).
-
-    `boundaries` are the weeks' start instants plus the end of the last week, ascending. Weeks are bucketed with one
-    CASE arm each, so the SQL is the same on SQLite and PostgreSQL. A Board with no completion yields one row with a
-    None index and a count of 0.
-    """
     lo, hi = boundaries[0], boundaries[-1]
     bucket = db.case(
         *[(db.and_(Card.completed_at >= boundaries[i], Card.completed_at < boundaries[i + 1]), i) for i in range(len(boundaries) - 1)],
@@ -49,7 +42,6 @@ def throughput(boundaries, board_id=None):
         .select_from(Board)
         .outerjoin(
             Card,
-            # by the Card's own Board, so a Card archived before V17 that was completed still counts (THR-06)
             db.and_(Card.board_id == Board.id, Card.deleted_at.is_(None), Card.completed_at >= lo, Card.completed_at < hi),
         )
         .where(Board.deleted_at.is_(None))
@@ -61,13 +53,10 @@ def throughput(boundaries, board_id=None):
     return db.session.execute(q).all()
 
 
-# ---- Dashboard (V17, Requirement 51): fixed query budget, grouped queries and LIMIT ---------------------------------
-
 PRIORITY_RANK = db.case((Card.priority == "high", 0), (Card.priority == "medium", 1), else_=2)
 
 
 def _live_cards(board_ids, member_id):
-    """Cards of these Boards that are on a Board (not deleted, not archived, in a Column), optionally of one assignee."""
     conds = [Card.board_id.in_(board_ids), Card.deleted_at.is_(None), Card.archived_at.is_(None)]
     if member_id is not None:
         conds.append(Card.assignee_id == member_id)
@@ -75,7 +64,6 @@ def _live_cards(board_ids, member_id):
 
 
 def overview(board_ids, member_id, today):
-    """total, done, in progress, and overdue over the live Cards of these Boards: one grouped query."""
     q = (
         db.select(
             db.func.count(Card.id),
@@ -112,7 +100,6 @@ def _count(where):
 
 
 def overdue_cards(board_ids, member_id, today, lo, hi, limit):
-    """Open Cards past their end date with the end date inside [lo, hi]: (count, first rows)."""
     where = [*_open(board_ids, member_id), Card.end_date < today, Card.end_date >= lo, Card.end_date <= hi]
     return _count(where), _card_rows(where, (Card.end_date, PRIORITY_RANK, Card.id), limit)
 
@@ -129,7 +116,6 @@ def top_priority(board_ids, member_id, limit):
 
 
 def finished_pairs(board_ids, member_id, lo_dt, hi_dt):
-    """(completed_at, end_date) of Cards finished in [lo_dt, hi_dt) that have an end date; archived Cards count (THR-06)."""
     q = db.select(Card.completed_at, Card.end_date).where(
         Card.board_id.in_(board_ids),
         Card.deleted_at.is_(None),
@@ -144,7 +130,6 @@ def finished_pairs(board_ids, member_id, lo_dt, hi_dt):
 
 
 def weekly_done(boundaries, board_ids, member_id):
-    """Cards completed per week index, over these Boards: one grouped query."""
     lo, hi = boundaries[0], boundaries[-1]
     bucket = db.case(*[(db.and_(Card.completed_at >= boundaries[i], Card.completed_at < boundaries[i + 1]), i) for i in range(len(boundaries) - 1)], else_=None)
     q = (
@@ -158,7 +143,6 @@ def weekly_done(boundaries, board_ids, member_id):
 
 
 def people(board_ids):
-    """The owners and members of these Boards, by name, without email."""
     from app.models import BoardMember
 
     ids = db.union(

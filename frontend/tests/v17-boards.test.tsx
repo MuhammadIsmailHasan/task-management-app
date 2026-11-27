@@ -119,7 +119,7 @@ describe("Due badges (VIEW-08, VIEW-09)", () => {
   it("shows the state of the Card on its tile, from the server field and not from the browser date", () => {
     const props = { draggable: false };
     const { rerender } = render(<CardTile card={card({ end_date: "2000-01-01" })} dueState={null} {...props} />);
-    expect(screen.queryByText(/Overdue/)).not.toBeInTheDocument(); // a past date means nothing without the server's state
+    expect(screen.queryByText(/Overdue/)).not.toBeInTheDocument();
     rerender(<CardTile card={card({ end_date: "2000-01-01" })} dueState="overdue" {...props} />);
     expect(screen.getByText(/Overdue · Jan 1/)).toBeInTheDocument();
     rerender(<CardTile card={card({ end_date: "2099-01-02" })} dueState="due_tomorrow" {...props} />);
@@ -161,7 +161,7 @@ describe("List view (VIEW-01, VIEW-02)", () => {
 describe("Calendar view (VIEW-03, VIEW-04)", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 10, 26, 12)); // 26 Nov 2026
+    vi.setSystemTime(new Date(2026, 10, 26, 12));
   });
   afterEach(() => vi.useRealTimers());
 
@@ -170,7 +170,7 @@ describe("Calendar view (VIEW-03, VIEW-04)", () => {
     render(<CalendarView columns={columns} cards={cards} onOpen={vi.fn()} />);
     expect(screen.getByRole("heading", { name: "November 2026" })).toBeInTheDocument();
     expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
-    expect(screen.getAllByRole("gridcell")).toHaveLength(42); // 26 Oct to 6 Dec: six whole weeks
+    expect(screen.getAllByRole("gridcell")).toHaveLength(42);
     expect(screen.getAllByRole("gridcell").find((c) => c.getAttribute("aria-current") === "date")).toHaveTextContent("26");
     const day = screen.getAllByRole("gridcell").find((c) => c.textContent?.startsWith("27") && within(c).queryByRole("button", { name: "Open card On the 27th" }));
     expect(day).toBeTruthy();
@@ -211,8 +211,8 @@ describe("monthGrid", () => {
       fc.property(fc.integer({ min: 2000, max: 2040 }), fc.integer({ min: 0, max: 11 }), (year, month) => {
         const cells = monthGrid(year, month);
         expect(cells.length % 7).toBe(0);
-        expect(new Date(`${cells[0].iso}T00:00:00`).getDay()).toBe(1); // Monday
-        expect(new Date(`${cells[cells.length - 1].iso}T00:00:00`).getDay()).toBe(0); // Sunday
+        expect(new Date(`${cells[0].iso}T00:00:00`).getDay()).toBe(1);
+        expect(new Date(`${cells[cells.length - 1].iso}T00:00:00`).getDay()).toBe(0);
         expect(cells.filter((c) => c.inMonth)).toHaveLength(new Date(year, month + 1, 0).getDate());
       }),
     );
@@ -230,7 +230,7 @@ describe("Archived view (VIEW-05 to VIEW-07)", () => {
     wrap("manager", <ArchivedView board={board} initialCards={archived} categories={[]} />);
     await userEvent.click(screen.getByRole("button", { name: "Restore Old plan" }));
     expect(mocks.api.cards.restore).toHaveBeenCalledWith("z1");
-    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Card restored to Todo")); // a Toast (TOAST-01)
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Card restored to Todo"));
     await waitFor(() => expect(screen.queryByText("Old plan")).not.toBeInTheDocument());
     expect(screen.getByText("No archived cards.")).toBeInTheDocument();
   });

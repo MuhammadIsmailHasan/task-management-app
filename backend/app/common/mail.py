@@ -1,8 +1,3 @@
-"""Outgoing mail (V17, Requirement 59): one small module with two transports, `smtp` (Gmail) and `console`.
-
-Mail is sent after the database commit and never inside the transaction. A failed send is logged (user id, purpose,
-error class: no address, no token) and does not fail the request; it is retried once after 5 seconds.
-"""
 import logging
 import smtplib
 import ssl
@@ -19,7 +14,6 @@ log = logging.getLogger("revoboard.mail")
 RETRY_AFTER_SECONDS = 5
 SMTP_VARS = ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM")
 
-# Tests read what was "sent" here; the console transport never touches it.
 outbox = []
 _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="mail")
 _lock = threading.Lock()
@@ -31,13 +25,11 @@ class Message:
     subject: str
     text: str
     html: str | None = None
-    # for the log only: who and why, never the address or a link
     user_id: str | None = None
     purpose: str | None = None
 
 
 def link(path_and_query):
-    """An absolute link to the app, from PUBLIC_BASE_URL (`https://host` + `/app/verify?token=...`)."""
     base = (current_app.config.get("PUBLIC_BASE_URL") or "").rstrip("/")
     return f"{base}{path_and_query}"
 
@@ -68,9 +60,9 @@ def _deliver(msg, cfg, retry=True):
         elif cfg["MAIL_BACKEND"] == "memory":
             with _lock:
                 outbox.append(msg)
-        else:  # console: the body goes to the log (at WARNING so it shows with the default settings), never the SMTP credentials
+        else:
             log.warning("mail to %s | %s\n%s", msg.to, msg.subject, msg.text)
-    except Exception as exc:  # a failed send must never fail the request
+    except Exception as exc:
         log.error("mail failed: purpose=%s user=%s error=%s", msg.purpose, msg.user_id, type(exc).__name__)
         if retry:
             time.sleep(RETRY_AFTER_SECONDS)
@@ -78,11 +70,6 @@ def _deliver(msg, cfg, retry=True):
 
 
 def send(msg):
-    """Hand a message to the transport. Call it after `db.session.commit()`.
-
-    The memory transport (tests) and the console transport run inline so the result is deterministic; SMTP runs on a
-    small bounded pool so the request does not wait for it.
-    """
     cfg = {k: current_app.config.get(k) for k in ("MAIL_BACKEND", *SMTP_VARS)}
     if cfg["MAIL_BACKEND"] == "smtp":
         _pool.submit(_deliver, msg, cfg)
@@ -91,7 +78,6 @@ def send(msg):
 
 
 def check_config(config):
-    """Stop the app at start-up with a clear message when SMTP is chosen and a setting is missing (ACT-08)."""
     if config["MAIL_BACKEND"] not in ("smtp", "console", "memory"):
         raise RuntimeError("MAIL_BACKEND must be smtp or console")
     if config["MAIL_BACKEND"] == "smtp":
@@ -99,8 +85,6 @@ def check_config(config):
         if missing:
             raise RuntimeError(f"MAIL_BACKEND=smtp needs: {', '.join(missing)}")
 
-
-# ---- the three messages (ACT-09): plain text with a simple HTML part, the product name, no password ----
 
 def _html(body):
     return f"<p>{body}</p><p>RevoBoard</p>"

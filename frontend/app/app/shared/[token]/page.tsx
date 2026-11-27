@@ -29,7 +29,6 @@ function InvalidLink() {
   );
 }
 
-/** Server page: load the shared payloads with the viewer's Token if there is one; signed-in viewers with access go to the normal board. */
 export default async function SharedPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const bearer = await serverToken();

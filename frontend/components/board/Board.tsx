@@ -25,18 +25,15 @@ interface BoardProps {
   onOpen: (card: Card) => void;
   onMove: (cardId: string, columnId: string, index: number) => Promise<void>;
   onCreate: (columnId: string, title: string) => Promise<void>;
-  /** Column CRUD for the Board_Owner, a Manager, and an Admin (Requirement 49); omit `columnActions` to show none of it. */
   columnActions?: {
     onRename: (columnId: string, name: string) => Promise<void>;
     onMove: (columnId: string, delta: -1 | 1) => Promise<void>;
-    /** Drag and drop: move a Column to this 0-based position (COLD-03). */
     onReorder: (columnId: string, position: number) => Promise<void>;
     onDelete: (columnId: string) => Promise<void>;
     onAdd: (name: string) => Promise<void>;
   };
 }
 
-/** Sideways scrolling while a Column is dragged: the strip at each edge and the step per drag event. */
 const EDGE = 64;
 const SCROLL_STEP = 24;
 
@@ -45,10 +42,6 @@ interface Target {
   index: number;
 }
 
-/**
- * Columns scroll sideways inside the board and each scrolls vertically inside itself; "Add a card" stays pinned at the
- * column bottom. Drag-and-drop: placeholder at the drop target, FLIP for siblings, one move call per drop.
- */
 export function Board({ columns, cards, categories, members, canMove, canCreate, onOpen, onMove, onCreate, columnActions }: BoardProps) {
   const root = useRef<HTMLDivElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -57,7 +50,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
   const [adding, setAdding] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [asking, setAsking] = useState(false);
-  // a Column being dragged by its grip, and the index among the other Columns it would land at (COLD-02)
   const [colDragId, setColDragId] = useState<string | null>(null);
   const [colTarget, setColTarget] = useState<number | null>(null);
   useFlip(root);
@@ -90,7 +82,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
     if (id && t) await onMove(id, t.columnId, t.index);
   }
 
-  /** Over the Column row while a Column is dragged: where it would land, and sideways scrolling near the edges. */
   function onRowDragOver(e: React.DragEvent<HTMLDivElement>) {
     if (!colDragId) return;
     e.preventDefault();
@@ -118,7 +109,7 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
     setColTarget(null);
     if (index === null || !columnActions) return;
     const from = ordered.findIndex((c) => c.id === id);
-    if (index !== from) await columnActions.onReorder(id, index); // a drop where it started sends nothing
+    if (index !== from) await columnActions.onReorder(id, index);
   }
 
   function submitNew(e: React.FormEvent) {
@@ -139,7 +130,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
       onDragOver={onRowDragOver}
       onDrop={(e) => void onRowDrop(e)}
     >
-      {/* the padding sits on this inner row, so the last Column keeps the same gutter as the first when the row scrolls (DS-21) */}
       <div className="flex w-max min-w-full items-stretch gap-gutter pb-item">
       {ordered.flatMap((col, colIndex) => {
         const tone = columnTone(col.name, colIndex);
@@ -165,7 +155,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
               e.dataTransfer.effectAllowed = "move";
               e.dataTransfer.setData("text/plain", card.id);
               setHeight((e.currentTarget as HTMLElement).offsetHeight);
-              // hide the original after the browser has taken its drag image
               requestAnimationFrame(() => setDragId(card.id));
             }}
             onDragEnd={() => {
@@ -181,7 +170,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
             <div key="placeholder" data-testid="drop-placeholder" aria-hidden="true" className="drop-placeholder shrink-0 rounded-ui" style={{ height: height ?? undefined }} />,
           );
         }
-        // the drop indicator sits before the Column that the dragged one would take the place of
         const others = ordered.filter((c) => c.id !== colDragId);
         const showIndicator = colDragId !== null && col.id !== colDragId && colTarget !== null && others[colTarget]?.id === col.id;
         const indicator = <div key={`drop-${col.id}`} data-testid="column-drop-indicator" aria-hidden="true" className="w-1 shrink-0 self-stretch rounded-ui bg-accent" />;
@@ -212,7 +200,6 @@ export function Board({ columns, cards, categories, members, canMove, canCreate,
                         if (sectionEl) e.dataTransfer.setDragImage(sectionEl, 16, 16);
                         setColDragId(col.id);
                       },
-                      // Escape or a drop outside the row ends here without a drop: nothing moves (COLD-02)
                       onDragEnd: () => {
                         setColDragId(null);
                         setColTarget(null);

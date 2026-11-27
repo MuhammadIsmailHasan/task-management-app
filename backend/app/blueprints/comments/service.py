@@ -26,7 +26,6 @@ def _load_card(actor, card_id, with_board=False):
 
 
 def _require_commenter(actor, card, board):
-    """A Manager, a Supervisor with Board_Staff_Access, or the assigned Member (PERM-05). Never an Admin."""
     if not policy.can_comment(actor, card, board):
         raise Forbidden("You cannot comment on this card")
 
@@ -66,7 +65,6 @@ def reply(actor, comment_id, data):
 
 
 def delete_comment(actor, comment_id):
-    """Author only; a top-level Comment takes its Replies with it. The log row keeps no text (Requirement 26)."""
     cid = to_uuid(comment_id)
     c = repo.get(cid) if cid else None
     if c is None:
@@ -136,13 +134,11 @@ def list_comments(card, actor, sort="latest", limit=None, offset=0):
 
 
 def serialize_one(c, viewer_role):
-    """A single new or changed comment with its author's name and avatar."""
     idents = repo.author_identities([c])
     return serialize(c, viewer_role, {}, idents=idents, urls=avatar_urls(idents, clock.now()))
 
 
 def list_for_request(actor, card_id, sort, limit=None, offset=0):
-    """`{items, total}`: one page of top-level comments (all when `limit` is absent) and the count of all of them (CMV-07)."""
     card = _load_card(actor, card_id)
     items = list_comments(card, actor, sort or "latest", limit, offset)
     return {"items": items, "total": repo.count_top_level(card.id)}

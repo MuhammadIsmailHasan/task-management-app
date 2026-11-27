@@ -1,4 +1,3 @@
-"""Shared marshmallow pieces: base schema, trimmed text, error messages."""
 import marshmallow as ma
 from marshmallow import fields
 
@@ -9,8 +8,6 @@ class BaseSchema(ma.Schema):
 
 
 class Text(fields.String):
-    """Trimmed, non-empty string; messages name the field (for example 'content is required')."""
-
     def __init__(self, *, max_length=None, min_length=None, allow_blank=False, strip=True, **kwargs):
         super().__init__(**kwargs)
         self.max_length = max_length
@@ -40,8 +37,6 @@ class Text(fields.String):
 
 
 class Username(Text):
-    """3 to 30 characters of a-z, 0-9, underscore, dot; trimmed and lower-cased."""
-
     def __init__(self, **kwargs):
         super().__init__(max_length=30, **kwargs)
         self.metadata = {**self.metadata, "pattern": "^[a-z0-9_.]{3,30}$", "description": "Case-insensitive, unique"}
@@ -56,8 +51,6 @@ class Username(Text):
 
 
 class Email(Text):
-    """Lower-cased, one @, a dotted domain, at most 255 characters."""
-
     def __init__(self, **kwargs):
         super().__init__(max_length=255, **kwargs)
         self.metadata = {**self.metadata, "format": "email", "description": "Case-insensitive, unique"}

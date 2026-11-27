@@ -6,7 +6,6 @@ import { BaseButton } from "@/components/shared/BaseButton";
 
 const SCROLL_FRACTION = 0.8;
 
-/** One row of chips that scrolls sideways; the arrow buttons show only on a side that has hidden chips. */
 export function ChipStrip({ children, label }: { children: ReactNode; label: string }) {
   const strip = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });

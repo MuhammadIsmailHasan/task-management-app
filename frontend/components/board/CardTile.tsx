@@ -14,18 +14,14 @@ interface CardTileProps {
   card: Card;
   category?: Category;
   assignee?: Pick<Member, "full_name" | "avatar_url"> & { inactive?: boolean; unavailable?: boolean };
-  /** From the Card's `due_state`; null in Done and without a date. */
   dueState: DueState;
-  /** The Card sits in the Done Column. */
   done?: boolean;
   draggable: boolean;
-  /** The handlers are optional so a static copy (the landing page preview) renders on the server. */
   onOpen?: () => void;
   onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragEnd?: () => void;
 }
 
-/** The card face, Trello style: label chips, title, a row of small badges, and the assignee avatar. */
 export function CardTile({ card, category, assignee, dueState, done = false, draggable, onOpen, onDragStart, onDragEnd }: CardTileProps) {
   const overdue = dueState === "overdue";
   const tomorrow = dueState === "due_tomorrow";

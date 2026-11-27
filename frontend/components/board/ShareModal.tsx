@@ -18,9 +18,7 @@ interface ShareModalProps {
   boardName: string;
   open: boolean;
   onClose: () => void;
-  /** The Public_Link is managed by a Manager and an Admin only (PUB-01, PUB-02). */
   canPublicLink: boolean;
-  /** A Manager and an Admin decide on join requests; the Board_Owner only sees the list (INV-14 to INV-16). */
   canDecide: boolean;
   onPendingChange?: (pending: number) => void;
 }
@@ -29,7 +27,6 @@ function when(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-/** A link field with a Copy button; the link is built from the page origin and the API's `path`, and never leaves this field (SHR-04). */
 function LinkField({ label, link }: { label: string; link: string }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -60,7 +57,6 @@ function LinkField({ label, link }: { label: string; link: string }) {
   );
 }
 
-/** Regenerate and Disable for one link, each through ConfirmDialog (SHR-03). */
 function LinkActions({ what, onRegenerate, onDisable }: { what: string; onRegenerate: () => Promise<void>; onDisable: () => Promise<void> }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -94,10 +90,6 @@ function LinkActions({ what, onRegenerate, onDisable }: { what: string; onRegene
   );
 }
 
-/**
- * One modal for the Invite_Link, the pending Join_Requests, and the Public_Link (Requirement 55, drawn as
- * `06-invite-public-link-desktop.png`). Each section loads and fails on its own (SHR-05).
- */
 export function ShareModal({ boardId, boardName, open, onClose, canPublicLink, canDecide, onPendingChange }: ShareModalProps) {
   const [tab, setTab] = useState("invite");
   const [invite, setInvite] = useState<InviteState | null>(null);

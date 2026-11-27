@@ -1,4 +1,3 @@
-"""Unit tests of small pure rules: card ordering, slugs, due state, login throttling, rich text."""
 from datetime import date, datetime, timedelta, timezone
 
 from app.common.due import due_state
@@ -41,7 +40,7 @@ def test_login_throttle_window():
     window = timedelta(minutes=15)
     times = [now - timedelta(minutes=m) for m in (1, 2, 3)]
     assert blocked_until(times, now, window, 4) is None
-    assert blocked_until(times, now, window, 3) == 12 * 60  # the oldest of the 3 leaves the window in 12 minutes
+    assert blocked_until(times, now, window, 3) == 12 * 60
     assert blocked_until([now - timedelta(minutes=20)] * 5, now, window, 3) is None
 
 

@@ -1,4 +1,3 @@
-"""Shared builders for the property-based tests."""
 import itertools
 from datetime import datetime, timezone
 
@@ -36,8 +35,6 @@ def hdr(user):
 
 
 class Ticker:
-    """Strictly increasing injectable clock so created_at ordering is deterministic."""
-
     def __init__(self):
         from datetime import datetime, timedelta, timezone
 
@@ -61,8 +58,6 @@ STAFF = {"manager", "admin", "owner", "sup_member"}
 
 
 class Env:
-    """One board plus one user per relationship to it. Call build() once per example."""
-
     def __init__(self, client):
         reset_db()
         self.c = client
@@ -95,7 +90,6 @@ class Env:
 
 
 def last_mail_token(to=None):
-    """The raw token in the newest outbox message (to `to`, when given); the link carries it as `?token=...`."""
     import re
 
     from app.common import mail
@@ -109,5 +103,4 @@ def last_mail_token(to=None):
 
 
 def verify_email(client, to=None):
-    """Confirm the newest link the way a visitor does: POST the token to /api/auth/verify."""
     return client.post("/api/auth/verify", json={"token": last_mail_token(to)})

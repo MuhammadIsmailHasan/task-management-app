@@ -21,16 +21,12 @@ interface BoardHeaderProps {
   search: string;
   onSearch: (value: string) => void;
   onCategory: (id: string | null) => void;
-  /** The number of archived Cards; the toolbar links to the Archived page (VIEW-05). */
   archivedCount?: number;
-  /** A Manager, an Admin, or the Board's owner may edit its name and description (the Backend's rename rule). */
   canEdit?: boolean;
 }
 
-/** Progress and Archived share the control look of the search field: one height, fill, radius, and shadow. */
 const TOOL = "inline-flex min-h-control shrink-0 items-center rounded-ui bg-surface-raised px-4 text-sm whitespace-nowrap shadow-card";
 
-/** The Board_Toolbar and the filter bar (SHELL-12, SHELL-16; reference `01-board-desktop.png`). Sharing is in the Top_Menu (SHR-01), not here.. */
 export function BoardHeader({ board, cards, categories, categoryId, search, onSearch, onCategory, archivedCount = 0, canEdit = false }: BoardHeaderProps) {
   const [editing, setEditing] = useState(false);
   const doneId = board.columns?.find((c) => c.name === "Done")?.id;
@@ -47,7 +43,6 @@ export function BoardHeader({ board, cards, categories, categoryId, search, onSe
           </BaseButton>
         )}
       </div>
-      {/* one row from 960 pixels: the category chips take the free width and scroll; progress, search, and Archived share one control look */}
       <section aria-label="Filters" className="flex flex-wrap items-center gap-field rounded-ui bg-surface p-item lg:flex-nowrap">
         <div className="w-full min-w-0 lg:w-auto lg:flex-1">
           <FilterRow categories={categories} categoryId={categoryId} onCategory={onCategory} />

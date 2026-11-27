@@ -1,4 +1,3 @@
-"""Single-use email tokens, stored only as SHA-256 hashes (V17, ACT-06)."""
 import hashlib
 import secrets
 from datetime import timedelta
@@ -16,8 +15,7 @@ def _hash(raw):
 
 
 def create(user, purpose):
-    """A new token for `user`; returns the raw value, which goes into the email and nowhere else. The caller commits."""
-    raw = secrets.token_urlsafe(32)  # 256 bits
+    raw = secrets.token_urlsafe(32)
     now = clock.now()
     db.session.add(EmailToken(user_id=user.id, purpose=purpose, token_hash=_hash(raw), expires_at=now + TTL))
     db.session.flush()
@@ -25,7 +23,6 @@ def create(user, purpose):
 
 
 def invalidate(user_id, purpose):
-    """Mark every unused token of this purpose as used, so only the newest link works."""
     now = clock.now()
     db.session.execute(
         db.update(EmailToken).where(EmailToken.user_id == user_id, EmailToken.purpose == purpose, EmailToken.used_at.is_(None)).values(used_at=now)
@@ -33,7 +30,6 @@ def invalidate(user_id, purpose):
 
 
 def consume(raw):
-    """Look up an unused token, mark it used, and return it. 400 TOKEN_INVALID or TOKEN_EXPIRED otherwise."""
     if not isinstance(raw, str) or not raw:
         raise TokenInvalid("This link is not valid")
     row = db.session.scalars(db.select(EmailToken).where(EmailToken.token_hash == _hash(raw)).with_for_update()).first()

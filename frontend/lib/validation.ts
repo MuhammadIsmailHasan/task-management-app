@@ -1,4 +1,3 @@
-/** Identity validation; mirrors backend/app/common/validation.py (V10, Property 42). */
 const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
 export const EMAIL_MAX = 255;
@@ -13,7 +12,6 @@ export function isEmail(value: string): boolean {
 
 export type IdentifierKind = "email" | "username";
 
-/** "email" when the lower-cased value has an @ and the email shape, "username" when it has none and matches the format, else null. */
 export function classifyIdentifier(raw: string): { kind: IdentifierKind; value: string } | null {
   const value = raw.trim().toLowerCase();
   if (value.includes("@")) return isEmail(value) ? { kind: "email", value } : null;
@@ -31,11 +29,9 @@ export interface AuthValues {
   password: string;
 }
 
-/** Every invalid field of the login or register form at once, in form order (FIX-04). An empty object means the form may be sent. */
 export function validateAuth(mode: AuthMode, v: AuthValues): Record<string, string[]> {
   const errors: Record<string, string[]> = {};
   if (mode === "login") {
-    // No request is sent for a value that is neither a Username nor an Email (Req 1.39, 1.40).
     if (!classifyIdentifier(v.identifier)) {
       errors.identifier = [v.identifier.includes("@") ? "Enter a valid email address." : "Enter a valid username or email."];
     }
@@ -49,5 +45,4 @@ export function validateAuth(mode: AuthMode, v: AuthValues): Record<string, stri
   return errors;
 }
 
-/** The form order of the fields, so focus goes to the first invalid one. */
 export const AUTH_FIELD_ORDER = ["full_name", "identifier", "username", "email", "password"] as const;

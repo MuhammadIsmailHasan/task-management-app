@@ -152,7 +152,7 @@ describe("CardModal Auto_Save", () => {
     modal();
     const box = await screen.findByLabelText("Description");
     await userEvent.type(box, "More");
-    await userEvent.tab(); // TinyMCE saves on blur (round 6); its Ctrl+Enter is the editor's own
+    await userEvent.tab();
     expect(api.cards.update).toHaveBeenCalledWith("c1", { description: "More" });
     const region = document.querySelector('[data-field-status="description"]') as HTMLElement;
     expect(region).toHaveAttribute("aria-live", "polite");

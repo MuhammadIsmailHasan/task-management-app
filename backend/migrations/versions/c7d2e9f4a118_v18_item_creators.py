@@ -1,13 +1,3 @@
-"""v18: who created a subtask or an attachment
-
-Revision ID: c7d2e9f4a118
-Revises: b8e4c2a9d713
-Create Date: 2026-11-26 18:00:00
-
-Adds `created_by_id` (nullable, ON DELETE SET NULL) to subtasks and attachments. Existing rows stay null: the
-owner accepted that a Member cannot edit or delete them (Open Question 74). Also reports Cards still assigned to a
-Manager or an Admin (TASK-09); nothing is changed for them.
-"""
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import UUID

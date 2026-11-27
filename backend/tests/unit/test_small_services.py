@@ -1,4 +1,3 @@
-"""Unit tests of the health, categories, columns, and notifications services: repositories and Board checks mocked."""
 from datetime import date, datetime, timezone
 from unittest.mock import MagicMock
 
@@ -13,8 +12,6 @@ from app.common.errors import ColumnLocked, ColumnNotEmpty, Conflict, Forbidden,
 from tests.unit.support import actor, new_id, row
 
 
-# ---- health ------------------------------------------------------------------------------------------------------
-
 def test_health_reports_ok_and_turns_a_database_error_into_503(stub):
     repo = stub(health, "repo")
     assert health.check() == {"database": "ok"}
@@ -22,8 +19,6 @@ def test_health_reports_ok_and_turns_a_database_error_into_503(stub):
     with pytest.raises(ServiceUnavailable):
         health.check()
 
-
-# ---- categories --------------------------------------------------------------------------------------------------
 
 @pytest.fixture
 def cats(stub, session):
@@ -76,8 +71,6 @@ def test_update_and_delete_category(cats):
     with pytest.raises(NotFound):
         categories.delete(who, str(new_id()))
 
-
-# ---- columns -----------------------------------------------------------------------------------------------------
 
 @pytest.fixture
 def cols(stub, session):
@@ -160,8 +153,6 @@ def test_delete_column(cols):
     with pytest.raises(ColumnLocked):
         columns.delete(actor("manager"), str(todo.id))
 
-
-# ---- notifications -----------------------------------------------------------------------------------------------
 
 def notification(**over):
     base = dict(id=new_id(), type="assigned", board_id=None, card_id=new_id(), actor_id=new_id(), action=None, is_read=False, notify_date=date(2026, 11, 27), created_at=datetime(2026, 11, 27, tzinfo=timezone.utc))

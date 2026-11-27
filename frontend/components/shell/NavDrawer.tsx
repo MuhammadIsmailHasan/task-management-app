@@ -12,10 +12,6 @@ import { useShell } from "./ShellContext";
 
 const row = "flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-ui px-3 text-sm font-medium no-underline transition-colors duration-fast focus-ring [&_svg]:size-icon [&_svg]:shrink-0";
 
-/**
- * Below 960 pixels the Sidebar and the Top_Menu become this drawer: the global items as 44 pixel rows, then, while a
- * Board is open, the group "This board", then the Boards (NAV-03). It closes on a route change through each link.
- */
 export function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { session, board, boardId, boards, panel, toggleSidePanel, shareOpen, openShare, pendingRequests } = useShell();
   const pathname = usePathname();

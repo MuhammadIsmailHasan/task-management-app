@@ -1,7 +1,3 @@
-"""Unit tests of the cards service and DTO: fields, assignment, archive, move, subtasks, attachments, listing, My Tasks.
-
-Repositories, the Board checks, Activity_Log, and notifications are mocked; `db.session` is a MagicMock.
-"""
 import io
 from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -44,8 +40,6 @@ def load(c, x):
     c.repo.get_card.return_value = x
     return str(x.id)
 
-
-# ---- loading and permissions ---------------------------------------------------------------------------------------
 
 def test_load_card_and_get_card(c):
     x = card()
@@ -94,8 +88,6 @@ def test_completion_stamp():
     assert cards.completion_stamp("Done", "Done", old, NOW) == old
     assert cards.completion_stamp("Done", "Todo", old, NOW) is None
 
-
-# ---- create and update --------------------------------------------------------------------------------------------
 
 def test_create_card_in_a_column(c):
     col = row(id=new_id(), board_id=c.board.id, name="Todo")
@@ -189,14 +181,12 @@ def test_delete_card(c):
     c.notif.notify_assignee.assert_called_once()
 
 
-# ---- archive and restore ------------------------------------------------------------------------------------------
-
 def test_archive_and_restore(c):
     x = card()
     c.repo.get_column.return_value = row(name="Todo")
     cards.set_archived(actor("manager"), load(c, x), True)
     assert x.column_id is None and x.archived_at == NOW
-    assert cards.set_archived(actor("manager"), str(x.id), True) is x  # already archived: unchanged
+    assert cards.set_archived(actor("manager"), str(x.id), True) is x
     first = row(id=new_id(), name="Todo")
     c.repo.first_column.return_value = first
     c.repo.max_order.return_value = None
@@ -212,8 +202,6 @@ def test_archive_and_restore(c):
     with pytest.raises(NotFound):
         cards.set_archived(actor("manager"), str(x.id), False)
 
-
-# ---- move ---------------------------------------------------------------------------------------------------------
 
 def test_move_between_columns_places_the_card_and_notifies(c):
     source, target = row(id=new_id(), board_id=c.board.id, name="Todo"), row(id=new_id(), board_id=c.board.id, name="Done")
@@ -240,7 +228,7 @@ def test_move_rebalances_when_neighbours_touch(c):
     cards.move_card(actor(), str(x.id), {"column_id": str(target.id), "prev": str(prev.id), "next": str(nxt.id)})
     assert (prev.order, nxt.order) == (1.0, 2.0)
     c.session.flush.assert_called_once()
-    c.notif.notify_assignee.assert_not_called()  # a reorder inside one Column notifies nobody
+    c.notif.notify_assignee.assert_not_called()
 
 
 def test_move_refusals(c):
@@ -268,8 +256,6 @@ def test_move_refusals(c):
     with pytest.raises(ValidationError):
         cards.move_card(actor(), str(x.id), {"column_id": str(target.id), "prev": str(later.id), "next": str(earlier.id)})
 
-
-# ---- subtasks -----------------------------------------------------------------------------------------------------
 
 def subtask(x, **over):
     return row(**{**dict(id=new_id(), card_id=x.id, title="Write", is_done=False, order=1.0, created_by_id=None), **over})
@@ -337,8 +323,6 @@ def test_delete_subtask(c):
     c.repo.delete_subtask.assert_called_once_with(s)
 
 
-# ---- attachments --------------------------------------------------------------------------------------------------
-
 class Upload:
     def __init__(self, filename, mimetype):
         self.filename, self.mimetype, self.saved = filename, mimetype, None
@@ -370,7 +354,7 @@ def test_delete_attachment_removes_the_file(c, ctx, tmp_path):
     att = row(id=new_id(), card_id=x.id, name="a.pdf", file_path="stored.pdf", url=None, created_by_id=None)
     c.repo.get_attachment.return_value = att
     c.policy.can_edit_item.return_value = True
-    cards.delete_attachment(actor(), str(att.id))  # the file is already gone: no error
+    cards.delete_attachment(actor(), str(att.id))
     c.repo.delete_attachment.assert_called_once_with(att)
     c.repo.get_attachment.return_value = None
     with pytest.raises(NotFound):
@@ -415,8 +399,6 @@ def test_attachment_file_path_checks_the_signature_and_share_scope(c, ctx):
         cards.attachment_file_path(str(att.id), exp, path.split("sig=")[1])
 
 
-# ---- listing and My Tasks -----------------------------------------------------------------------------------------
-
 def test_parse_filters():
     assert cards.parse_archived({}) is False and cards.parse_archived({"archived": "true"}) is True
     with pytest.raises(ValidationError):
@@ -442,7 +424,7 @@ def test_list_board_cards(c):
 
 
 def test_group_key():
-    today = date(2026, 11, 25)  # a Wednesday
+    today = date(2026, 11, 25)
     assert cards.group_key(None, today) == "no_due"
     assert cards.group_key(today - timedelta(days=1), today) == "overdue"
     assert cards.group_key(today, today) == "today"
@@ -464,8 +446,6 @@ def test_my_cards_groups_and_orders_and_refuses_staff(c):
     with pytest.raises(Forbidden):
         cards.my_cards(actor("manager"))
 
-
-# ---- DTO ----------------------------------------------------------------------------------------------------------
 
 def test_validate_card_fields():
     out = dto.validate_card_fields({"title": " T ", "description": "<p>d</p>", "priority": "low", "start_date": "2026-01-01", "end_date": None}, partial=False)

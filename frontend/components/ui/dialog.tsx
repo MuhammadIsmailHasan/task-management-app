@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 export const Dialog = DialogPrimitive.Root;
 export const DialogClose = DialogPrimitive.Close;
 
-/** True for an element of the TinyMCE floating UI (dialogs, menus), which lives outside every modal. */
 const shieldedContent = new WeakSet<Element>();
 
 export function insideEditorUi(target: EventTarget | null): boolean {
@@ -20,12 +19,10 @@ export type DialogSize = "md" | "wide" | "card" | "full";
 const SIZE: Record<DialogSize, string> = {
   md: "inset-page m-auto h-fit max-h-full max-w-modal",
   wide: "inset-page m-auto h-fit max-h-full max-w-modal-wide",
-  // the Card modal fills the viewport minus the page gutter (CMV-01, round 3)
   card: "inset-page w-auto",
   full: "inset-page w-auto",
 };
 
-/** shadcn/ui Dialog on Radix: focus trap, Escape, ARIA. `full` fills the viewport minus a margin. */
 export function DialogContent({
   className,
   children,
@@ -37,7 +34,6 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-modal bg-scrim-strong backdrop-blur-overlay data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
-        // focus leaving the modal for the TinyMCE floating UI must not reach the focus trap on the document (round 7)
         ref={(node) => {
           if (!node || shieldedContent.has(node)) return;
           shieldedContent.add(node);
@@ -52,8 +48,6 @@ export function DialogContent({
           className,
         )}
         {...props}
-        // TinyMCE opens its link dialog and menus outside this modal: a click, a focus, or an Escape there must not
-        // close the modal (DS-29, round 7)
         onPointerDownOutside={(e) => {
           if (insideEditorUi(e.target)) e.preventDefault();
           props.onPointerDownOutside?.(e);
@@ -89,7 +83,6 @@ export function DialogTitle({ className, ...props }: ComponentProps<typeof Dialo
   return <DialogPrimitive.Title className={cn("min-w-0 flex-1 font-heading text-page-title break-words", className)} {...props} />;
 }
 
-/** The close icon, rendered inside the header row so it can never overlap the content below. */
 export function DialogCloseButton() {
   return (
     <DialogPrimitive.Close

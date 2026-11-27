@@ -1,9 +1,3 @@
-"""The due-date job (V17, Requirement 58): `flask notify-due`, run every 15 minutes.
-
-For each assigned, open Card due today or tomorrow (dates in APP_TIMEZONE) it creates one `due_today` or `due_tomorrow`
-notification, unless the assignee switched that type off. It is idempotent: the unique key (user, card, type, date)
-makes a second run on the same date insert nothing, and a PostgreSQL advisory lock stops two runs from overlapping.
-"""
 import signal
 import threading
 import uuid
@@ -16,8 +10,8 @@ from app.common import clock
 from app.extensions import db
 from app.models import Board, Card, Column, Notification, NotificationPreference, User
 
-INTERVAL_SECONDS = 900  # 15 minutes
-LOCK_KEY = 8_452_017  # an arbitrary constant: one lock for this job
+INTERVAL_SECONDS = 900
+LOCK_KEY = 8_452_017
 
 
 def _insert():
@@ -29,7 +23,6 @@ def _insert():
 
 
 def _candidates(day, type_):
-    """(card id, assignee id, board id) of the open Cards due on `day` whose assignee is active and has not switched `type_` off."""
     enabled = db.or_(NotificationPreference.enabled.is_(None), NotificationPreference.enabled.is_(True))
     return db.session.execute(
         db.select(Card.id, Card.assignee_id, Card.board_id)
@@ -43,7 +36,6 @@ def _candidates(day, type_):
 
 
 def _create(rows, type_, today):
-    """One bulk insert; `ON CONFLICT DO NOTHING` on the partial unique index drops what already exists. Returns how many were new."""
     if not rows:
         return 0
     now = clock.now()
@@ -56,7 +48,6 @@ def _create(rows, type_, today):
 
 
 def run(now=None):
-    """Create the day's notifications; returns (due_today, due_tomorrow, skipped) or None when another run holds the lock."""
     if now is not None:
         clock.set_now(lambda: now)
     try:
@@ -80,11 +71,10 @@ def run(now=None):
 def _line(result):
     if result is None:
         return "notify-due skipped: another run is in progress"
-    return f"due_today={result[0]} due_tomorrow={result[1]} skipped={result[2]}"  # counts only: no titles, no addresses
+    return f"due_today={result[0]} due_tomorrow={result[1]} skipped={result[2]}"
 
 
 def run_forever(stop):
-    """Run at once and then every 15 minutes until `stop` is set. A failed run is retried on the next round."""
     while not stop.is_set():
         try:
             click.echo(_line(run()))
@@ -106,6 +96,6 @@ def register_cli(app):
     def run_scheduler():
         """Run notify-due now and every 15 minutes, until SIGTERM or SIGINT."""
         stop = threading.Event()
-        for sig in (signal.SIGTERM, signal.SIGINT):  # explicit: PID 1 in a container ignores SIGTERM by default
+        for sig in (signal.SIGTERM, signal.SIGINT):
             signal.signal(sig, lambda *_: stop.set())
         run_forever(stop)

@@ -2,11 +2,6 @@ import { BaseLinkButton } from "@/components/shared/BaseLinkButton";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { routes } from "@/lib/routes";
 
-/**
- * The on-brand "page not found" screen (Requirement 48, SLUG-11 to SLUG-13). It never shows the requested path, a
- * slug, or a Board name, and gives no hint whether a Board exists. The illustration is inline SVG that uses token
- * colours only (`currentColor` through Tailwind classes), no raster file.
- */
 export function NotFound() {
   return (
     <main id="main" className="flex min-h-screen flex-col items-center justify-center gap-6 bg-surface p-6 text-center">

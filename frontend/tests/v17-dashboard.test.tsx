@@ -103,11 +103,11 @@ describe("DashboardView (Requirements 43 and 51)", () => {
   it("shows a loading state, then the greeting, the figures, and every widget", async () => {
     view("manager");
     expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
-    expect(await screen.findByText("57% Done")).toBeInTheDocument(); // 8 of 14
+    expect(await screen.findByText("57% Done")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^Good (morning|afternoon|evening), Ann$/);
     expect(within(screen.getByRole("region", { name: "Open work" })).getByText("6")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /3 weeks: 8 in total/ })).toBeInTheDocument();
-    expect(screen.getAllByText("Not limited by the date range").length).toBeGreaterThanOrEqual(2); // the overview and Top 5 (DASH-12)
+    expect(screen.getAllByText("Not limited by the date range").length).toBeGreaterThanOrEqual(2);
     const overdue = screen.getByRole("region", { name: "Overdue cards" });
     expect(within(overdue).getByRole("link", { name: "Late one" })).toHaveAttribute("href", "/app/b/alpha?card=k1");
     expect(within(overdue).getByText("and 11 more")).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe("DashboardView (Requirements 43 and 51)", () => {
   it("changing a filter writes it to the query string instead of fetching by itself", async () => {
     view("manager");
     await screen.findByText("57% Done");
-    expect(screen.queryByRole("radio", { name: "Last 7 days" })).not.toBeInTheDocument(); // no presets (DASH-27)
+    expect(screen.queryByRole("radio", { name: "Last 7 days" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /^From:/ }));
     await userEvent.click(screen.getByRole("button", { name: /October 5th, 2026/ }));
     expect(mocks.replace).toHaveBeenCalledWith(expect.stringContaining("from=2026-10-05"));

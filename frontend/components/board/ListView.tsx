@@ -16,10 +16,6 @@ interface ListViewProps {
   onOpen: (card: Card) => void;
 }
 
-/**
- * The Board's Cards grouped by Column, one table section per Column (VIEW-01). From 960 pixels a row is a table row;
- * below it the same fields stack as a card with a 44 pixel hit area (VIEW-02).
- */
 export function ListView({ columns, cards, categories, members, onOpen }: ListViewProps) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
   const memberById = new Map(members.map((m) => [m.id, m]));

@@ -1,9 +1,3 @@
-"""add board description
-
-Revision ID: a1c3f7e9b204
-Revises: 532f2dabeba9
-Create Date: 2026-11-19 16:00:00
-"""
 import sqlalchemy as sa
 from alembic import op
 

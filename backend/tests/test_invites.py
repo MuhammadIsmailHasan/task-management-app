@@ -1,4 +1,3 @@
-"""Invite link, join requests, board-scoped notifications, comment deletion, derived progress (V12; Properties 52 to 57)."""
 import threading
 import uuid
 
@@ -27,7 +26,7 @@ def test_invite_management_roles_and_lifecycle(client):
     assert _invite(client, env, "owner", "get").get_json()["data"] == {"enabled": False, "token": None, "path": None}
     on = _invite(client, env, "owner").get_json()["data"]
     assert on["enabled"] and len(on["token"]) >= 43 and on["path"] == f"/app/invite/{on['token']}"
-    assert _invite(client, env, "manager").get_json()["data"]["token"] == on["token"]  # idempotent, no second row
+    assert _invite(client, env, "manager").get_json()["data"]["token"] == on["token"]
     new = _invite(client, env, "admin", suffix="/regenerate").get_json()["data"]
     assert new["token"] != on["token"]
     assert client.get(f"/api/invite/{on['token']}", headers=env.h["member_other"]).status_code == 404
@@ -52,7 +51,7 @@ def test_invite_lookup_states_and_one_404(client):
     bodies = {get("member_other", t).get_data() for t in ("nope", token + "x", token[::-1])}
     assert len(bodies) == 1 and get("member_other", "nope").status_code == 404
     client.delete(f"/api/boards/{env.bid}", headers=env.h["manager"])
-    assert get("member_other").status_code == 404  # soft-deleted board reads as unknown
+    assert get("member_other").status_code == 404
 
 
 def test_property_55_join_request_lifecycle(client):
@@ -63,33 +62,29 @@ def test_property_55_join_request_lifecycle(client):
     assert r.status_code == 201 and set(r.get_json()["data"]) == {"id", "board_id", "status", "created_at"}
     rid = r.get_json()["data"]["id"]
     assert client.get(f"/api/invite/{token}", headers=hdr(asker)).get_json()["data"]["state"] == "pending"
-    assert _ask(client, token, asker).status_code == 409  # already pending
+    assert _ask(client, token, asker).status_code == 409
     assert "board" in _ask(client, token, asker).get_json()["error"]["details"]
-    assert _ask(client, token, env.users["member"]).status_code == 409  # already a member
-    assert _ask(client, token, env.users["owner"]).status_code == 409  # the owner
+    assert _ask(client, token, env.users["member"]).status_code == 409
+    assert _ask(client, token, env.users["owner"]).status_code == 409
     for who in ("manager", "admin"):
         r = client.post(f"/api/invite/{token}/requests", headers=env.h[who])
         assert r.status_code == 400 and "role" in r.get_json()["error"]["details"]
     assert client.post(f"/api/invite/{token}/requests").status_code == 401
-    # notifications: the owner, the Manager, and the Admin, once each, with no Email
     for who in ("owner", "manager", "admin"):
         items = client.get("/api/notifications", headers=env.h[who]).get_json()["data"]["items"]
         mine = [n for n in items if n["type"] == "board_join_requested"]
         assert len(mine) == 1 and mine[0]["board_id"] == env.bid and mine[0]["actor_name"] == asker.full_name
         assert mine[0]["card_id"] is None and "email" not in str(mine[0])
-    # the pending list carries the Email to the owner, Manager, and Admin only
     for who in ("owner", "manager", "admin"):
         rows = client.get(f"/api/boards/{env.bid}/join-requests", headers=env.h[who]).get_json()["data"]
         assert [x["id"] for x in rows] == [rid] and rows[0]["user"]["email"] == asker.email
     for who in ("member", "sup_member", "member_other"):
         assert client.get(f"/api/boards/{env.bid}/join-requests", headers=env.h[who]).status_code == 403
     assert client.get(f"/api/boards/{env.bid}/join-requests").status_code == 401
-    # the owner cannot decide; a bad status is 400; an unknown id is 404
     assert client.patch(f"/api/join-requests/{rid}", headers=env.h["owner"], json={"status": "approved"}).status_code == 403
     assert client.patch(f"/api/join-requests/{rid}", json={"status": "approved"}).status_code == 401
     assert client.patch(f"/api/join-requests/{rid}", headers=env.h["manager"], json={"status": "maybe"}).status_code == 400
     assert client.patch(f"/api/join-requests/{UUID0}", headers=env.h["manager"], json={"status": "approved"}).status_code == 404
-    # reject, then ask again with no cooldown
     rej = client.patch(f"/api/join-requests/{rid}", headers=env.h["manager"], json={"status": "rejected"})
     assert rej.status_code == 200 and "email" not in rej.get_data(as_text=True)
     assert client.patch(f"/api/join-requests/{rid}", headers=env.h["admin"], json={"status": "approved"}).status_code == 409
@@ -97,8 +92,7 @@ def test_property_55_join_request_lifecycle(client):
     assert [n["type"] for n in inbox] == ["board_join_rejected"]
     again = _ask(client, token, asker)
     assert again.status_code == 201 and again.get_json()["data"]["id"] != rid
-    assert BoardJoinRequest.query.filter_by(id=uuid.UUID(rid)).one().status == "rejected"  # the old row is unchanged
-    # approval by the Admin creates the member once, one log row, one board_added
+    assert BoardJoinRequest.query.filter_by(id=uuid.UUID(rid)).one().status == "rejected"
     ok = client.patch(f"/api/join-requests/{again.get_json()['data']['id']}", headers=env.h["admin"], json={"status": "approved"})
     assert ok.status_code == 200
     assert BoardMember.query.filter_by(board_id=uuid.UUID(env.bid), user_id=asker.id).count() == 1
@@ -106,7 +100,6 @@ def test_property_55_join_request_lifecycle(client):
     assert any(a.metadata_.get("via") == "join_request" for a in added)
     assert [n["type"] for n in client.get("/api/notifications", headers=hdr(asker)).get_json()["data"]["items"]].count("board_added") == 1
     assert client.get(f"/api/boards/{env.bid}", headers=hdr(asker)).status_code == 200
-    # no Email anywhere in the logs and the notification text
     blob = str([a.metadata_ for a in ActivityLog.query.all()]) + str(client.get("/api/notifications", headers=env.h["owner"]).get_json())
     assert asker.email not in blob and token not in blob
 
@@ -121,14 +114,13 @@ def test_pending_request_survives_regenerate_and_disable(client):
 
 
 def test_simultaneous_requests_make_one_row(client, monkeypatch):
-    """Two requests that both pass the pending check: the partial unique index stops the second and it maps to 409."""
     from app.blueprints.invites import repository as invites_repo
 
     env = Env(client)
     token = _enable(client, env)
     user = env.users["member_other"]
     assert _ask(client, token, user).status_code == 201
-    monkeypatch.setattr(invites_repo, "get_pending", lambda *a: None)  # the racing request saw no pending row
+    monkeypatch.setattr(invites_repo, "get_pending", lambda *a: None)
     r = _ask(client, token, user)
     assert r.status_code == 409 and "board" in r.get_json()["error"]["details"]
     assert BoardJoinRequest.query.filter_by(status="pending").count() == 1
@@ -155,13 +147,11 @@ def test_members_list_owner_first_once_and_candidates(client):
     rows = client.get(base, headers=env.h["member"]).get_json()["data"]
     assert rows[0]["id"] == env.uid("owner") and rows[0]["is_owner"] is True
     assert sum(1 for r in rows if r["is_owner"]) == 1 and all("email" not in r for r in rows)
-    # owner who is also a BoardMember is listed once
     assert client.post(base, headers=env.h["manager"], json={"user_id": env.uid("owner")}).status_code == 201
     rows = client.get(base, headers=env.h["member"]).get_json()["data"]
     assert [r["id"] for r in rows].count(env.uid("owner")) == 1 and rows[0]["is_owner"]
     staff = client.get(base + "?include=email", headers=env.h["manager"]).get_json()["data"]
     assert all(m["email"] for m in staff)
-    # candidates: Members and Supervisors only, never the owner or a member
     for who in ("owner", "member", "sup_member"):
         assert client.get(f"/api/boards/{env.bid}/candidates?search=sup", headers=env.h[who]).status_code == 403
     found = client.get(f"/api/boards/{env.bid}/candidates?search=@t.test", headers=env.h["manager"])
@@ -170,7 +160,6 @@ def test_members_list_owner_first_once_and_candidates(client):
     for who in ("owner", "manager", "admin", "member"):
         ids = {x["id"] for x in client.get(f"/api/boards/{env.bid}/candidates?search={env.users[who].email}", headers=env.h["manager"]).get_json()["data"]}
         assert env.uid(who) not in ids
-    # the owner row cannot be removed while the owner is no BoardMember
     other = Env(client)
     assert client.delete(f"/api/boards/{other.bid}/members/{other.uid('owner')}", headers=other.h["manager"]).status_code == 404
 
@@ -184,7 +173,6 @@ def test_add_member_notifies_and_owner_reassignment_clears_and_notifies(client):
     assert [n["type"] for n in inbox] == ["board_added"] and inbox[0]["board_name"] == "B" and inbox[0]["actor_name"]
     for who in ("owner", "member", "sup_member"):
         assert client.post(f"/api/boards/{env.bid}/members", headers=env.h[who], json={"user_id": str(other.id)}).status_code == 403
-    # reassignment: cards of the previous owner are cleared (he is no BoardMember), the new owner is notified
     card = env.card(assignee_id=env.uid("owner"))
     new_owner = mkuser("supervisor")
     assert client.patch(f"/api/boards/{env.bid}", headers=env.h["manager"], json={"owner_id": str(new_owner.id)}).status_code == 200
@@ -221,7 +209,7 @@ def test_property_56_notification_dedup_with_null_card_and_constant_queries(clie
     db.session.commit()
     assert Notification.query.filter_by(user_id=member.id, type="board_added").count() == max(before, 1)
     db.session.add(Notification(user_id=member.id, type="assigned", notify_date=datetime.date(2026, 1, 1)))
-    with pytest.raises(IntegrityError):  # CHECK: a card type needs a card_id
+    with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
 
@@ -249,11 +237,9 @@ def test_property_53_comment_delete_and_reply_count(client):
         assert client.delete(f"/api/comments/{top['id']}", headers=env.h[who]).status_code == 403, who
     assert client.delete(f"/api/comments/{top['id']}").status_code == 401
     assert client.delete(f"/api/comments/{UUID0}", headers=env.h["member"]).status_code == 404
-    # deleting a reply decrements the parent's count
     assert client.delete(f"/api/comments/{r1['id']}", headers=env.h["manager"]).get_json()["data"] == {"deleted": 1}
     listed = client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"]["items"]
     assert listed[0]["reply_count"] == 1 and [r["id"] for r in listed[0]["replies"]] == [r2["id"]]
-    # deleting the top-level comment takes the remaining reply with it
     assert client.delete(f"/api/comments/{top['id']}", headers=env.h["member"]).get_json()["data"] == {"deleted": 2}
     assert client.get(f"/api/cards/{cid}/comments", headers=env.h["member"]).get_json()["data"]["items"] == []
     rows = ActivityLog.query.filter_by(action="comment.deleted").all()
@@ -268,7 +254,6 @@ def test_property_57_derived_progress_and_matrix(client):
     cid = card["id"]
     assert card["progress"] is None and card["subtask_total_count"] == 0
     subs = [client.post(f"/api/cards/{cid}/subtasks", headers=env.h["owner"], json={"title": f"s{i}"}).get_json()["data"] for i in range(3)]
-    # the assigned Member may toggle; another Member and a Member of another card may not
     assert client.patch(f"/api/subtasks/{subs[0]['id']}", headers=env.h["member"], json={"is_done": True}).status_code == 200
     assert client.patch(f"/api/subtasks/{subs[1]['id']}", headers=env.h["member_other"], json={"is_done": True}).status_code == 403
     assert client.patch(f"/api/subtasks/{subs[1]['id']}", json={"is_done": True}).status_code == 401
@@ -278,7 +263,7 @@ def test_property_57_derived_progress_and_matrix(client):
         assert client.patch(f"/api/subtasks/{subs[2]['id']}", headers=env.h[who], json={"is_done": False}).status_code == 200
     assert client.patch(f"/api/subtasks/{subs[2]['id']}", headers=env.h["sup_other"], json={"is_done": True}).status_code == 403
     got = client.get(f"/api/cards/{cid}", headers=env.h["manager"]).get_json()["data"]
-    assert (got["progress"], got["subtask_done_count"], got["subtask_total_count"]) == (3, 1, 3)  # 1/3 -> 3 of 10
+    assert (got["progress"], got["subtask_done_count"], got["subtask_total_count"]) == (3, 1, 3)
     for done, total, expected in ((0, 4, 0), (1, 2, 5), (1, 4, 3), (3, 4, 8), (4, 4, 10), (1, 1, 10)):
         assert (20 * done + total) // (2 * total) == expected
     listed = client.get(f"/api/boards/{env.bid}/cards", headers=env.h["manager"]).get_json()["data"]

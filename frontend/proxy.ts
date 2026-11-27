@@ -3,12 +3,6 @@ import { APP_BASE, isGuardedPath, legacyRedirect, loginPath } from "@/lib/routes
 import { isUsableToken } from "@/lib/session-token";
 import { TOKEN_COOKIE } from "@/lib/session";
 
-/**
- * One origin (Requirement 46): the Landing_Page is `/`, every other page is under `/app`. A V16 path gets a 308 to its
- * `/app` equivalent. A guarded `/app` path without a usable cookie redirects to the sign-in page with a safe `next`
- * and removes the stale cookie. This check is optimistic; the Backend stays the authority (a revoked or forged Token
- * that still decodes meets a 401, which lands on the session-expired route). Every `/app` response is `noindex`.
- */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -30,7 +24,6 @@ export function proxy(request: NextRequest) {
   } else {
     response = NextResponse.next();
   }
-  // The app is private: no search engine indexes any page under /app.
   if (onApp) response.headers.set("X-Robots-Tag", "noindex");
   return response;
 }

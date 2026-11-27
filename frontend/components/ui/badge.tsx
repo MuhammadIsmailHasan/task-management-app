@@ -2,7 +2,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-/** shadcn/ui Badge; tones are the --label-* colour pairs, shapes are pill and tag. */
 export const badgeVariants = cva("inline-flex min-h-chip items-center gap-1 text-xs font-semibold", {
   variants: {
     tone: {

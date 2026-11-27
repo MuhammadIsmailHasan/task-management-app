@@ -13,10 +13,6 @@ import { ProfileSecurity } from "./ProfileSecurity";
 const TABS = ["about", "security", "notifications"] as const;
 type Tab = (typeof TABS)[number];
 
-/**
- * The Profile page (Requirement 54): a cover band, a large avatar over its lower edge, the name and username, and the
- * tabs About, Security, and Notifications. The active tab is kept in `?tab=`.
- */
 export function ProfileView({ initial }: { initial: User }) {
   const [user, setUser] = useState(initial);
   const params = useSearchParams();

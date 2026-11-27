@@ -8,13 +8,11 @@ import { PALETTE, SOLID, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 
 interface ColorSwatchPickerProps {
-  /** Accessible name, such as "Color of Bug". */
   label: string;
   value: Tone;
   onChange: (tone: Tone) => void;
 }
 
-/** The 18 category colours as a 6 by 3 grid of swatches in a popover (CATP-03). The chosen one carries a check and `aria-pressed`. */
 export function ColorSwatchPicker({ label, value, onChange }: ColorSwatchPickerProps) {
   const [open, setOpen] = useState(false);
   const name = (t: string) => t[0].toUpperCase() + t.slice(1);

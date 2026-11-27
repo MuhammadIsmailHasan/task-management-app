@@ -1,8 +1,3 @@
-"""Rate_Limiter (V10, Decision O): a pure policy plus a Postgres-backed store.
-
-Counts live in `rate_limit_attempts`. A failure row is written in its own short transaction and
-committed before the 401 is raised, because the error handler rolls back the request session.
-"""
 import hashlib
 import hmac
 from datetime import timedelta
@@ -28,10 +23,6 @@ class RateLimited(AppError):
 
 
 def blocked_until(times, now, window, limit):
-    """Seconds (whole, rounded up, at least 1) until a key under `limit` again; None when not blocked.
-
-    The window is half-open: (now - window, now].
-    """
     live = sorted(t for t in times if t > now - window)
     if len(live) < limit:
         return None
@@ -86,7 +77,6 @@ def _lock(session, scope, key):
 
 
 def _record(session, entries):
-    """Insert one row per (scope, key) and purge old rows of those scopes. The caller commits."""
     now = clock.now()
     for scope, key in entries:
         _lock(session, scope, key)
@@ -95,13 +85,10 @@ def _record(session, entries):
 
 
 def _record_committed(entries):
-    """Write in a separate short transaction so the request's rollback cannot discard it (Req 20.9)."""
     with Session(db.engine) as session:
         _record(session, entries)
         session.commit()
 
-
-# ---- login -----------------------------------------------------------------------------------------
 
 def check_login(identifier, ip):
     waits = [
@@ -122,8 +109,6 @@ def reset_pair(identifier, ip):
     db.session.commit()
 
 
-# ---- availability (every request counts; a blocked request adds no row) -------------------------------
-
 def hit_availability(ip):
     key = ip_key("availability", ip)
     with Session(db.engine) as session:
@@ -135,8 +120,6 @@ def hit_availability(ip):
         _record(session, [("availability", key)])
         session.commit()
 
-
-# ---- change password -----------------------------------------------------------------------------------
 
 def check_change_password(user_id):
     wait = _wait(db.session, "change_password", user_key(user_id), _cfg("RATE_LIMIT_CHANGE_PASSWORD_MAX"))
@@ -152,10 +135,7 @@ def reset_change_password(user_id):
     db.session.execute(delete(RateLimitAttempt).where(RateLimitAttempt.scope == "change_password", RateLimitAttempt.key_hash == user_key(user_id)))
 
 
-# ---- resend verification (V17, ACT-04): a per-address bucket and a per-client bucket ---------------------------------
-
 def hit_resend(address, ip):
-    """Every call counts, a blocked call adds no row. `address` is an email or a user id; `ip` may be None."""
     entries = [("resend_verification", key_hash("resend", str(address)))]
     if ip:
         entries.append(("resend_verification_ip", key_hash("resend_ip", ip)))

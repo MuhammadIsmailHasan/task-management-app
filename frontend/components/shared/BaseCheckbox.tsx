@@ -2,7 +2,6 @@ import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-/** The one checkbox (DS-10): a native checkbox kept for keyboard and screen readers, drawn with tokens. */
 export function BaseCheckbox({ className, ...props }: Omit<ComponentProps<"input">, "type">) {
   return (
     <span className={cn("relative inline-flex size-checkbox shrink-0", className)}>

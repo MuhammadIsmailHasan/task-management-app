@@ -1,4 +1,3 @@
-"""Identity validation shared by register, login, profile and candidate search (V10, Decisions M and N)."""
 import re
 
 from app.common.errors import ValidationError
@@ -21,12 +20,10 @@ def is_username(value):
 
 
 def is_email_shape(value):
-    """One "@", a local part, a dotted domain, no spaces, at most 255 characters."""
     return len(value) <= EMAIL_MAX and _EMAIL_RE.fullmatch(value) is not None
 
 
 def classify_identifier(raw):
-    """Return ("email", value) or ("username", value); raise ValidationError (details.identifier) otherwise."""
     value = raw.strip().lower()
     if "@" in value:
         if is_email_shape(value):

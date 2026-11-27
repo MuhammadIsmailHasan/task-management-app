@@ -17,7 +17,6 @@ const SEARCH_FROM = 6;
 
 const percentDone = (b: Board) => (b.card_count ? Math.round(((b.done_count ?? 0) / b.card_count) * 100) : 0);
 
-/** The Board name as a dropdown that lists the Boards the viewer may see (SHELL-12 to SHELL-15). */
 export function BoardSwitcher({ board }: { board: Board }) {
   const { boards, session } = useShell();
   const [open, setOpen] = useState(false);

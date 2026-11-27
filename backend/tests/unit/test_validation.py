@@ -1,4 +1,3 @@
-"""Unit tests of the identity rules (Decisions M and N)."""
 import pytest
 
 from app.common.errors import ValidationError

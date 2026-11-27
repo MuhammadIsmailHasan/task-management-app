@@ -7,7 +7,6 @@ interface Row {
   id: string;
 }
 
-/** A list loaded one page at a time: the first page fills the visible area, loadMore asks for rows older than the last one. */
 export function usePagedList<T extends Row>(fetchPage: (page: { limit: number; before?: string }) => Promise<T[]>, deps: unknown[]) {
   const [rows, setRows] = useState<T[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -32,7 +31,6 @@ export function usePagedList<T extends Row>(fetchPage: (page: { limit: number; b
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   const loadMore = useCallback(async () => {

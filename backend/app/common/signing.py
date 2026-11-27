@@ -7,13 +7,9 @@ TTL_SECONDS = 900
 
 
 def api_base():
-    """The public path of the API: `/api` in development and tests, `/app/api` behind nginx (API_PUBLIC_PREFIX, PATH-04).
-
-    The prefix is not inside any signature, so changing it invalidates no valid URL.
-    """
     try:
         return (current_app.config.get("API_PUBLIC_PREFIX") or "/api").rstrip("/")
-    except RuntimeError:  # no application context
+    except RuntimeError:
         return "/api"
 
 
@@ -22,12 +18,10 @@ def _secret(secret):
 
 
 def _mac(resource_id, exp, secret, scope=None):
-    """The scope is inside the signed string, so a signature never verifies under another scope."""
     return hmac.new(_secret(secret), f"{resource_id}.{exp}.{scope or ''}".encode(), hashlib.sha256).hexdigest()
 
 
 def share_scope(share_token, secret=None):
-    """Scope of a file URL minted through a Share_Token; the raw token never appears in the URL (Req 18.14)."""
     return "share:" + hmac.new(_secret(secret), share_token.encode(), hashlib.sha256).hexdigest()[:16]
 
 
@@ -52,7 +46,6 @@ def verify_file_signature(attachment_id, exp, sig, now, secret=None, scope=None)
 
 
 def avatar_url(user_id, now, secret=None):
-    """Signed avatar URL; the `avatar` scope is inside the signature, so it never opens an attachment file."""
     exp = int(now.timestamp()) + TTL_SECONDS
     return f"{api_base()}/users/{user_id}/avatar/file?exp={exp}&sig={_mac(user_id, exp, secret, 'avatar')}"
 

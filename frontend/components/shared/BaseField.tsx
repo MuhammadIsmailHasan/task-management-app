@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Input, Textarea } from "@/components/ui/input";
 
-/** Label + control + field errors. The error ids pair with aria-describedby on the control. */
 export function BaseField({ label, htmlFor, errors, children }: { label: string; htmlFor: string; errors?: string[]; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-label">
@@ -26,7 +25,6 @@ export function BaseTextarea(props: ComponentProps<"textarea">) {
   return <Textarea {...props} />;
 }
 
-/** Inline error / notice banner. */
 export function BaseAlert({ children, tone = "error" }: { children: ReactNode; tone?: "error" | "info" }) {
   return (
     <div

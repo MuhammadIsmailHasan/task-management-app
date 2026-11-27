@@ -1,4 +1,3 @@
-"""Avatar upload, signed URLs and removal (Requirement 19, criteria 18 to 27; Property 47)."""
 import io
 import os
 
@@ -34,7 +33,7 @@ def test_avatar_upload_replace_remove_and_signed_file(app, client, make_user, au
     assert client.delete("/api/users/me/avatar").status_code == 401
     assert client.get("/api/auth/me", headers=h).get_json()["data"]["avatar_url"] is None
 
-    first = _up(client, h, PNG, name="../evil.exe", mime="text/plain")  # name and type are ignored
+    first = _up(client, h, PNG, name="../evil.exe", mime="text/plain")
     assert first.status_code == 200 and first.get_json()["message"] == "Avatar updated"
     url = first.get_json()["data"]["avatar_url"]
     assert url.startswith(f"/api/users/{user.id}/avatar/file?exp=")
@@ -51,7 +50,7 @@ def test_avatar_upload_replace_remove_and_signed_file(app, client, make_user, au
 
     second = _up(client, h, JPG, name="x", mime="application/pdf")
     assert second.status_code == 200
-    assert [f.rsplit(".", 1)[1] for f in os.listdir(avatars)] == ["jpg"]  # exactly one file remains
+    assert [f.rsplit(".", 1)[1] for f in os.listdir(avatars)] == ["jpg"]
     assert _up(client, h, WEBP).status_code == 200
 
     gone = client.delete("/api/users/me/avatar", headers=h)
@@ -72,7 +71,7 @@ def test_avatar_rejections(app, client, make_user, auth):
         r = _up(client, h, data, name=name)
         assert r.status_code == 400 and "file" in r.get_json()["error"]["details"], name
     assert _up(client, h, PNG + b"0" * (MAX_AVATAR_BYTES - len(PNG) + 1)).status_code == 400
-    assert _up(client, h, PNG + b"0" * (MAX_AVATAR_BYTES - len(PNG))).status_code == 200  # exactly 2 MiB
+    assert _up(client, h, PNG + b"0" * (MAX_AVATAR_BYTES - len(PNG))).status_code == 200
     assert client.post("/api/users/me/avatar", headers=h, data={}, content_type="multipart/form-data").status_code == 400
     assert client.patch("/api/auth/me", headers=h, json={"full_name": "x", "avatar_url": "https://x.y/z.png"}).status_code == 400
 
@@ -130,7 +129,6 @@ def test_avatar_fields_in_comment_member_candidate_and_card_payloads(client):
     cand = client.get(f"/api/boards/{env.bid}/candidates?search=member", headers=env.h["manager"]).get_json()["data"]
     assert all("avatar_url" in r for r in cand)
 
-    # no avatar and no email in any shared payload; no email in comments, cards or members for a member
     token = client.post(f"/api/boards/{env.bid}/share", headers=env.h["manager"]).get_json()["data"]["token"]
     blob = str([client.get(f"/api/shared/{token}/cards").get_json(), client.get(f"/api/shared/{token}").get_json()])
     assert "avatar" not in blob and "@t.test" not in blob
@@ -172,7 +170,7 @@ def test_property_50_query_count_does_not_depend_on_authors_or_assignees(app, cl
     def count(path):
         statements = []
         engine = db.engine
-        listener = lambda conn, cur, stmt, *a: statements.append(stmt)  # noqa: E731
+        listener = lambda conn, cur, stmt, *a: statements.append(stmt)
         event.listen(engine, "before_cursor_execute", listener)
         try:
             db.session.expire_all()
@@ -189,7 +187,6 @@ def test_property_50_query_count_does_not_depend_on_authors_or_assignees(app, cl
 
 
 def test_the_public_prefix_replaces_api_in_signed_urls_and_old_signatures_still_verify(app, client):
-    """PATH-04: the prefix is not inside the signature."""
     from datetime import datetime, timezone
 
     from app.common.signing import sign_file_url, verify_file_signature
@@ -203,6 +200,6 @@ def test_the_public_prefix_replaces_api_in_signed_urls_and_old_signatures_still_
     finally:
         app.config["API_PUBLIC_PREFIX"] = ""
     assert prefixed.startswith("/app/api/attachments/a1/file?")
-    assert prefixed.split("?", 1)[1] == plain.split("?", 1)[1]  # same exp and signature
+    assert prefixed.split("?", 1)[1] == plain.split("?", 1)[1]
     sig = plain.split("sig=")[1]
     assert verify_file_signature("a1", exp, sig, now)

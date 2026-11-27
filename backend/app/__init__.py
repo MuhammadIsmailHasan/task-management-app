@@ -48,9 +48,9 @@ def _load_config(overrides):
         "JWT_ACCESS_TOKEN_EXPIRES": timedelta(hours=24),
         "FILE_URL_SECRET": env["FILE_URL_SECRET"],
         "APP_TIMEZONE": tz,
-        "UPLOAD_DIR": os.path.abspath(env.get("UPLOAD_DIR") or "uploads"),  # absolute: send_file resolves relative paths against the app folder
+        "UPLOAD_DIR": os.path.abspath(env.get("UPLOAD_DIR") or "uploads"),
         "ALLOWED_ORIGINS": origins,
-        "API_PUBLIC_PREFIX": (env.get("API_PUBLIC_PREFIX") or "").strip().rstrip("/"),  # "" in development, "/app/api" behind nginx (V17, PATH-04)
+        "API_PUBLIC_PREFIX": (env.get("API_PUBLIC_PREFIX") or "").strip().rstrip("/"),
         "APP_ENV": (env.get("APP_ENV") or "production").strip().lower(),
         "RATE_LIMIT_WINDOW_SECONDS": _int(env, "RATE_LIMIT_WINDOW_SECONDS", 900),
         "RATE_LIMIT_LOGIN_PAIR_MAX": _int(env, "RATE_LIMIT_LOGIN_PAIR_MAX", 5),
@@ -66,7 +66,6 @@ def _load_config(overrides):
         "SMTP_PASSWORD": env.get("SMTP_PASSWORD") or "",
         "MAIL_FROM": (env.get("MAIL_FROM") or "").strip(),
     }
-    # smtp is the default in production; development and tests default to the console (ACT-08)
     app_env = (env.get("APP_ENV") or "production").strip().lower()
     config["MAIL_BACKEND"] = (env.get("MAIL_BACKEND") or ("console" if app_env in ("development", "testing") else "smtp")).strip().lower()
     config.update(overrides)
@@ -81,7 +80,6 @@ def create_app(config_overrides=None):
     if not app.config["SQLALCHEMY_DATABASE_URI"]:
         raise RuntimeError("DATABASE_URL is required")
 
-    # One app-wide CORS policy; no cookies are used, so credentials stay off.
     CORS(app, origins=app.config["ALLOWED_ORIGINS"], supports_credentials=False, expose_headers=["Retry-After"])
 
     if app.config["TRUSTED_PROXY_COUNT"] > 0:
@@ -90,7 +88,7 @@ def create_app(config_overrides=None):
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=app.config["TRUSTED_PROXY_COUNT"])
 
     db.init_app(app)
-    from app import models  # noqa: F401  (register models for migrations)
+    from app import models
 
     migrate.init_app(app, db)
     jwt.init_app(app)

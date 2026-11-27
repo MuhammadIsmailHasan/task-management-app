@@ -1,4 +1,3 @@
-"""Unit tests of the Rate_Limiter store and the due-date job, with their sessions faked (no database)."""
 import threading
 from datetime import date, datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -22,8 +21,6 @@ def fixed_clock():
 
 
 class FakeSession:
-    """Answers `_times` with the stored attempt times; records adds, deletes, and commits."""
-
     def __init__(self, times=(), dialect="sqlite"):
         self.times, self.added, self.executed, self.commits, self.rollbacks = list(times), [], [], 0, 0
         self.dialect = dialect
@@ -44,7 +41,7 @@ class FakeSession:
     def rollback(self):
         self.rollbacks += 1
 
-    def remove(self):  # the app context's teardown ends the scoped session
+    def remove(self):
         pass
 
     def __enter__(self):
@@ -107,7 +104,7 @@ def test_availability_counts_every_call_until_blocked(limits):
     limits.short.times = recent(2)
     with pytest.raises(rl.RateLimited):
         rl.hit_availability("1.1.1.1")
-    assert limits.short.rollbacks == 1 and len(limits.short.added) == 1  # a blocked call adds no row
+    assert limits.short.rollbacks == 1 and len(limits.short.added) == 1
 
 
 def test_change_password_bucket(limits):
@@ -136,8 +133,6 @@ def test_count(limits):
     assert rl.count("login_ip") == 3
 
 
-# ---- the due-date job ----------------------------------------------------------------------------------------------
-
 @pytest.fixture
 def job(ctx, session, monkeypatch):
     found = {"due_today": [], "due_tomorrow": []}
@@ -153,7 +148,7 @@ def candidate():
 def test_run_creates_today_and_tomorrow_and_counts_skips(job):
     job.found["due_today"] = [candidate(), candidate()]
     job.found["due_tomorrow"] = [candidate()]
-    assert due.run(NOW) == (1, 1, 1)  # one insert per type, each reporting one new row
+    assert due.run(NOW) == (1, 1, 1)
     job.session.commit.assert_called_once()
     assert due._line((1, 1, 1)) == "due_today=1 due_tomorrow=1 skipped=1" and "skipped" in due._line(None)
     assert due._create([], "due_today", NOW.date()) == 0
@@ -204,4 +199,4 @@ def test_cli_commands(ctx, monkeypatch):
     monkeypatch.setattr(due.signal, "signal", lambda sig, fn: handlers.setdefault(sig, fn))
     monkeypatch.setattr(due, "run_forever", lambda stop: (handlers[due.signal.SIGTERM](), ran.append(stop.is_set())))
     ctx.test_cli_runner().invoke(args=["run-scheduler"])
-    assert ran == [True]  # SIGTERM sets the stop event
+    assert ran == [True]

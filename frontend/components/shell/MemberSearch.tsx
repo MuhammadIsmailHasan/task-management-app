@@ -17,7 +17,6 @@ interface MemberSearchProps {
   onAdded: () => void;
 }
 
-/** Search users who are not on the board yet (GET /boards/{id}/candidates) and add the chosen one. */
 export function MemberSearch({ boardId, onAdded }: MemberSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Candidate[] | null>(null);
@@ -49,7 +48,6 @@ export function MemberSearch({ boardId, onAdded }: MemberSearchProps) {
     setError(null);
     try {
       await api.boards.addMember(boardId, user.id);
-      // the search starts over, so the next person is found from a clean field (MEMP-03)
       setQuery("");
       setResults(null);
       input.current?.focus();

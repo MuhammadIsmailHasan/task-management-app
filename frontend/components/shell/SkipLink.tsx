@@ -1,4 +1,3 @@
-/** First focusable element of every page: jumps past the header and the rail to the main region (SHELL-25). */
 export function SkipLink() {
   return (
     <a

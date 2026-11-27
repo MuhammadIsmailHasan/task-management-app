@@ -1,4 +1,3 @@
-"""Rate_Limiter (Requirement 20): pure policy properties and endpoint behaviour."""
 from datetime import datetime, timedelta, timezone
 
 from hypothesis import given, strategies as st
@@ -23,7 +22,6 @@ def test_property_44_rate_limit_window(ages, limit):
     assert (wait is None) == (len(live) < limit)
     if wait is not None:
         assert wait >= 1
-        # at that moment the pair is free again, one second earlier it is not
         assert blocked_until(times, NOW + timedelta(seconds=wait), WINDOW, limit) is None
         if wait > 1:
             assert blocked_until(times, NOW + timedelta(seconds=wait - 1), WINDOW, limit) is not None
@@ -46,8 +44,8 @@ def test_login_blocks_after_pair_limit_and_a_correct_password_does_not_unblock(m
         body = blocked.get_json()
         retry = body["error"]["details"]["retry_after"]
         assert body["error"]["code"] == "RATE_LIMITED" and retry >= 1 and blocked.headers["Retry-After"] == str(retry)
-        assert _login(client, "other_user", "x" * 8).status_code == 401  # another pair is independent
-        assert _login(client, "not valid", "x").status_code == 400  # 400 counts nothing
+        assert _login(client, "other_user", "x" * 8).status_code == 401
+        assert _login(client, "not valid", "x").status_code == 400
         db.drop_all()
 
 
@@ -58,7 +56,7 @@ def test_success_resets_pair_and_window_expiry_frees_it(make_user, tmp_path):
         client = app.test_client()
         make_user("member", "resetme")
         assert _login(client, "resetme", "wrong-pass").status_code == 401
-        assert _login(client, "resetme", TEST_PASSWORD).status_code == 200  # reset
+        assert _login(client, "resetme", TEST_PASSWORD).status_code == 200
         assert _login(client, "resetme", "wrong-pass").status_code == 401
         assert _login(client, "resetme", "wrong-pass").status_code == 401
         assert _login(client, "resetme", "wrong-pass").status_code == 429
@@ -79,7 +77,7 @@ def test_ip_limit_availability_limit_and_register_never_limited(tmp_path):
         client = app.test_client()
         assert _login(client, "aaa", "x" * 8).status_code == 401
         assert _login(client, "bbb", "x" * 8).status_code == 401
-        assert _login(client, "ccc", "x" * 8).status_code == 429  # same address, new identifier
+        assert _login(client, "ccc", "x" * 8).status_code == 429
         assert client.get("/api/auth/availability?username=abc").status_code == 200
         assert client.get("/api/auth/availability?username=abd").status_code == 200
         third = client.get("/api/auth/availability?username=abe")
@@ -105,7 +103,7 @@ def test_profile_and_change_password(app, client, make_user, auth):
     done = client.post("/api/auth/change-password", headers=h, json={"current_password": TEST_PASSWORD, "new_password": "newpassw0rd"})
     assert done.status_code == 200 and done.get_json()["message"] == "Password changed"
     assert client.post("/api/auth/login", json={"identifier": "prof", "password": "newpassw0rd"}).status_code == 200
-    assert client.get("/api/auth/me", headers=h).status_code == 200  # the issued Token stays valid
+    assert client.get("/api/auth/me", headers=h).status_code == 200
     from app.models import ActivityLog
 
     actions = {a.action for a in ActivityLog.query.all()}

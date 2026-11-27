@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** "done of total" with a bar; the bar width is the share of done Subtasks. */
 export function ProgressMeter({ done, total, label = "Subtasks", className, overdue = false }: { done: number; total: number; label?: string; className?: string; overdue?: boolean }) {
   const percent = total ? Math.round((done / total) * 100) : 0;
   return (

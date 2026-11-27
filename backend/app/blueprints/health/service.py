@@ -12,6 +12,6 @@ def check():
     try:
         repo.ping()
     except SQLAlchemyError as exc:
-        log.warning("Health check failed: %s", type(exc).__name__)  # the message can hold the host and the user
+        log.warning("Health check failed: %s", type(exc).__name__)
         raise ServiceUnavailable("Database unavailable") from exc
     return {"database": "ok"}

@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from "react";
 
-/** FLIP: after every render, animate each [data-flip-id] element from its previous position to its new one. */
 export function useFlip(root: RefObject<HTMLElement | null>) {
   const previous = useRef(new Map<string, DOMRect>());
   useLayoutEffect(() => {

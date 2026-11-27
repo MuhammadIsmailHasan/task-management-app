@@ -17,7 +17,6 @@ interface AvatarUploaderProps {
   onChange: (user: User) => void;
 }
 
-/** Choose, preview, upload, and remove the avatar. Type and size are checked here first; the server checks again by content. */
 export function AvatarUploader({ user, onChange }: AvatarUploaderProps) {
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);

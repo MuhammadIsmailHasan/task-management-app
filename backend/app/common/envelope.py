@@ -1,4 +1,3 @@
-"""Envelope schemas: { status, message, data } for success, { status, message, error } for failure."""
 import marshmallow as ma
 from marshmallow import fields
 
@@ -27,7 +26,6 @@ class NullEnvelopeSchema(ma.Schema):
 
 
 def envelope(data_schema, many=False):
-    """Return (and cache) a schema wrapping data_schema in the success envelope."""
     key = (data_schema, many)
     if key not in _cache:
         base = data_schema.__name__.removesuffix("Schema")

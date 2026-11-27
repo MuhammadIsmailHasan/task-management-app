@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 export const Tabs = TabsPrimitive.Root;
 
-/** shadcn/ui Tabs on Radix: role="tablist", arrow-key navigation, `aria-selected`. The track is the pill track recipe. */
 export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
   return <TabsPrimitive.List data-slot="tabs-list" className={cn("flex w-full gap-1 rounded-ui bg-surface p-1", className)} {...props} />;
 }

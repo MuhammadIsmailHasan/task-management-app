@@ -1,4 +1,3 @@
-"""Unit tests of the comments and invites services: repositories, Board checks, and notifications mocked."""
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -10,8 +9,6 @@ from app.blueprints.invites import service as invites
 from app.common.errors import Conflict, Forbidden, NotFound, ValidationError
 from tests.unit.support import actor, new_id, row
 
-
-# ---- comments ----------------------------------------------------------------------------------------------------
 
 def comment(card_id, **over):
     base = dict(id=new_id(), card_id=card_id, author_id=new_id(), parent_id=None, content="hi", is_priority=False, reply_count=0, created_at=datetime(2026, 1, 1, tzinfo=timezone.utc), replies=[])
@@ -99,8 +96,6 @@ def test_serialize_and_listing(cm):
     one = comments.serialize_one(comment(cm.card.id, created_at=None), "member")
     assert one["created_at"] is None and one["can_create_card"] is False and "replies" not in one
 
-
-# ---- invites -----------------------------------------------------------------------------------------------------
 
 @pytest.fixture
 def inv(stub, session, ctx):

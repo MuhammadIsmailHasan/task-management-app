@@ -8,7 +8,6 @@ import { api } from "@/lib/api";
 import type { User } from "@/lib/types";
 import { routes } from "@/lib/routes";
 
-/** The one user menu: Profile, then Log out (Decision L). The trigger shows the avatar, or a user icon without one. */
 export function UserMenu({ user }: { user: User | null }) {
   return (
     <BaseMenu

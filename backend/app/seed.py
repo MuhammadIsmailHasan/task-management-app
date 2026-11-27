@@ -1,8 +1,3 @@
-"""Dev-only helper: one user per role. Registered as `flask seed-users`.
-
-No credential lives in the code: the password comes from SEED_PASSWORD, or a random
-one is generated and printed once. Refuses to run unless APP_ENV is development or testing.
-"""
 import os
 import secrets
 from datetime import timedelta
@@ -35,7 +30,6 @@ _hasher = PasswordHasher()
 
 
 def _get_or_create(username, role, full_name, password, domain="example.com"):
-    """One seeded user: Email is `<username>@<domain>`; an existing user is looked up by `lower(username)`."""
     user = User.query.filter(db.func.lower(User.username) == username).first()
     if user is None:
         user = User(
@@ -44,7 +38,7 @@ def _get_or_create(username, role, full_name, password, domain="example.com"):
             email=f"{username}@{domain}",
             password_hash=_hasher.hash(password),
             role=role,
-            email_verified_at=datetime.now(timezone.utc),  # seeded accounts are verified (ACT-05)
+            email_verified_at=datetime.now(timezone.utc),
         )
         db.session.add(user)
     return user
@@ -100,7 +94,6 @@ def _log(actor, action, target_type, target_id, meta, when):
 
 
 def seed_demo_data(password, tz="UTC"):
-    """Sample rows for every table. Idempotent: does nothing when the demo board exists."""
     if Board.query.filter_by(name=DEMO_BOARD).first():
         return False
     users = create_users_of_each_role(password)
@@ -116,7 +109,6 @@ def seed_demo_data(password, tz="UTC"):
         description="Redesign the marketing site: new landing page, brand colors, and a faster build.",
     )
     todo, doing, review, revision, done = cols
-    # (title, column, priority, category, assignee, start offset, end offset, description)
     cards = [
         ("Design new landing page", todo, "high", "Design", member, -2, 5, "Hero, pricing and footer sections."),
         ("Set up CI pipeline", doing, "medium", "Development", member2, -5, 0, "Run tests on every pull request."),

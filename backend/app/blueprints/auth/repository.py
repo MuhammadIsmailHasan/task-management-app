@@ -13,7 +13,6 @@ def get_by_email(email):
 
 
 def identities(user_ids):
-    """id -> Identity for these users in one query. Columns only, so the email is never loaded."""
     ids = {i for i in user_ids if i is not None}
     if not ids:
         return {}

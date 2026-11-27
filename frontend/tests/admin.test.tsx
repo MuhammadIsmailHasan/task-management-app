@@ -49,7 +49,7 @@ describe("UsersScreen", () => {
     expect(await screen.findByText("Create user “cyd”?")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() => expect(create).toHaveBeenCalledWith({ full_name: "Cy Day", username: "cyd", email: "cy@x.com", password: "long-enough-pass", role: "member" }));
-    await waitFor(() => expect(refresh).toHaveBeenCalled()); // the page reloads in its sorted place; the Toast says "User created"
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it("maps a 409 onto the username and email fields", async () => {
@@ -75,7 +75,7 @@ describe("UsersScreen", () => {
     await userEvent.type(screen.getByLabelText("Username"), "annlr");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(update).toHaveBeenCalledWith("u1", { full_name: "Ann Lee-Roy", username: "annlr", email: "ann@x.com" }));
-    await waitFor(() => expect(refresh).toHaveBeenCalled()); // the Toast says "User updated"
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it("stages a role change in the row and saves it only after Update and a confirmation (ADM-04)", async () => {

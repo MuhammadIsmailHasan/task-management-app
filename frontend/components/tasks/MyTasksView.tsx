@@ -9,7 +9,6 @@ import type { MyCards, MyTaskGroupKey, Priority } from "@/lib/types";
 const GROUP_LABEL: Record<MyTaskGroupKey, string> = { overdue: "Overdue", today: "Today", tomorrow: "Tomorrow", this_week: "This week", later: "Later", no_due: "No due date" };
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
 
-/** The signed-in user's open Cards in the groups the Backend computed (Requirement 52): the page never groups by the browser date (TASK-05). */
 export function MyTasksView({ data }: { data: MyCards }) {
   if (data.groups.length === 0) {
     return (

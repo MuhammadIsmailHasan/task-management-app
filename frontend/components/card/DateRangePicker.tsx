@@ -11,11 +11,9 @@ interface DateRangePickerProps {
   onChange: (range: Range) => void;
 }
 
-/** One range calendar plus optional Start date and End date fields; the rules are in lib/dates.ts. */
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   const id = useId();
   const [hint, setHint] = useState<string | null>(null);
-  // The checkboxes decide whether a field is in use, so clearing a field while typing never disables it.
   const [useStart, setUseStart] = useState(!!value.start);
   const [useEnd, setUseEnd] = useState(!!value.end);
   const startOn = useStart || !!value.start;

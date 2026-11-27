@@ -1,4 +1,3 @@
-"""The V10 and V12 reset migrations outside development (Decision AN, Property 61)."""
 import importlib.util
 from pathlib import Path
 from unittest.mock import MagicMock

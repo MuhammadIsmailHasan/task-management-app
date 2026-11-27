@@ -15,7 +15,6 @@ export const ANCHORS = [
   { href: "#roles", label: "Roles" },
 ] as const;
 
-/** The sticky landing header; below 960 pixels a menu button opens a drawer with the same anchors and buttons (LAND-03). */
 export function LandingHeader() {
   const [open, setOpen] = useState(false);
   return (
@@ -24,7 +23,6 @@ export function LandingHeader() {
         <Menu aria-hidden="true" />
       </BaseButton>
       <Link href="/" aria-label="RevoBoard home" className="inline-flex min-w-0">
-        {/* the mark alone below 960 pixels, so the logo and the call to action never overlap */}
         <BrandLogo variant="mark" size="sm" decorative className="lg:hidden" />
         <BrandLogo variant="full" size="sm" decorative className="hidden lg:block" />
       </Link>

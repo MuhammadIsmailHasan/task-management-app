@@ -1,4 +1,3 @@
-"""Properties 3, 4, 5 and 51 and the Board_Access matrix (V12: every Board is private)."""
 import pytest
 from hypothesis import given, strategies as st
 
@@ -6,7 +5,7 @@ from helpers import PROP, RELATIONS, STAFF, UUID0, Env
 
 
 def can_access(rel):
-    return rel in {"manager", "admin", "owner", "sup_member", "member"}  # a Guest reads nothing here (V10); no public Boards (V12)
+    return rel in {"manager", "admin", "owner", "sup_member", "member"}
 
 
 def denied(rel):
@@ -22,17 +21,17 @@ def oracle(action, rel):
             return 401
         if not acc:
             return 403
-        if action == "create_column":  # V17: the Board_Owner, a Manager, and an Admin only (COL-01)
+        if action == "create_column":
             return 201 if rel in {"manager", "admin", "owner"} else 403
         return 201 if rel in STAFF else 403
     if action == "comment":
         if not acc:
             return denied(rel)
-        return 201 if rel in {"manager", "owner", "sup_member"} else 403  # V18: staff only; the card has no assignee (PERM-05)
+        return 201 if rel in {"manager", "owner", "sup_member"} else 403
     if action == "analytics":
         if rel == "guest":
             return 401
-        return 200 if rel in ("manager", "admin", "owner") else 403  # V18: an Admin reads analytics (DASH-23)
+        return 200 if rel in ("manager", "admin", "owner") else 403
     if action == "activity":
         if not acc:
             return denied(rel)
@@ -66,7 +65,6 @@ def call(env, action, rel, ids):
 
 
 def test_board_access_matrix_exhaustive(client):
-    """Properties 3, 4, 5 and tasks 4.3, 14.3: every relation x action on public and private boards."""
     for rel in RELATIONS:
         for action in ACTIONS:
             env = Env(client)
@@ -91,15 +89,12 @@ def test_property_4_board_access_function(client, rel, action):
 @given(rel=st.sampled_from(RELATIONS))
 def test_property_5_401_vs_403_vs_404(client, rel):
     env = Env(client)
-    # unknown or malformed ids are 404 for any caller who passes the role gate
-    expected = 401 if rel == "guest" else 404  # a Guest has no Token: 401 comes before any lookup (V10)
+    expected = 401 if rel == "guest" else 404
     for path in (f"/api/boards/{UUID0}", "/api/boards/not-a-uuid"):
         r = client.get(path, headers=env.h[rel])
         assert r.status_code == expected
-    # a soft-deleted board is 404 for everyone, including its owner and managers
     client.delete(f"/api/boards/{env.bid}", headers=env.h["manager"])
     assert client.get(f"/api/boards/{env.bid}", headers=env.h[rel]).status_code == expected
-    # no Token on a protected endpoint is 401, a Token without the role is 403
     assert client.get("/api/notifications").status_code == 401
     assert client.get("/api/users", headers=env.h["manager"]).status_code == 403
     assert client.get("/api/users").status_code == 401
@@ -117,7 +112,6 @@ def test_property_51_board_access_and_list(client, rel):
         assert listing.status_code == 401
         return
     ids = {b["id"] for b in listing.get_json()["data"]}
-    # Manager and Admin see every live Board; everyone else sees only the Boards they own or belong to
     expected = {other["id"], env.bid} if rel in ("manager", "admin") else ({env.bid} if can_access(rel) else set())
     assert ids == expected
     assert all("visibility" not in b for b in listing.get_json()["data"])

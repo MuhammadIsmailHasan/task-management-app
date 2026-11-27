@@ -4,7 +4,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker, type DayPickerProps } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
-/** shadcn/ui Calendar on react-day-picker, themed from the design tokens. */
 export function Calendar({ className, classNames, ...props }: DayPickerProps) {
   return (
     <DayPicker

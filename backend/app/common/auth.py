@@ -5,7 +5,6 @@ from flask_jwt_extended import create_access_token, get_jwt, verify_jwt_in_reque
 
 from app.common.errors import AccountDisabled, Forbidden
 
-# admin is deliberately outside the ladder (separate track).
 ROLE_RANK = {"guest": 0, "member": 1, "supervisor": 2, "manager": 3}
 
 
@@ -20,10 +19,6 @@ def issue_token(user_id, role) -> str:
 
 
 def _require_active(user_id):
-    """A deactivated user's Token stops working at once: `is_active` is read on every authenticated request (ADM-07).
-
-    No revocation list exists; the one cheap query is the whole mechanism.
-    """
     from app.common.ids import to_uuid
     from app.extensions import db
     from app.models import User
@@ -37,7 +32,6 @@ def _require_active(user_id):
 
 
 def current_actor():
-    """Return the Actor from a valid Token, or None for a Guest."""
     verify_jwt_in_request(optional=True)
     claims = get_jwt()
     if not claims:
@@ -47,7 +41,6 @@ def current_actor():
 
 
 def optional_actor():
-    """Like current_actor, but a malformed, expired or otherwise unusable Token reads as a Guest (Req 18.24)."""
     from flask_jwt_extended.exceptions import JWTExtendedException
     from jwt.exceptions import PyJWTError
 
@@ -58,12 +51,10 @@ def optional_actor():
 
 
 def require_role(*roles):
-    """Role comes only from the signed Token claims, never the request body."""
-
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            verify_jwt_in_request()  # missing/invalid -> 401 via jwt callbacks
+            verify_jwt_in_request()
             claims = get_jwt()
             _require_active(claims.get("sub"))
             if claims.get("role") not in roles:

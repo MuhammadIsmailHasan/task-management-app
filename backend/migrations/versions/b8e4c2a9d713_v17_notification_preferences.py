@@ -1,13 +1,3 @@
-"""v17: notification preferences, five new notification types, and the narrowed dedupe index
-
-Revision ID: b8e4c2a9d713
-Revises: a3d8f1b7c629
-Create Date: 2026-11-26 13:00:00
-
-Adds the per-user switches, the five preference types (comment_on_assigned, due_today, due_tomorrow,
-assigned_card_changed, subtask_on_assigned), the nullable `action` column, and narrows the card dedupe index to the
-types that are once-a-day by nature, so a second comment or move on the same day is never refused (NPF-06).
-"""
 import sqlalchemy as sa
 from alembic import op
 

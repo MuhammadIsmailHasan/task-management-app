@@ -12,7 +12,6 @@ import type { Member } from "@/lib/types";
 import { MemberSearch } from "./MemberSearch";
 import { useShell } from "./ShellContext";
 
-/** The members of the open Board in the Side_Panel: owner first, role tags, add and remove for those who may (SHELL-19, SHELL-20). */
 export function MembersView() {
   const { boardId, boards, session } = useShell();
   const [members, setMembers] = useState<Member[]>([]);
@@ -39,7 +38,6 @@ export function MembersView() {
   return (
     <div className="flex flex-col gap-section">
       {canAdd && (
-        // --space-4 between the panel header and the search field (FIX-06)
         <div data-testid="member-search-wrap" className="pt-4">
           <MemberSearch boardId={boardId} onAdded={() => setVersion((v) => v + 1)} />
         </div>

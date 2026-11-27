@@ -11,7 +11,6 @@ export const PopoverClose = PopoverPrimitive.Close;
 const SIDE_OFFSET = 8;
 const COLLISION_PADDING = 8;
 
-/** shadcn/ui Popover on Radix: anchored, Escape and outside click close it, focus returns to the trigger. */
 export function PopoverContent({ className, align = "start", sideOffset = SIDE_OFFSET, style, ...props }: ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
     <PopoverPrimitive.Portal>

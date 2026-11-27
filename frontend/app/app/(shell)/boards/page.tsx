@@ -7,7 +7,6 @@ import { decodeToken } from "@/lib/session";
 import { serverGet, serverToken } from "@/lib/server";
 import type { Analytics, Board, Member } from "@/lib/types";
 
-/** Totals for the analytics strip: a Manager sees every board, a Supervisor only the boards they own; others get none. */
 async function analyticsFor(boards: Board[]): Promise<Analytics[] | null> {
   const token = await serverToken();
   const claims = token ? decodeToken(token) : null;
@@ -25,7 +24,6 @@ async function analyticsFor(boards: Board[]): Promise<Analytics[] | null> {
 
 export const metadata = { title: "Home" };
 
-/** Home: every board the viewer may see as a tile, and an analytics strip for Supervisors and Managers. */
 export default async function BoardsHome({ searchParams }: { searchParams: Promise<{ q?: string; sort?: string; order?: string }> }) {
   const sp = await searchParams;
   const q = (sp.q ?? "").slice(0, 100);

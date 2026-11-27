@@ -3,8 +3,6 @@ from app.models.base import uuid_pk
 
 
 class RateLimitAttempt(db.Model):
-    """One counted attempt. Rows are only inserted and deleted, so there is no updated_at (like ActivityLog)."""
-
     __tablename__ = "rate_limit_attempts"
 
     id = uuid_pk()

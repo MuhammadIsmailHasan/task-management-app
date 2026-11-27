@@ -1,9 +1,4 @@
-"""The due-date scheduler (Requirement 58, DUE-05, DUE-06): the same loop, now every 15 minutes."""
-
-
 class Stop:
-    """An Event that stops after `rounds` waits."""
-
     def __init__(self, rounds):
         self.rounds, self.waits = rounds, []
 

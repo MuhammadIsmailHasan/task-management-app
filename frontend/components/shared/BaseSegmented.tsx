@@ -13,11 +13,9 @@ interface BaseSegmentedProps<T extends string> {
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
-  /** The accessible name of the group. */
   label: string;
 }
 
-/** A two or three option switch on the pill track recipe: `role="radiogroup"`, arrow keys move and select, one tab stop. */
 export function BaseSegmented<T extends string>({ options, value, onChange, label }: BaseSegmentedProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 

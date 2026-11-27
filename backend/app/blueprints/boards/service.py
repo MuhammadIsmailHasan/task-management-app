@@ -28,7 +28,7 @@ def is_board_member(actor, board):
 def can_access(actor, board):
     if board is None or board.deleted_at is not None:
         return False
-    if actor is None:  # a Guest sees nothing here; shared links use /api/shared (V10, Decision K)
+    if actor is None:
         return False
     return actor.role in PRIVILEGED or is_owner(actor, board) or is_board_member(actor, board)
 
@@ -64,7 +64,6 @@ def load_board(actor, board_id):
 
 
 def board_detail_by_slug(actor, slug):
-    """Same 401/403/404 rules as board_detail; a value that cannot be a slug is a plain 404 (SLUG-06)."""
     if actor is None:
         raise Unauthorized("Authentication required")
     board = repo.get_by_slug(slug) if is_valid_slug(slug) else None
@@ -75,7 +74,6 @@ def board_detail_by_slug(actor, slug):
 
 
 def board_detail(actor, board_id):
-    """Board with columns loaded; same 404/401/403 rules as load_board."""
     bid = to_uuid(board_id)
     board = repo.get_detail(bid) if bid else None
     return require_access(actor, board)
@@ -120,7 +118,7 @@ def update_board(actor, board_id, data):
             raise Forbidden("Not allowed to rename the board")
     if "name" in data:
         board.name = clean_name(data["name"])
-        board.slug = unique_slug(db.session.connection(), board.name, exclude_id=board.id)  # a rename moves the slug; the old one is not kept (OQ46)
+        board.slug = unique_slug(db.session.connection(), board.name, exclude_id=board.id)
         activity.add(to_uuid(actor.id), "board.updated", "board", board.id, {"name": board.name})
     if "description" in data:
         board.description = clean_description(data["description"])
@@ -130,7 +128,6 @@ def update_board(actor, board_id, data):
 
 
 def _unassign_cards(actor, board, user_id):
-    """Clear the assignee on every live Card of the Board assigned to this user; one card.unassigned row each, no Notification."""
     for card in repo.assigned_cards(board.id, user_id):
         card.assignee_id = None
         activity.add(to_uuid(actor.id), "card.unassigned", "card", card.id, {"card_title": card.title, "board_id": str(board.id)})
@@ -169,7 +166,6 @@ def soft_delete(actor, board_id):
 
 
 def list_boards(actor, q=None, sort="updated_at", order="desc"):
-    """Visible boards and their counts (a fixed number of queries)."""
     boards = repo.list_visible(actor, (q or "").strip() or None, sort, order)
     counts = repo.counts_for([b.id for b in boards], clock.today(current_app.config["APP_TIMEZONE"]))
     return boards, counts
@@ -204,7 +200,7 @@ def add_member(actor, board_id, data):
         raise ValidationError(
             "Only Member and Supervisor accounts can be added", details={"user_id": ["Managers and Admins already see every board"]}
         )
-    if not (user.is_active and user.is_available):  # the picker never offers them, and a direct add is refused (ADM-08)
+    if not (user.is_active and user.is_available):
         raise ValidationError("This person is not available to be added", details={"user_id": ["The user is inactive or unavailable"]})
     if repo.get_member(board.id, user.id):
         from app.common.errors import Conflict
@@ -216,7 +212,6 @@ def add_member(actor, board_id, data):
 
 
 def add_member_row(actor, board, user, via=None):
-    """The shared part of add and approve: the row, the Activity_Log row, and the board_added Notification."""
     if repo.get_member(board.id, user.id) is None:
         repo.add_member(board.id, user.id)
         meta = {"user_id": str(user.id)}
@@ -238,8 +233,6 @@ def remove_member(actor, board_id, user_id):
     activity.add(to_uuid(actor.id), "board.member_removed", "board", board.id, {"user_id": str(uid)})
     db.session.commit()
 
-
-# ---- share links (V10, Decision K) -------------------------------------------------------------------
 
 def _share_manager(actor, board_id):
     board = load_board(actor, board_id)

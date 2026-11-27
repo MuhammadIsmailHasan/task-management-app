@@ -140,7 +140,7 @@ describe("Team view members (Requirement 22, V16 SHELL-19, SHELL-20)", () => {
     const owner = renderSidebar(shell("supervisor", "own"));
     await screen.findByText("Olive Owner");
     expect(screen.queryByRole("searchbox", { name: "Search people" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove Mia Member" })).toBeInTheDocument(); // the owner may still remove
+    expect(screen.getByRole("button", { name: "Remove Mia Member" })).toBeInTheDocument();
     owner.unmount();
   });
 });
@@ -303,7 +303,7 @@ describe("Comment deletion (Requirement 26)", () => {
 
 describe("Property 58: auto-save sends only what changed", () => {
   const draftArb = fc.record({
-    title: fc.string({ minLength: 1, maxLength: 12 }).map((t) => t.trim() || "x"), // the server stores titles trimmed
+    title: fc.string({ minLength: 1, maxLength: 12 }).map((t) => t.trim() || "x"),
     description: fc.string({ maxLength: 12 }),
     priority: fc.constantFrom("high", "medium", "low"),
     start_date: fc.constantFrom("", "2026-01-01", "2026-02-01"),

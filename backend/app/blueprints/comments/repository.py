@@ -22,13 +22,8 @@ def add(card_id, author_id, content, parent_id=None):
 
 
 def list_for_card(card_id, sort="latest", limit=None, offset=0):
-    """Top-level comments with replies loaded, plus author roles: 3 queries whatever the row count.
-
-    Returns (comments, roles) where roles maps author id to role for comments and replies.
-    """
     order = [Comment.is_priority.desc()]
     if sort == "popular":
-        # priority comments stay newest first: reply_count only ranks the non-priority rest
         rank = db.case((Comment.is_priority.is_(True), 0), else_=Comment.reply_count)
         order += [rank.desc(), Comment.created_at.desc(), Comment.id.desc()]
     else:
@@ -56,12 +51,11 @@ def count_top_level(card_id):
 
 
 def author_identities(comments):
-    """Name and avatar path of the authors of these comments and their replies: one query whatever the row count."""
     from app.blueprints.auth import repository as users
 
     ids = {c.author_id for c in comments}
     for c in comments:
-        if "replies" in c.__dict__:  # replies are loaded explicitly by list_for_card; never lazy-load here
+        if "replies" in c.__dict__:
             ids |= {r.author_id for r in c.replies}
     return users.identities(ids)
 
@@ -71,7 +65,6 @@ def reply_ids(parent_id):
 
 
 def delete_replies(parent_id):
-    """Replies go first so the foreign key on parent_id never blocks the parent (decision: explicit delete, no ON DELETE CASCADE)."""
     return db.session.execute(db.delete(Comment).where(Comment.parent_id == parent_id)).rowcount
 
 

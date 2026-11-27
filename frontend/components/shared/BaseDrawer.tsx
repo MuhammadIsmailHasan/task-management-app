@@ -7,12 +7,10 @@ import type { ReactNode } from "react";
 interface BaseDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** The drawer's accessible name. */
   title: string;
   children: ReactNode;
 }
 
-/** An off-canvas panel from the left behind a scrim: focus trap, Escape, and focus return come from the Radix Dialog. */
 export function BaseDrawer({ open, onClose, title, children }: BaseDrawerProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(next) => !next && onClose()}>

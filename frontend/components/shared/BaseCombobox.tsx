@@ -10,30 +10,23 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@
 export interface ComboOption {
   value: string;
   label: string;
-  /** Extra text matched by the search (a login, for example). */
   keywords?: string[];
-  /** Custom content of the option row; defaults to the label. */
   render?: ReactNode;
 }
 
-/** Lists of this many options or more get a search field. */
 export const SEARCH_FROM = 6;
 
 interface BaseComboboxProps {
   options: ComboOption[];
   value: string;
   onChange: (value: string) => void;
-  /** Accessible name of the control. */
   label: string;
   placeholder?: string;
-  /** Force the search field on or off; by default it shows from SEARCH_FROM options. */
   searchable?: boolean;
   wide?: boolean;
-  /** Replace the default select-like trigger (the element must be a single button). */
   trigger?: ReactElement;
 }
 
-/** The only select in the app: a button that opens a popover with a keyboard-navigable list and, for long lists, a search field. */
 export function BaseCombobox({ options, value, onChange, label, placeholder = "Select…", searchable, wide, trigger }: BaseComboboxProps) {
   const [open, setOpen] = useState(false);
   const showSearch = searchable ?? options.length >= SEARCH_FROM;

@@ -37,7 +37,7 @@ def test_docs_hidden_otherwise(make_app, env):
 
 def test_unset_app_env_defaults_to_production(monkeypatch):
     monkeypatch.delenv("APP_ENV", raising=False)
-    monkeypatch.setenv("MAIL_BACKEND", "console")  # production needs SMTP settings unless the console is chosen on purpose
+    monkeypatch.setenv("MAIL_BACKEND", "console")
     from app import create_app
 
     app = create_app({"TESTING": True})
@@ -65,7 +65,6 @@ def test_committed_openapi_json_is_current(app):
 
     committed = pathlib.Path(__file__).resolve().parents[1] / "openapi.json"
     assert committed.exists(), "run: flask export-openapi"
-    # Python 3.13 renamed the HTTP 422 phrase, so the same app yields two spellings; compare one spelling.
     def canon(text):
         return json.loads(text.replace("UNPROCESSABLE_CONTENT", "UNPROCESSABLE_ENTITY").replace("Unprocessable Content", "Unprocessable Entity"))
 

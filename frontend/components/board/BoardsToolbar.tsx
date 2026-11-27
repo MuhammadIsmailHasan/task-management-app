@@ -15,7 +15,6 @@ export const BOARD_SORTS = [
   { value: "created_at:asc", label: "Oldest" },
 ];
 
-/** The search and sort of the Boards page; both live in the query string (`?q=&sort=&order=`), and the page reads them on the server (BRDL-01, BRDL-03). */
 export function BoardsToolbar({ q, sort, order }: { q: string; sort: string; order: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,12 +34,10 @@ export function BoardsToolbar({ q, sort, order }: { q: string; sort: string; ord
     try {
       window.sessionStorage.setItem(BOARDS_QUERY_KEY, query);
     } catch {
-      /* the arrow then returns to the bare Boards page */
     }
     router.replace(`${pathname}${query}`);
   }
 
-  // search as the user types, after a pause
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -48,7 +45,6 @@ export function BoardsToolbar({ q, sort, order }: { q: string; sort: string; ord
     }
     const id = setTimeout(() => go({ q: text, sort: value }), 250);
     return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   return (

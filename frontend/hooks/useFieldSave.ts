@@ -12,15 +12,10 @@ const SAVED_MS = 2000;
 
 interface Options {
   cardId: string;
-  /** Apply a response to the displayed Card (merge only the sent fields). */
   onMerged: (update: (card: Card) => Card) => void;
   onSaved?: (saved: Card, sent: string[]) => void;
 }
 
-/**
- * Per-field Auto_Save (Requirement 25): each call sends one PATCH with only that field, tracks Saving, Saved for
- * two seconds, or an error with a Retry, and lets the modal wait for every request still in flight.
- */
 export function useFieldSave({ cardId, onMerged, onSaved }: Options) {
   const [status, setStatus] = useState<Partial<Record<FieldKey, FieldState>>>({});
   const inFlight = useRef(new Set<Promise<unknown>>());
@@ -64,7 +59,6 @@ export function useFieldSave({ cardId, onMerged, onSaved }: Options) {
     [save],
   );
 
-  /** Resolves when no request is in flight. */
   const whenIdle = useCallback(async () => {
     while (inFlight.current.size) await Promise.allSettled([...inFlight.current]);
   }, []);

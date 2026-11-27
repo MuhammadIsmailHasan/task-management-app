@@ -22,15 +22,10 @@ interface CommentThreadProps {
   onReply: (commentId: string, content: string) => Promise<void>;
   onTogglePriority: (commentId: string) => Promise<void>;
   onCreateCard?: (comment: Comment) => Promise<void>;
-  /** The viewer's id: only their own Comments get a Delete action (Requirement 26). */
   viewerId?: string | null;
   onDelete?: (comment: Comment) => Promise<void>;
 }
 
-/**
- * Priority comments come first (the server orders them), then the rest under a Latest/Popular toggle.
- * Reply shows only on top-level comments; there is no like button; Create card follows `can_create_card`.
- */
 export function CommentThread({ comments, sort, names = {}, canReply, canPrioritize, onSortChange, onReply, onTogglePriority, onCreateCard, viewerId, onDelete }: CommentThreadProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

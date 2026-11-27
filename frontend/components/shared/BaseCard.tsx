@@ -4,14 +4,11 @@ import { cn } from "@/lib/utils";
 interface BaseCardProps {
   title: string;
   children: ReactNode;
-  /** Controls beside the title (a toggle, an Edit button). */
   action?: ReactNode;
   className?: string;
-  /** A section inside a modal: a border line and `--pad-item` padding, no shadow. */
   plain?: boolean;
 }
 
-/** A titled section: a heading row on top, content below; `plain` is the lighter bordered frame used inside a modal. */
 export function BaseCard({ title, children, action, className, plain = false }: BaseCardProps) {
   const id = `card-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (

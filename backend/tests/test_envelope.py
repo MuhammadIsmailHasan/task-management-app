@@ -56,7 +56,6 @@ def test_validation_is_400_never_422(client, make_user, auth):
     manager = make_user("manager")
     r = client.post("/api/boards", headers=auth(manager), json={"name": "B", "visibility": "public"})
     assert r.status_code == 400 and "visibility" in check_envelope(r)["error"]["details"]
-    # malformed JSON and bad query value
     r = client.post("/api/auth/login", data="{not json", content_type="application/json")
     assert r.status_code == 400
     check_envelope(r)
@@ -106,7 +105,6 @@ def test_file_route_error_is_enveloped(client):
 
 
 def test_every_route_returns_envelope(app, client, make_user):
-    """Property 36 sweep: every /api route, with and without a Token, with an empty JSON body."""
     admin = make_user("admin")
     headers = {"Authorization": f"Bearer {issue_token(admin.id, admin.role)}"}
     for rule in api_rules(app):
