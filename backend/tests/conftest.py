@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 import secrets
 
 import pytest
+from sqlalchemy import UUID
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.compiler import compiles
 
 TEST_PASSWORD = secrets.token_urlsafe(12)
 
@@ -15,6 +18,12 @@ os.environ["APP_ENV"] = "testing"
 
 from app import create_app
 from app.extensions import db
+
+
+@compiles(UUID, "sqlite")
+@compiles(postgresql.UUID, "sqlite")
+def sqlite_uuid_as_text(type_, compiler, **kw):
+    return "CHAR(32)"
 
 
 @pytest.fixture
