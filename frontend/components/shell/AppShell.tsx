@@ -35,6 +35,12 @@ export function AppShell({ boards, children }: { boards: Board[]; children: Reac
     setUser(getStoredUser());
   }, [pathname]);
 
+  // A Board just created or renamed is not in the list this layout loaded: reload the layout once, after the navigation
+  // has landed (a refresh right after a push can refresh the page being left instead).
+  useEffect(() => {
+    if (slug && !current) router.refresh();
+  }, [slug, current, router]);
+
   const refreshInbox = useCallback(async () => {
     if (!getSession()) return;
     try {

@@ -159,7 +159,6 @@
   --spacing-sidebar: var(--sidebar-w);
   --spacing-sidebar-collapsed: var(--sidebar-w-collapsed);
   --spacing-progress-track: var(--size-progress-track);
-  --spacing-progress-meter: var(--size-progress-meter);
   --spacing-search: var(--size-search);
   --spacing-popover: var(--popover-w);
   --spacing-popover-wide: var(--popover-w-wide);
@@ -184,6 +183,7 @@
   --spacing-dot: var(--size-dot);
   --spacing-dot-md: var(--size-dot-md);
   --spacing-icon-sm: var(--size-icon-sm);
+  --spacing-checkbox: var(--size-checkbox);
   --spacing-icon-flag: var(--size-icon-flag);
   --spacing-accent-bar: var(--size-accent-bar);
   --spacing-progress: var(--size-progress);

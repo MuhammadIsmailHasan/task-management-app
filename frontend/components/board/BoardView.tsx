@@ -231,6 +231,7 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
         onSearch={setSearch}
         onCategory={setCategoryId}
         archivedCount={archivedCount}
+        canEdit={canManageColumns}
       />
       {notice && (
         <div className="shrink-0 px-4 pt-4 lg:px-8">

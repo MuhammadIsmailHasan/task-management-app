@@ -34,7 +34,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-field">
       <BaseCalendar
         start={value.start}
         end={value.end}
@@ -44,7 +44,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
           onChange(normalizeRange(value.start, value.end, day));
         }}
       />
-      <div className="grid grid-cols-date-row items-center gap-x-3 gap-y-3">
+      <div className="grid grid-cols-date-row items-center gap-label">
         <BaseCheckbox
           aria-label="Use a start date"
           checked={startOn}
@@ -79,7 +79,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
           onChange={setEnd}
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label empty:hidden">
         {!valid && (
           <p id={`${id}-error`} role="alert" className="text-xs text-danger">
             The end date cannot be before the start date.

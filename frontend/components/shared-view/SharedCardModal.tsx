@@ -3,6 +3,7 @@
 import { Calendar, Flag } from "lucide-react";
 import { useState } from "react";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
+import { BaseCard } from "@/components/shared/BaseCard";
 import { BaseCheckbox } from "@/components/shared/BaseCheckbox";
 import { BaseAlert } from "@/components/shared/BaseField";
 import { RichText } from "@/components/shared/RichText";
@@ -65,8 +66,7 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
             {card.assignee_name && <span className="text-sm text-ink-muted">Assigned to {card.assignee_name}</span>}
           </div>
           <RichText html={card.description} />
-          <section aria-label="Subtasks" className="flex flex-col gap-2">
-            <h3 className="font-heading text-base font-semibold">Subtasks</h3>
+          <BaseCard plain title="Subtasks">
             {card.subtasks.length === 0 && <p className="text-sm text-ink-muted">No subtasks.</p>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {card.subtasks.map((s) => (
@@ -76,9 +76,8 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
                 </li>
               ))}
             </ul>
-          </section>
-          <section aria-label="Attachments" className="flex flex-col gap-2">
-            <h3 className="font-heading text-base font-semibold">Attachments</h3>
+          </BaseCard>
+          <BaseCard plain title="Attachments">
             {card.attachments.length === 0 && <p className="text-sm text-ink-muted">No attachments.</p>}
             {error && <BaseAlert>{error}</BaseAlert>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -90,7 +89,7 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
                 </li>
               ))}
             </ul>
-          </section>
+          </BaseCard>
         </div>
       )}
     </BaseModal>
