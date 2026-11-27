@@ -1,0 +1,13 @@
+# Unit coverage (pytest-cov): the logic layer that tests/unit covers. Routes, schemas, repositories, and models are
+# HTTP and database adapters, checked by the integration tests in tests/.
+[run]
+include =
+    app/blueprints/*/service.py
+    app/blueprints/*/dto.py
+    app/common/*
+    app/jobs/*
+
+[report]
+fail_under = 90
+show_missing = true
+skip_covered = false

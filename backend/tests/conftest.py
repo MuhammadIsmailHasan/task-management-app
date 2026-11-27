@@ -37,25 +37,6 @@ def client(app):
     return app.test_client()
 
 
-class FakeRepository:
-    """Base for in-memory fake repositories used by service unit tests."""
-
-    def __init__(self):
-        self.rows = {}
-
-    def add(self, row):
-        self.rows[row.id] = row
-        return row
-
-    def get_by_id(self, id_):
-        return self.rows.get(id_)
-
-
-@pytest.fixture
-def fake_repository():
-    return FakeRepository
-
-
 @pytest.fixture
 def make_user(app):
     from argon2 import PasswordHasher

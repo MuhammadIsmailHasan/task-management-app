@@ -9,6 +9,8 @@ node_modules/
 uploads/
 .pytest_cache/
 .hypothesis/
+.coverage
+htmlcov/
 .claude/
 .mcp.json
 .DS_Store

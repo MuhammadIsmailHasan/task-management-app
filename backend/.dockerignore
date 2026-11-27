@@ -6,3 +6,6 @@
 **/*.pyc
 uploads
 tests
+.coverage
+.coveragerc
+htmlcov
