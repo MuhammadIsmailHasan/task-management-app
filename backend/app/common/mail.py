@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from email.message import EmailMessage
+from html import escape
 
 from flask import current_app
 
@@ -14,6 +15,24 @@ log = logging.getLogger("revoboard.mail")
 RETRY_AFTER_SECONDS = 5
 SMTP_VARS = ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "MAIL_FROM")
 URL_SCHEMES = ("http://", "https://")
+
+BRAND = "#002954"
+ON_BRAND = "#ffffff"
+SURFACE = "#f3f2ff"
+SURFACE_RAISED = "#ffffff"
+INK = "#0f193c"
+INK_MUTED = "#43474f"
+BORDER = "#ebedff"
+RADIUS = "12px"
+FONT = "'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif"
+TEXT_SM = "14px"
+TEXT_BASE = "15px"
+TEXT_XL = "24px"
+CARD_WIDTH = "480px"
+SPACE_SM = "12px"
+SPACE_MD = "16px"
+SPACE_LG = "24px"
+LINE_HEIGHT = "1.6"
 
 outbox = []
 _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="mail")
@@ -89,23 +108,51 @@ def check_config(config):
             raise RuntimeError("MAIL_BACKEND=smtp needs PUBLIC_BASE_URL to start with http:// or https://")
 
 
-def _html(body):
-    return f"<p>{body}</p><p>RevoBoard</p>"
+def _paragraph(content, color=INK, size=TEXT_BASE):
+    return f'<p style="margin:0 0 {SPACE_MD};color:{color};font-size:{size};line-height:{LINE_HEIGHT}">{content}</p>'
+
+
+def _button(label, url):
+    return f'<p style="margin:{SPACE_LG} 0"><a href="{escape(url)}" style="display:inline-block;background:{BRAND};color:{ON_BRAND};font-size:{TEXT_BASE};font-weight:600;text-decoration:none;padding:{SPACE_SM} {SPACE_LG};border-radius:{RADIUS}">{escape(label)}</a></p>'
+
+
+def _html(title, name, intro, note, action_url=None):
+    parts = [
+        f'<h1 style="margin:0 0 {SPACE_MD};color:{INK};font-size:{TEXT_XL}">{escape(title)}</h1>',
+        _paragraph(f"Hello {escape(name)},"),
+        _paragraph(escape(intro)),
+    ]
+    if action_url:
+        parts.append(_button("Confirm email", action_url))
+        link_html = f'<a href="{escape(action_url)}" style="color:{BRAND};word-break:break-all">{escape(action_url)}</a>'
+        parts.append(_paragraph(f"If the button does not work, open this link:<br>{link_html}", INK_MUTED, TEXT_SM))
+    parts.append(f'<p style="margin:0;border-top:1px solid {BORDER};padding-top:{SPACE_MD};color:{INK_MUTED};font-size:{TEXT_SM};line-height:{LINE_HEIGHT}">{escape(note)}</p>')
+    return (
+        f'<!doctype html><html lang="en"><body style="margin:0;padding:0;background:{SURFACE};font-family:{FONT}">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{SURFACE}"><tr><td align="center" style="padding:{SPACE_LG} {SPACE_MD}">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:{CARD_WIDTH};background:{SURFACE_RAISED};border:1px solid {BORDER};border-radius:{RADIUS};overflow:hidden;text-align:left">'
+        f'<tr><td style="background:{BRAND};color:{ON_BRAND};padding:{SPACE_MD} {SPACE_LG};font-size:{TEXT_BASE};font-weight:700">RevoBoard</td></tr>'
+        f'<tr><td style="padding:{SPACE_LG}">{"".join(parts)}</td></tr>'
+        "</table></td></tr></table></body></html>"
+    )
 
 
 def verification_email(user, token):
     url = link(f"/app/verify?token={token}")
     text = f"Hello {user.full_name},\n\nConfirm your email address to start using RevoBoard:\n{url}\n\nThe link works once and expires in 24 hours. If you did not register, ignore this message.\n\nRevoBoard"
-    return Message(to=user.email, subject="Confirm your RevoBoard email", text=text, html=_html(f'Confirm your email address to start using RevoBoard: <a href="{url}">Confirm email</a>. The link works once and expires in 24 hours.'), user_id=str(user.id), purpose="verify_email")
+    html = _html("Confirm your email", user.full_name, "Confirm your email address to start using RevoBoard.", "The link works once and expires in 24 hours. If you did not register, ignore this message.", url)
+    return Message(to=user.email, subject="Confirm your RevoBoard email", text=text, html=html, user_id=str(user.id), purpose="verify_email")
 
 
 def change_email_email(user, token):
     url = link(f"/app/verify?token={token}")
     text = f"Hello {user.full_name},\n\nConfirm this new email address for your RevoBoard account:\n{url}\n\nThe link works once and expires in 24 hours. Until then your old address stays in use. If you did not ask for this, ignore this message.\n\nRevoBoard"
-    return Message(to=user.pending_email, subject="Confirm your new RevoBoard email", text=text, html=_html(f'Confirm this new email address: <a href="{url}">Confirm email</a>. The link works once and expires in 24 hours.'), user_id=str(user.id), purpose="change_email")
+    html = _html("Confirm your new email", user.full_name, "Confirm this new email address for your RevoBoard account.", "The link works once and expires in 24 hours. Until then your old address stays in use. If you did not ask for this, ignore this message.", url)
+    return Message(to=user.pending_email, subject="Confirm your new RevoBoard email", text=text, html=html, user_id=str(user.id), purpose="change_email")
 
 
 def password_changed_email(user, when):
     stamp = when.strftime("%Y-%m-%d %H:%M UTC")
     text = f"Hello {user.full_name},\n\nYour RevoBoard password was changed on {stamp}. If this was not you, contact an administrator.\n\nRevoBoard"
-    return Message(to=user.email, subject="Your RevoBoard password was changed", text=text, html=_html(f"Your password was changed on {stamp}. If this was not you, contact an administrator."), user_id=str(user.id), purpose="password_changed")
+    html = _html("Your password was changed", user.full_name, f"Your RevoBoard password was changed on {stamp}.", "If this was not you, contact an administrator.")
+    return Message(to=user.email, subject="Your RevoBoard password was changed", text=text, html=html, user_id=str(user.id), purpose="password_changed")

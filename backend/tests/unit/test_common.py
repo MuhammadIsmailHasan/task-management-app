@@ -198,7 +198,16 @@ def test_messages_carry_the_link_and_never_a_password(ctx):
     change = mail.change_email_email(person(), "tok")
     assert change.to == "b@x.co" and change.purpose == "change_email"
     changed = mail.password_changed_email(person(), NOW)
-    assert "2026-11-27 09:00 UTC" in changed.text and changed.html.endswith("<p>RevoBoard</p>")
+    assert "2026-11-27 09:00 UTC" in changed.text and "2026-11-27 09:00 UTC" in changed.html and "<a " not in changed.html
+    assert 'href="https://revo.example/app/verify?token=tok"' in verify.html and "Confirm email" in change.html
+
+
+def test_html_escapes_the_user_name(ctx):
+    ctx.config["PUBLIC_BASE_URL"] = "https://revo.example"
+    user = person()
+    user.full_name = '<a href="https://evil.example">Ann</a>'
+    html = mail.verification_email(user, "tok").html
+    assert "<a href=\"https://evil.example" not in html and "&lt;a href=" in html
 
 
 @pytest.mark.parametrize("base", ["", "revo.example"])
