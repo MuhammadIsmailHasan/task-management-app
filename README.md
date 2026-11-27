@@ -2,6 +2,9 @@
 
 Kanban task management for teams: boards, columns, cards with subtasks and attachments, comments, roles, private boards with invite and public links, a dashboard, and notifications.
 
+**Website:** [revoboard.belajardeploy.my.id](https://revoboard.belajardeploy.my.id)  
+**Release:** v1
+
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4, shadcn/ui on Radix, TinyMCE (self-hosted) for rich text.
 - **Backend:** Flask 3 with flask-smorest, SQLAlchemy and Alembic, PostgreSQL, JWT auth, Argon2 password hashing.
 - **One origin:** the landing page is `/`, the app is `/app/...`, and the API is `/app/api/...` (nginx maps it to Flask `/api/...`).
@@ -20,6 +23,44 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 | My Tasks | Your assigned cards grouped by due date |
 | Notifications | Inbox with All and Unread; assignment, comments, changes, subtasks, and due-today and due-tomorrow reminders every 15 minutes |
 | Admin | Users table with role, active, and available switches, paged |
+
+## Screenshots
+
+### Landing page
+
+![Landing page](docs/screenshots/landing.png)
+
+### Sign in
+
+![Sign in](docs/screenshots/login.png)
+
+### Board
+
+![Board](docs/screenshots/board.png)
+
+### Add a card
+
+![Add a card](docs/screenshots/add-card.png)
+
+### Card modal
+
+![Card modal](docs/screenshots/card-modal.png)
+
+### Public board (read only)
+
+![Public board (read only)](docs/screenshots/public-board.png)
+
+### List view
+
+![List view](docs/screenshots/list.png)
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### User management
+
+![User management](docs/screenshots/users.png)
 
 ## Repository layout
 
