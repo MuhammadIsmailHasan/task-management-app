@@ -2,3 +2,6 @@
 next-env.d.ts
 # self-hosted TinyMCE, copied from node_modules by scripts/copy-tinymce.mjs
 /public/tinymce
+# Playwright
+/test-results
+/playwright-report
