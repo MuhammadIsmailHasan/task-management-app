@@ -24,6 +24,19 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 | Notifications | Inbox with All and Unread; assignment, comments, changes, subtasks, and due-today and due-tomorrow reminders every 15 minutes |
 | Admin | Users table with role, active, and available switches, paged |
 
+## Email confirmation
+
+1. After registration, the app shows **Check your email** and sends a confirmation link. Sign-in is refused until the address is confirmed.
+2. The link works once and expires in 24 hours. It opens `/app/verify` and confirms the address.
+3. **Resend email** sends a new link. It is rate limited: by default 3 requests per address in 15 minutes (`RATE_LIMIT_RESEND_VERIFICATION_MAX`, `RATE_LIMIT_WINDOW_SECONDS`).
+4. A change of email address is confirmed the same way. The old address stays in use until then.
+
+| Setting | Value |
+|---|---|
+| `PUBLIC_BASE_URL` | The public origin that starts every link in a mail, for example `https://revoboard.belajardeploy.web.id`. Required with `smtp` |
+| `MAIL_BACKEND` | `smtp` sends real mail; `console` only writes it to the backend log |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Required with `smtp` |
+
 ## Screenshots
 
 ### Landing page
@@ -33,6 +46,18 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 ### Sign in
 
 ![Sign in](docs/screenshots/login.png)
+
+### Check your email
+
+![Check your email](docs/screenshots/verify-sent.png)
+
+### Confirmation email
+
+![Confirmation email](docs/screenshots/verify-email.png)
+
+### Email confirmed
+
+![Email confirmed](docs/screenshots/verify-done.png)
 
 ### Board
 
