@@ -61,9 +61,14 @@ umask 022
 chmod +x "$HERE"/bare/*.sh
 
 echo "== nginx"
-sudo install -m 644 "$HERE/nginx/revoboard.conf" /etc/nginx/sites-available/revoboard
-sudo find /etc/nginx/sites-enabled -mindepth 1 -maxdepth 1 -type l -delete
-sudo ln -s /etc/nginx/sites-available/revoboard /etc/nginx/sites-enabled/revoboard
+SITE=/etc/nginx/sites-available/revoboard
+if [ -e "$SITE" ]; then
+  echo "Keeping the existing $SITE"
+else
+  sudo install -m 644 "$HERE/nginx/revoboard.conf" "$SITE"
+  sudo find /etc/nginx/sites-enabled -mindepth 1 -maxdepth 1 -type l -delete
+fi
+sudo ln -sfn "$SITE" /etc/nginx/sites-enabled/revoboard
 sudo nginx -t
 sudo service nginx start
 sudo nginx -s reload

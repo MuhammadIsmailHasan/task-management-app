@@ -23,7 +23,7 @@ bash deploy/bare/deploy.sh
 bash deploy/bare/seed.sh
 ```
 
-`setup.sh` installs Python venv support and Node 24 when Node is older than 22, creates the database role and `/srv/revoboard/.env`, replaces the enabled Nginx sites, and registers the programs with supervisord. For CI set the repository variable `DEPLOY_SCRIPT` to nothing (the default is `deploy/bare/deploy.sh`).
+`setup.sh` installs Python venv support and Node 24 when Node is older than 22, creates the database role and `/srv/revoboard/.env`, installs the Nginx site on the first run only (see below), and registers the programs with supervisord. For CI set the repository variable `DEPLOY_SCRIPT` to nothing (the default is `deploy/bare/deploy.sh`).
 
 | Task | Command |
 |------|---------|
@@ -62,7 +62,7 @@ bash deploy/deploy.sh
 bash deploy/seed.sh
 ```
 
-`setup-server.sh` replaces the enabled Nginx sites, restarts `dockerd` under supervisord, and writes `/srv/revoboard/.env`.
+`setup-server.sh` installs the Nginx site on the first run only, restarts `dockerd` under supervisord, and writes `/srv/revoboard/.env`.
 
 ## Automatic deploy
 
@@ -98,7 +98,7 @@ One Next.js process serves the landing page at `/` and every app page under `/ap
 | `/api/...` | 404 |
 | `/boards`, `/dashboard`, `/admin/users`, `/profile`, `/login`, `/register`, `/invite/...`, `/shared/...`, `/session-expired` | Frontend answers 308 to the same page under `/app` (`/admin/users` becomes `/app/users`) |
 
-1. Nginx: `deploy/nginx/revoboard.conf` is one server block. Change `server_name` if the domain changes, then reload Nginx.
+1. Nginx: `deploy/nginx/revoboard.conf` is one server block. Change `server_name` if the domain changes. Setup does not overwrite an existing `/etc/nginx/sites-available/revoboard`, so apply a later change to that file on the server, then reload Nginx.
 2. Environment (`/srv/revoboard/.env`): `ALLOWED_ORIGINS` and `PUBLIC_BASE_URL` are the one public origin; `API_PUBLIC_PREFIX=/app/api` makes the Backend write `/app/api/...` in signed file URLs. The setup scripts write all three. The Frontend is built with `NEXT_PUBLIC_API_URL=/app/api` (the `Dockerfile` and `deploy/bare/deploy.sh` set it).
 3. Cookie: the session cookie is host-only and `Path=/app`, so the landing page and every other path never receive it. **Every existing session ends at this release**: a V16 cookie was set on `/` and the app now reads the new one, so everyone signs in again.
 4. Restart: `sudo supervisorctl restart revoboard:` (bare) or deploy again (Docker).
@@ -106,7 +106,7 @@ One Next.js process serves the landing page at `/` and every app page under `/ap
 
 ## Domain and TLS, later
 
-Publish ports 80 and 443, add one certificate to Nginx and redirect plain HTTP to HTTPS, switch `ALLOWED_ORIGINS` and `PUBLIC_BASE_URL` to the `https://` origin (the session cookie turns `Secure` by itself on an `https:` page), then run `setup-server.sh https://<host>` and deploy again. Setup overwrites the Nginx site, so put the TLS change in `deploy/nginx/revoboard.conf`.
+Publish ports 80 and 443, add one certificate to Nginx and redirect plain HTTP to HTTPS, switch `ALLOWED_ORIGINS` and `PUBLIC_BASE_URL` to the `https://` origin (the session cookie turns `Secure` by itself on an `https:` page), then run `setup-server.sh https://<host>` and deploy again. Setup keeps an existing Nginx site, so TLS settings added on the server (for example by Certbot) stay. When the site file does not exist yet, setup copies `deploy/nginx/revoboard.conf` and disables the other enabled sites.
 
 ## Smoke test
 
