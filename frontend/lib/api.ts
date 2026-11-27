@@ -239,7 +239,7 @@ export const api = {
     cards: () => get<MyCards>("/me/cards"),
   },
   users: {
-    list: (page = 1, perPage = 20) => get<{ items: (User & { role: string })[]; page: number; per_page: number; total: number }>("/users", { page: String(page), per_page: String(perPage) }),
+    list: (page = 1, perPage = 10) => get<{ items: (User & { role: string })[]; page: number; per_page: number; total: number }>("/users", { page: String(page), per_page: String(perPage) }),
     create: (body: { full_name: string; username: string; email: string; password: string; role: string }) =>
       post<User>("/users", body),
     update: (id: string, body: { full_name?: string; username?: string; email?: string; role?: string; is_active?: boolean; is_available?: boolean }) =>

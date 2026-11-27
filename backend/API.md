@@ -276,7 +276,7 @@ User administration (Admin only).
 
 | Method | Path | Auth | Success | Errors | Summary |
 |---|---|---|---|---|---|
-| GET | `/api/users` | Token | 200 | 400, 401, 403 | List users sorted by role, then name; `page`, `per_page` (default 20, at most 100); `data` of `{ items, page, per_page, total }` |
+| GET | `/api/users` | Token | 200 | 400, 401, 403 | List users sorted by role, then name; `page`, `per_page` (default 10, at most 100); `data` of `{ items, page, per_page, total }` |
 | POST | `/api/users` | Token | 201 | 400, 401, 403, 409, 422 | Create a user |
 | PATCH | `/api/users/{user_id}` | Token | 200 | 400, 401, 403, 404, 409, 422 | Update a user, assign a role, or set `is_active` and `is_available` (there is no delete) |
 | POST | `/api/users/me/avatar` | Token | 200 | 400, 401 | Upload my avatar |

@@ -9,7 +9,7 @@ _role = validate.OneOf(ROLES, error="role must be one of: " + ", ".join(ROLES))
 
 class UserListQuerySchema(BaseSchema):
     page = fields.Integer(load_default=1, validate=validate.Range(min=1, error="page must be 1 or more"))
-    per_page = fields.Integer(load_default=20, validate=validate.Range(min=1, max=100, error="per_page must be between 1 and 100"))
+    per_page = fields.Integer(load_default=10, validate=validate.Range(min=1, max=100, error="per_page must be between 1 and 100"))
 
 
 class UserPageSchema(BaseSchema):

@@ -15,4 +15,4 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   return <UsersScreen key={page} initial={users} />;
 }
 
-const PER_PAGE = 20;
+const PER_PAGE = 10;

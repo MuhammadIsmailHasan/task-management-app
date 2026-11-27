@@ -15,7 +15,7 @@ V18 introduces no visual language of its own: every visual rule uses Design_Syst
 | Question | Answer |
 |---|---|
 | Toasts | Bottom right, every success and error of an action, app-wide; field errors stay next to the field. Library `sonner`. |
-| Users page order | Role (Admin, Manager, Supervisor, Member), then name A to Z; 20 rows per page, paged by the Backend. |
+| Users page order | Role (Admin, Manager, Supervisor, Member), then name A to Z; 10 rows per page, paged by the Backend. |
 | "Board page" search and sort | The Boards list page: search by name, sort by `created_at` or `updated_at`, both directions. |
 | Back arrow | Goes to the parent page (not browser history). Sidebar destinations have none. |
 | Admin Dashboard | Yes; an Admin sees every Board, like a Manager. |

@@ -18,7 +18,7 @@ const shell = shellValue({ session: { token: "t", userId: "a1", role: "admin" as
 function renderScreen(users: AdminUser[]) {
   return render(
     <ShellContext.Provider value={shell}>
-      <UsersScreen initial={{ items: users, page: 1, per_page: 20, total: users.length }} />
+      <UsersScreen initial={{ items: users, page: 1, per_page: 10, total: users.length }} />
     </ShellContext.Provider>,
   );
 }

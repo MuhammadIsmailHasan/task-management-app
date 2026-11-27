@@ -14,7 +14,7 @@ bp = Blueprint("users", __name__, description="User administration (Admin only)"
 
 
 @bp.route("/users", methods=["GET"])
-@endpoint(bp, "List users", "Admin only. Sorted by role, then name; paged with `page` and `per_page` (default 20, at most 100).", errors=(401, 403))
+@endpoint(bp, "List users", "Admin only. Sorted by role, then name; paged with `page` and `per_page` (default 10, at most 100).", errors=(401, 403))
 @require_role("admin")
 @bp.arguments(UserListQuerySchema, location="query")
 @bp.response(200, envelope(UserPageSchema))
