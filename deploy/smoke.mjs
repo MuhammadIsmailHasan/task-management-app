@@ -44,13 +44,13 @@ check("the landing page links into /app", landingText.includes('href="/app/regis
 const loginPage = await fetch(`${O}/app/login`);
 check("/app/login is the sign-in page", loginPage.status === 200 && loginPage.headers.get("x-robots-tag") === "noindex");
 const legacy = await fetch(`${O}/boards`, { redirect: "manual" });
-check("a V16 path answers 308 to /app", legacy.status === 308 && new URL(legacy.headers.get("location")).pathname === "/app/boards");
+check("a V16 path answers 308 to /app", legacy.status === 308 && new URL(legacy.headers.get("location"), O).pathname === "/app/boards");
 const unknown = await fetch(`${O}/app/xyz`);
 check("an unknown /app path is the 404 page", unknown.status === 404 && (await unknown.text()).includes("Page not found"));
 const oldSlug = await fetch(`${O}/app/b/no-such-board`, { headers: { Cookie: `kanban_token=${token}` } });
 check("an unknown board slug is the 404 page", oldSlug.status === 404);
 const guarded = await fetch(`${O}/app/boards`, { redirect: "manual" });
-check("a guarded page without a cookie goes to sign in", guarded.status === 307 && new URL(guarded.headers.get("location")).pathname === "/app/login");
+check("a guarded page without a cookie goes to sign in", guarded.status === 307 && new URL(guarded.headers.get("location"), O).pathname === "/app/login");
 const robots = await (await fetch(`${O}/robots.txt`)).text();
 check("robots.txt allows the landing page and names the sitemap", robots.includes("Allow: /") && robots.includes("Sitemap:") && !robots.includes("Disallow"));
 const sitemap = await (await fetch(`${O}/sitemap.xml`)).text();

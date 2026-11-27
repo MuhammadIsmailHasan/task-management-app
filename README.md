@@ -2,7 +2,7 @@
 
 Kanban task management for teams: boards, columns, cards with subtasks and attachments, comments, roles, private boards with invite and public links, a dashboard, and notifications.
 
-**Website:** [revoboard.belajardeploy.my.id](https://revoboard.belajardeploy.my.id)  
+**Website:** [revoboard.belajardeploy.web.id](https://revoboard.belajardeploy.web.id)  
 **Release:** v1
 
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4, shadcn/ui on Radix, TinyMCE (self-hosted) for rich text.
