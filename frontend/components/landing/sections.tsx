@@ -1,4 +1,5 @@
-import { ArrowRight, Check, CircleCheck, Eye, History, LayoutDashboard, ListChecks, ListTodo, LockKeyhole, RotateCcw, SearchCheck, ShieldCheck, Tags, Timer, UserRound, UsersRound, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, History, ListChecks, LockKeyhole, Minus, RotateCcw, Tags, type LucideIcon } from "lucide-react";
+import { CardTile } from "@/components/board/CardTile";
 import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseLinkButton } from "@/components/shared/BaseLinkButton";
 import { BrandLogo } from "@/components/shared/BrandLogo";
@@ -6,6 +7,7 @@ import { RoleTag } from "@/components/shared/RoleTag";
 import { asBadgeTone, columnTone, SOLID } from "@/lib/tones";
 import type { Role } from "@/lib/types";
 import { routes } from "@/lib/routes";
+import { SAMPLE_CARDS, SAMPLE_CATEGORIES, SAMPLE_COLUMNS } from "@/lib/landing-sample";
 import { ProductPreview } from "./ProductPreview";
 
 const SECTION = "mx-auto flex max-w-site flex-col gap-section px-page py-surface";
@@ -68,12 +70,12 @@ export function Features() {
   );
 }
 
-const STAGES: { name: string; icon: LucideIcon; line: string; who: string }[] = [
-  { name: "Todo", icon: ListTodo, line: "Every new card starts here, with a priority and a due date.", who: "Staff plan" },
-  { name: "In Progress", icon: Timer, line: "The assignee picks it up and works through its subtasks.", who: "Assignee works" },
-  { name: "Review", icon: SearchCheck, line: "Ready for a check by the board's staff.", who: "Staff check" },
-  { name: "Revision", icon: RotateCcw, line: "Sent back with comments, then reviewed again.", who: "Assignee fixes" },
-  { name: "Done", icon: CircleCheck, line: "Finished. The date counts toward on-time and cycle time.", who: "Counted in KPIs" },
+const STAGES: { name: string; line: string; who: string }[] = [
+  { name: "Todo", line: "New cards wait here with a priority and a due date.", who: "Staff plan" },
+  { name: "In Progress", line: "The assignee works through the subtasks.", who: "Assignee works" },
+  { name: "Review", line: "Staff check the result.", who: "Staff check" },
+  { name: "Revision", line: "Sent back with comments, then reviewed again.", who: "Assignee fixes" },
+  { name: "Done", line: "Finished cards count toward on-time and cycle time.", who: "Counted in KPIs" },
 ];
 
 export function Workflow() {
@@ -81,36 +83,33 @@ export function Workflow() {
     <section id="workflow" className="scroll-mt-header bg-surface">
       <div className={SECTION}>
         <SectionHead eyebrow="Workflow" title="Five columns, one path" line="Drag a card from left to right. Reminders and the activity log follow it." />
-        <ol aria-label="Workflow steps" className="m-0 grid list-none grid-cols-1 gap-gutter p-0 md:grid-cols-2 lg:grid-cols-5">
-          {STAGES.map((s, i) => {
-            const tone = columnTone(s.name, i);
-            const last = i === STAGES.length - 1;
-            return (
-              <li key={s.name} className="flex flex-col gap-label overflow-hidden rounded-ui bg-surface-raised shadow-card">
-                <i aria-hidden="true" className={`h-progress w-full ${SOLID[tone]}`} />
-                <div className="flex flex-col gap-label px-item pb-item">
-                  <div className="flex items-center justify-between gap-2">
-                    <span aria-hidden="true" className="inline-flex size-control items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
-                      <s.icon className="size-icon" />
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
-                      Step {i + 1}
-                      {!last && <ArrowRight aria-hidden="true" className="size-icon-sm" />}
-                    </span>
-                  </div>
-                  <h3 className="inline-flex items-center gap-2 font-heading text-base font-semibold">
-                    <i aria-hidden="true" className={`size-dot-md shrink-0 rounded-full ${SOLID[tone]}`} />
-                    {s.name}
-                  </h3>
-                  <p className="text-sm text-ink-muted">{s.line}</p>
+        <div className="@container rounded-ui border border-line bg-surface-raised p-item shadow-float">
+          <ol aria-label="Workflow steps" className="m-0 flex list-none snap-x snap-proximity gap-gutter overflow-x-auto p-0">
+            {SAMPLE_COLUMNS.map((col, i) => {
+              const stage = STAGES[i];
+              const tone = columnTone(col.name, i);
+              const cards = SAMPLE_CARDS.filter((s) => s.card.column_id === col.id);
+              return (
+                <li key={col.id} className="flex w-column shrink-0 snap-start flex-col gap-item rounded-ui bg-surface p-item xl:w-auto xl:min-w-0 xl:flex-1">
+                  <header className="flex items-center gap-2">
+                    <i aria-hidden="true" className={`inline-block size-dot-md shrink-0 rounded-full ${SOLID[tone]}`} />
+                    <h3 className="min-w-0 truncate font-heading text-base font-semibold">{col.name}</h3>
+                    <BaseBadge tone="count">{cards.length}</BaseBadge>
+                  </header>
+                  <p className="text-sm text-ink-muted">{stage.line}</p>
                   <BaseBadge tone={asBadgeTone(tone)} className="self-start">
-                    {s.who}
+                    {stage.who}
                   </BaseBadge>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+                  <div aria-hidden="true" inert className="flex flex-col gap-gutter">
+                    {cards.map((s) => (
+                      <CardTile key={s.card.id} card={s.card} category={SAMPLE_CATEGORIES.find((c) => c.id === s.card.category_id)} dueState={s.card.due_state ?? null} done={col.name === "Done"} draggable={false} />
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
         <p className="inline-flex items-center justify-center gap-2 text-center text-sm text-ink-muted">
           <RotateCcw aria-hidden="true" className="size-icon-sm shrink-0" />
           Revision loops back to Review until the work passes.
@@ -120,45 +119,67 @@ export function Workflow() {
   );
 }
 
-const ROLES: { role: Role | "guest"; icon: LucideIcon; title: string; can: string[] }[] = [
-  { role: "member", icon: UserRound, title: "Does the work", can: ["Moves and updates the cards assigned to them", "Adds subtasks, files, and comments", "Sees My tasks and their own performance"] },
-  { role: "supervisor", icon: UsersRound, title: "Runs a board", can: ["Owns boards and invites members", "Assigns cards, dates, and categories", "Reads the Dashboard of their boards"] },
-  { role: "manager", icon: LayoutDashboard, title: "Sees every board", can: ["Creates boards and columns", "Manages any board and its people", "Compares team performance across boards"] },
-  { role: "admin", icon: ShieldCheck, title: "Runs the system", can: ["Manages users, roles, and access", "Reads the Dashboard of every board", "Stays out of cards and comments"] },
-  { role: "guest", icon: Eye, title: "Reads only", can: ["Opens a board through a public link", "Needs no account", "Cannot change anything"] },
+type Access = boolean | string;
+
+const ABILITIES = ["Boards", "Move cards", "Comment", "Create boards", "Dashboard", "Users"] as const;
+
+const ROLES: { role: Role | "guest"; title: string; access: Access[] }[] = [
+  { role: "member", title: "Does the work", access: ["Joined", "Assigned", "Assigned", false, false, false] },
+  { role: "supervisor", title: "Runs a board", access: ["Own", true, true, false, "Own", false] },
+  { role: "manager", title: "Sees every board", access: ["All", true, true, true, true, false] },
+  { role: "admin", title: "Runs the system", access: ["All", true, false, true, true, true] },
+  { role: "guest", title: "Reads only", access: ["Public link", false, false, false, false, false] },
 ];
+
+function AccessMark({ value }: { value: Access }) {
+  if (typeof value === "string") return <BaseBadge>{value}</BaseBadge>;
+  return value ? (
+    <span className="inline-flex size-chip items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
+      <Check aria-hidden="true" className="size-icon-sm" />
+      <span className="sr-only">Yes</span>
+    </span>
+  ) : (
+    <span className="inline-flex size-chip items-center justify-center text-ink-muted">
+      <Minus aria-hidden="true" className="size-icon-sm" />
+      <span className="sr-only">No</span>
+    </span>
+  );
+}
 
 export function Roles() {
   return (
     <section id="roles" className={`scroll-mt-header ${SECTION}`}>
       <SectionHead eyebrow="Roles" title="The right access for each person" line="Each person sees and changes only what their role allows." />
-      <ul aria-label="Roles" className="m-0 grid list-none grid-cols-1 gap-gutter p-0 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {ROLES.map((r) => (
-          <li key={r.role} className="flex flex-col gap-label rounded-ui border border-line bg-surface-raised p-item shadow-card">
-            <div className="flex items-center justify-between gap-2">
-              <span aria-hidden="true" className="inline-flex size-control items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
-                <r.icon className="size-icon" />
+      <div className="flex flex-col gap-2">
+        <div aria-hidden="true" className="hidden grid-cols-8 gap-3 px-item text-xs text-ink-muted uppercase lg:grid">
+          <span className="col-span-2">Role</span>
+          {ABILITIES.map((a) => (
+            <span key={a}>{a}</span>
+          ))}
+        </div>
+        <ul aria-label="Roles" className="m-0 flex list-none flex-col gap-2 p-0">
+          {ROLES.map((r) => (
+            <li key={r.role} className="grid grid-cols-2 items-center gap-3 rounded-ui bg-surface-raised p-item text-sm shadow-card lg:grid-cols-8">
+              <span className="col-span-2 flex min-w-0 items-center gap-2">
+                {r.role === "guest" ? (
+                  <BaseBadge tone="slate" shape="tag" className="shrink-0">
+                    Guest
+                  </BaseBadge>
+                ) : (
+                  <RoleTag role={r.role} />
+                )}
+                <span className="font-semibold">{r.title}</span>
               </span>
-              {r.role === "guest" ? (
-                <BaseBadge tone="slate" shape="tag" className="shrink-0">
-                  Guest
-                </BaseBadge>
-              ) : (
-                <RoleTag role={r.role} />
-              )}
-            </div>
-            <h3 className="font-heading text-base font-semibold">{r.title}</h3>
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {r.can.map((line) => (
-                <li key={line} className="flex items-start gap-2 text-sm text-ink-muted">
-                  <Check aria-hidden="true" className="mt-half size-icon-sm shrink-0 text-accent" />
-                  {line}
-                </li>
+              {r.access.map((value, i) => (
+                <span key={ABILITIES[i]} className="flex items-center justify-between gap-2 lg:justify-start">
+                  <span className="text-ink-muted lg:hidden">{ABILITIES[i]}</span>
+                  <AccessMark value={value} />
+                </span>
               ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -97,12 +97,18 @@ describe("Workflow and Roles sections", () => {
     expect(screen.getByText("Revision loops back to Review until the work passes.")).toBeInTheDocument();
   });
 
-  it("shows one card per role with its badge and three things it can do", () => {
+  it("shows the columns as a board of real card tiles", () => {
+    const { container } = render(<Workflow />);
+    expect(container.querySelectorAll("[inert] [data-card-id]")).toHaveLength(SAMPLE_CARDS.length);
+  });
+
+  it("shows one row per role with its badge and a mark for each ability", () => {
     render(<Roles />);
-    const cards = screen.getByRole("list", { name: "Roles" }).querySelectorAll(":scope > li");
-    expect(cards).toHaveLength(5);
-    expect([...cards].map((c) => c.querySelector("[data-tone]")?.textContent)).toEqual(["Member", "Supervisor", "Manager", "Admin", "Guest"]);
-    for (const c of cards) expect(c.querySelectorAll("ul > li")).toHaveLength(3);
+    const rows = screen.getByRole("list", { name: "Roles" }).querySelectorAll(":scope > li");
+    expect(rows).toHaveLength(5);
+    expect([...rows].map((c) => c.querySelector("[data-tone]")?.textContent)).toEqual(["Member", "Supervisor", "Manager", "Admin", "Guest"]);
+    expect(within(rows[0] as HTMLElement).getAllByText("Assigned")).toHaveLength(2);
+    expect(within(rows[4] as HTMLElement).getAllByText("No")).toHaveLength(5);
   });
 });
 
