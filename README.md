@@ -5,6 +5,22 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 **Website:** [revoboard.belajardeploy.web.id](https://revoboard.belajardeploy.web.id)  
 **Release:** v1
 
+## Demo accounts
+
+Sign in to the [live demo](https://revoboard.belajardeploy.web.id/app/login) with any account below. The password for all of them is `12345678`.
+
+| Role | Email | Boards |
+|---|---|---|
+| Supervisor | `supervisor@example.com` | Owns Website Redesign, Mobile App Launch, Marketing Campaign Q1 |
+| Supervisor | `supervisor2@example.com` | Owns Customer Support Desk, Platform Migration, Hiring and Q1 Planning |
+| Member | `member@example.com` | Website Redesign, Mobile App Launch, Customer Support Desk, Platform Migration |
+| Member | `member2@example.com` | Website Redesign, Customer Support Desk, Marketing Campaign Q1, Platform Migration |
+| Member | `member3@example.com` | Mobile App Launch, Marketing Campaign Q1, Platform Migration |
+
+The demo data has 6 boards with cards in every stage, subtasks, comments and due dates around the day it was seeded. The Admin account is not public.
+
+These accounts are public and shared. Do not enter real or private data; anyone can read, change, or delete what you add.
+
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4, shadcn/ui on Radix, TinyMCE (self-hosted) for rich text.
 - **Backend:** Flask 3 with flask-smorest, SQLAlchemy and Alembic, PostgreSQL, JWT auth, Argon2 password hashing.
 - **One origin:** the landing page is `/`, the app is `/app/...`, and the API is `/app/api/...` (nginx maps it to Flask `/api/...`).
