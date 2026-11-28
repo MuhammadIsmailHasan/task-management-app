@@ -36,6 +36,14 @@ USER_NAMES = {
 CREATED_BEFORE_START_DAYS = 2
 UNPLANNED_CREATED_DAYS_AGO = 7
 BOARD_AGE_DAYS = 35
+STOPS = {
+    "Todo": (),
+    "In Progress": ("In Progress",),
+    "Review": ("In Progress", "Review"),
+    "Revision": ("In Progress", "Review", "Revision"),
+    "Done": ("In Progress", "Review", "Done"),
+}
+REWORK_STOPS = ("In Progress", "Review", "Revision", "Review", "Done")
 _hasher = PasswordHasher()
 
 
@@ -104,6 +112,27 @@ def _log(actor, action, target_type, target_id, meta, when):
     )
 
 
+def _history(card, task, columns, actor, created, now):
+    stops = REWORK_STOPS if task.rework else STOPS[task.column]
+    if not stops:
+        return
+    end = now - timedelta(days=task.done_ago) if task.done_ago is not None else now
+    started = now + timedelta(days=task.start) if task.start is not None else created + timedelta(days=1)
+    started = max(min(started, end - timedelta(days=1)), created)
+    gap = (end - started) / max(len(stops) - 1, 1)
+    previous = "Todo"
+    for step, name in enumerate(stops):
+        meta = {
+            "from_column_id": str(columns[previous].id),
+            "to_column_id": str(columns[name].id),
+            "from_column_name": previous,
+            "to_column_name": name,
+            "card_title": task.title,
+        }
+        _log(actor, "card.moved", "card", card.id, meta, started + gap * step)
+        previous = name
+
+
 def _seed_project(project, users, today, now):
     owner = users[project.owner]
     board, cols, cats = _board(
@@ -127,6 +156,7 @@ def _seed_project(project, users, today, now):
         db.session.add(card)
         db.session.flush()
         _log(owner, "card.created", "card", card.id, {"title": task.title}, created)
+        _history(card, task, columns, assignee or owner, created, now)
         if assignee:
             _log(owner, "card.assigned", "card", card.id, {"assignee_id": str(assignee.id)}, created)
             if assignee is not owner:

@@ -13,6 +13,7 @@ class Task(NamedTuple):
     description: str | None = None
     subtasks: tuple = ()
     comments: tuple = ()
+    rework: bool = False
 
 
 class Project(NamedTuple):
@@ -40,7 +41,7 @@ PROJECTS = (
             Task("Beta test with ten users", "Todo", "high", "Release", None, 8, 20),
             Task("Sign-in with email", "Done", "high", "Feature", "member", -20, -9, 10),
             Task("App icon and splash screen", "Done", "low", "Release", "member3", -25, -18, 17),
-            Task("Keyboard covers input field", "Done", "medium", "Bug", "member3", -12, -8, 6),
+            Task("Keyboard covers input field", "Done", "medium", "Bug", "member3", -12, -8, 6, rework=True),
         ),
     ),
     Project(
@@ -54,7 +55,7 @@ PROJECTS = (
             Task("Update refund policy page", "Revision", "low", "Docs", "member2", -8, -2),
             Task("Define priority levels for tickets", "Todo", "medium", "Process", "supervisor2", 1, 6),
             Task("Reply templates for common questions", "Done", "medium", "Process", "member", -18, -11, 12),
-            Task("Fix broken link in welcome email", "Done", "high", "Ticket", "member2", -9, -7, 8),
+            Task("Fix broken link in welcome email", "Done", "high", "Ticket", "member2", -9, -7, 8, rework=True),
             Task("Archive old help articles", "Done", "low", "Docs", "member2", -30, -22, 20),
         ),
     ),
@@ -70,8 +71,8 @@ PROJECTS = (
             Task("Design banner set", "Todo", "low", "Ads", "member2", 3, 10),
             Task("Customer case study", "Revision", "medium", "Content", "member2", -10, 2, comments=(("member3", "The second section needs real numbers."),)),
             Task("Research competitor campaigns", "Done", "low", "Content", "member3", -24, -16, 15),
-            Task("Choose analytics events", "Done", "medium", "Ads", "member2", -15, -10, 11),
-            Task("Book event venue", "Done", "high", "Events", "supervisor", -14, -6, 4),
+            Task("Choose analytics events", "Done", "medium", "Ads", "member2", -15, -10, 11, rework=True),
+            Task("Book event venue", "Done", "high", "Events", "supervisor", -14, -6, 4, rework=True),
         ),
     ),
     Project(
@@ -87,7 +88,7 @@ PROJECTS = (
             Task("Slow query on dashboard", "Revision", "medium", "Database", "member2", -7, 3, comments=(("member2", "An index fixed most of it."), ("supervisor2", "Check the weekly report too."))),
             Task("Provision the new server", "Done", "high", "Infrastructure", "member", -28, -21, 22),
             Task("Copy uploaded files", "Done", "medium", "Infrastructure", "member", -13, -9, 9),
-            Task("Close unused ports", "Done", "high", "Security", "member3", -11, -5, 2),
+            Task("Close unused ports", "Done", "high", "Security", "member3", -11, -5, 2, rework=True),
         ),
     ),
     Project(
