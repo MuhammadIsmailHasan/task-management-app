@@ -112,6 +112,8 @@
   --danger-soft: #ffdad6;
   --on-danger: #ffffff;
   --on-danger-soft: #93000a;
+  --warning-soft: var(--label-amber-bg);
+  --on-warning-soft: var(--label-amber-text);
   --gradient-brand: radial-gradient(circle at 85% 90%, color-mix(in srgb, var(--accent-tint) 22%, transparent), transparent 55%), linear-gradient(135deg, var(--brand), var(--brand-soft));
   --gradient-cta: linear-gradient(90deg, var(--brand), var(--accent));
   --on-brand-soft: rgba(255, 255, 255, 0.16);

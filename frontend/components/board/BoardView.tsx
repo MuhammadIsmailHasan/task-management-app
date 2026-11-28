@@ -3,12 +3,12 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardModal } from "@/components/card/CardModal";
-import { BaseAlert } from "@/components/shared/BaseField";
 import { useShell } from "@/components/shell/ShellContext";
 import { api } from "@/lib/api";
 import { CATEGORIES_CHANGED } from "@/lib/categories";
 import { ApiError } from "@/lib/http";
 import { computeDropOrder, needsRebalance } from "@/lib/ordering";
+import { toast } from "@/lib/toast";
 import type { Board as BoardT, Card, Category, Comment, Member } from "@/lib/types";
 import { Board } from "./Board";
 import { BoardHeader } from "./BoardHeader";
@@ -32,13 +32,11 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const first = useRef(true);
   const params = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
   const cardParam = params.get("card");
-  const [notice, setNotice] = useState<string | null>(null);
   const [archivedCount, setArchivedCount] = useState(initialArchivedCount);
   const role = session?.role;
   const staff = role === "supervisor" || role === "manager" || role === "admin";
@@ -73,23 +71,29 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
   useEffect(() => {
     if (!cardParam) return;
     let live = true;
-    setNotice(null);
+    const unavailable = (message: string) => {
+      toast.warning(message);
+      router.replace(pathname);
+    };
     api.cards
       .get(cardParam)
       .then((c) => {
         if (!live) return;
-        if (!columns.some((col) => col.id === c.column_id)) return void setNotice("This card is no longer available.");
-        if (c.archived_at) return void setNotice("This card is archived.");
+        if (c.archived_at) return unavailable("This card is archived.");
+        if (!columns.some((col) => col.id === c.column_id)) return unavailable("This card is no longer available.");
         setCards((all) => (all.some((x) => x.id === c.id) ? all : [...all, c]));
         setOpenId(c.id);
       })
-      .catch(() => live && setNotice("This card is no longer available."));
+      .catch(() => live && unavailable("This card is no longer available."));
     return () => {
       live = false;
     };
   }, [cardParam, board.id]);
 
-  const failColumn = (err: unknown, fallback: string) => setError(err instanceof ApiError ? err.message : fallback);
+  const fail = (err: unknown, fallback: string) => {
+    if (err instanceof ApiError) toast.failure(err.message, err.httpStatus);
+    else toast.failure(fallback);
+  };
 
   async function reorder(id: string, to: number) {
     const ordered = [...columns].sort((a, b) => a.order - b.order);
@@ -98,25 +102,23 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     const snapshot = columns;
     const next = [...ordered];
     next.splice(to, 0, next.splice(from, 1)[0]);
-    setError(null);
     setColumns(next.map((c, i) => ({ ...c, order: i })));
     try {
       await api.columns.move(id, to);
     } catch (err) {
       setColumns(snapshot);
-      failColumn(err, "Could not move the column.");
+      fail(err, "Could not move the column.");
     }
   }
 
   const columnActions = canManageColumns
     ? {
         onRename: async (id: string, name: string) => {
-          setError(null);
           try {
             const saved = await api.columns.rename(id, name);
             setColumns((all) => all.map((c) => (c.id === id ? { ...c, ...saved } : c)));
           } catch (err) {
-            failColumn(err, "Could not rename the column.");
+            fail(err, "Could not rename the column.");
             throw err;
           }
         },
@@ -126,17 +128,15 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
         },
         onReorder: (id: string, to: number) => reorder(id, to),
         onDelete: async (id: string) => {
-          setError(null);
           await api.columns.remove(id);
           setColumns((all) => all.filter((c) => c.id !== id));
         },
         onAdd: async (name: string) => {
-          setError(null);
           try {
             const created = await api.columns.create(board.id, name);
             setColumns((all) => [...all, created]);
           } catch (err) {
-            failColumn(err, "Could not add the column.");
+            fail(err, "Could not add the column.");
             throw err;
           }
         },
@@ -152,7 +152,7 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     try {
       setCards(await api.cards.listForBoard(board.id, { search: search || undefined, category: categoryId ?? undefined }));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not load cards.");
+      fail(err, "Could not load cards.");
     }
   }, [board.id, search, categoryId]);
 
@@ -176,7 +176,6 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
     const order = computeDropOrder(siblings.map((s) => s.order), index);
     const prev = siblings[index - 1] ?? null;
     const next = siblings[index] ?? null;
-    setError(null);
     setCards((all) => all.map((c) => (c.id === cardId ? { ...c, column_id: columnId, order } : c)));
     try {
       const saved = await api.cards.move(cardId, { column_id: columnId, prev: prev?.id ?? null, next: next?.id ?? null });
@@ -184,17 +183,16 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
       if (needsRebalance(prev?.order ?? null, next?.order ?? null)) await refetch();
     } catch (err) {
       setCards(snapshot);
-      setError(err instanceof ApiError ? err.message : "Could not move the card.");
+      fail(err, "Could not move the card.");
     }
   }
 
   async function onCreate(columnId: string, title: string) {
-    setError(null);
     try {
       const card = await api.cards.create(columnId, { title });
       setCards((all) => [...all, card]);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not add the card.");
+      fail(err, "Could not add the card.");
       throw err;
     }
   }
@@ -225,16 +223,6 @@ export function BoardView({ view = "board", board, initialCards, initialCategori
         archivedCount={archivedCount}
         canEdit={canManageColumns}
       />
-      {notice && (
-        <div className="shrink-0 px-4 pt-4 lg:px-8">
-          <BaseAlert tone="info">{notice}</BaseAlert>
-        </div>
-      )}
-      {error && (
-        <div className="shrink-0 px-4 pt-4 lg:px-8">
-          <BaseAlert>{error}</BaseAlert>
-        </div>
-      )}
       {view === "list" && <ListView columns={columns} cards={cards} categories={categories} members={members} onOpen={(c) => setOpenId(c.id)} />}
       {view === "calendar" && <CalendarView columns={columns} cards={cards} onOpen={(c) => setOpenId(c.id)} />}
       {view === "board" && (

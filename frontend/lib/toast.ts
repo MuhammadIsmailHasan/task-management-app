@@ -1,8 +1,17 @@
 import { toast as sonner } from "sonner";
 
+const WARNING_STATUSES: readonly number[] = [403, 409, 429];
+const FALLBACK_ERROR = "Something went wrong. Try again.";
+
 export const toast = {
   success: (message: string) => void sonner.success(message),
-  error: (message: string) => void sonner.error(message || "Something went wrong. Try again."),
+  error: (message: string) => void sonner.error(message || FALLBACK_ERROR),
+  warning: (message: string) => void sonner.warning(message, { id: message }),
+  failure: (message: string, httpStatus?: number) => {
+    const text = message || FALLBACK_ERROR;
+    const show = httpStatus !== undefined && WARNING_STATUSES.includes(httpStatus) ? sonner.warning : sonner.error;
+    show(text, { id: text });
+  },
 };
 
 let held = 0;
@@ -38,5 +47,5 @@ export function reportResult(method: string, path: string, outcome: { ok: true; 
     return;
   }
   if (outcome.httpStatus === 401 || outcome.hasDetails || errorToastHeld() || OWN_ERRORS.some((re) => re.test(path))) return;
-  toast.error(outcome.message);
+  toast.failure(outcome.message, outcome.httpStatus);
 }

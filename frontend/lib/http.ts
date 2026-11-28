@@ -17,6 +17,8 @@ export function apiAsset(path: string): string {
 
 export type Details = Record<string, string[]>;
 
+const OFFLINE = "Cannot reach the server. Check your connection and try again.";
+
 export const ACCOUNT_NOT_ACTIVATED = "ACCOUNT_NOT_ACTIVATED";
 export const ACCOUNT_DISABLED = "ACCOUNT_DISABLED";
 
@@ -59,8 +61,8 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   try {
     res = await fetch(url, { method, headers, body, cache: "no-store" });
   } catch {
-    reportResult(method, path, { ok: false, message: "Cannot reach the server. Check your connection and try again.", httpStatus: 0, hasDetails: false });
-    throw new ApiError(0, "NETWORK_ERROR", "Cannot reach the server");
+    reportResult(method, path, { ok: false, message: OFFLINE, httpStatus: 0, hasDetails: false });
+    throw new ApiError(0, "NETWORK_ERROR", OFFLINE);
   }
 
   let payload: unknown;

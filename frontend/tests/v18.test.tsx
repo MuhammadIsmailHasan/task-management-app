@@ -17,9 +17,9 @@ import { shellValue } from "./support/shell";
 import { CATEGORIES_CHANGED, notifyCategoriesChanged } from "@/lib/categories";
 import { homeFor, parentOf } from "@/lib/routes";
 import { PALETTE } from "@/lib/tones";
-import { quietSuccess, reportResult } from "@/lib/toast";
+import { quietSuccess, reportResult, toast } from "@/lib/toast";
 
-const toastMocks = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+const toastMocks = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toastMocks, Toaster: () => null }));
 const replace = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace, refresh: vi.fn() }), usePathname: () => "/app/boards" }));
@@ -44,7 +44,26 @@ describe("Toasts (TOAST-01 to TOAST-07)", () => {
     reportResult("POST", "/boards", { ok: false, message: "Bad", httpStatus: 400, hasDetails: true });
     reportResult("POST", "/boards", { ok: false, message: "Expired", httpStatus: 401, hasDetails: false });
     reportResult("POST", "/auth/login", { ok: false, message: "Wrong", httpStatus: 401, hasDetails: false });
-    expect(toastMocks.error.mock.calls).toEqual([["Nope"]]);
+    expect(toastMocks.warning.mock.calls).toEqual([["Nope", { id: "Nope" }]]);
+    expect(toastMocks.error).not.toHaveBeenCalled();
+  });
+
+  it("shows a warning Toast once per message", () => {
+    toast.warning("This card is archived.");
+    expect(toastMocks.warning).toHaveBeenCalledWith("This card is archived.", { id: "This card is archived." });
+  });
+
+  it.each([
+    [403, "warning"],
+    [409, "warning"],
+    [429, "warning"],
+    [0, "error"],
+    [404, "error"],
+    [500, "error"],
+  ] as const)("shows a %i failure as a %s Toast keyed by its message", (httpStatus, tone) => {
+    reportResult("POST", "/cards/c1/move", { ok: false, message: "No", httpStatus, hasDetails: false });
+    expect(toastMocks[tone]).toHaveBeenCalledWith("No", { id: "No" });
+    expect(toastMocks[tone === "warning" ? "error" : "warning"]).not.toHaveBeenCalled();
   });
 });
 
