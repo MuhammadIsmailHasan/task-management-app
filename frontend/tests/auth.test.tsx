@@ -49,6 +49,17 @@ describe("AuthForm", () => {
     expect(document.cookie).toContain("kanban_token=");
   });
 
+  it("shows and hides the password", async () => {
+    render(<AuthForm mode="login" />);
+    const field = screen.getByLabelText("Password");
+    expect(field).toHaveAttribute("type", "password");
+    await userEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(field).toHaveAttribute("type", "text");
+    await userEvent.click(screen.getByRole("button", { name: "Hide password" }));
+    expect(field).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "Show password" }).className).not.toContain("-translate-y-1/2");
+  });
+
   it("shows a server error message", async () => {
     login.mockRejectedValue(new ApiError(401, "UNAUTHORIZED", "Invalid credentials"));
     render(<AuthForm mode="login" />);

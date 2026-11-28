@@ -139,9 +139,11 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
             aria-describedby={errors[id] ? `${id}-error` : undefined}
           />
           {password && (
-            <BaseButton variant="ghost" size="sm" className="absolute top-1/2 right-2 size-control-sm -translate-y-1/2 px-0" aria-label={reveal ? "Hide password" : "Show password"} onClick={() => setReveal((r) => !r)}>
-              {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            </BaseButton>
+            <span className="absolute inset-y-0 right-2 flex items-center">
+              <BaseButton variant="ghost" size="sm" className="size-control-sm px-0" aria-label={reveal ? "Hide password" : "Show password"} onClick={() => setReveal((r) => !r)}>
+                {reveal ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              </BaseButton>
+            </span>
           )}
         </div>
       </BaseField>
