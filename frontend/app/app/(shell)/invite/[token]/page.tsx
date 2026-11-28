@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { Link2Off } from "lucide-react";
+import { InviteCard } from "@/components/invite/InviteCard";
 import { InviteJoin } from "@/components/invite/InviteJoin";
+import { BaseLinkButton } from "@/components/shared/BaseLinkButton";
 import { ApiError } from "@/lib/http";
 import { serverGet } from "@/lib/server";
 import type { InviteLookup } from "@/lib/types";
@@ -9,13 +12,13 @@ export const metadata = { title: "Invitation", robots: { index: false, follow: f
 
 function NotValid() {
   return (
-    <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+    <InviteCard icon={Link2Off}>
       <h1 className="font-heading text-xl">This invite link is not valid</h1>
-      <p className="max-w-auth text-ink-muted">Ask the board owner for a new link.</p>
-      <Link href={routes.boards} className="font-semibold">
+      <p className="text-sm text-ink-muted">Ask the board owner for a new link.</p>
+      <BaseLinkButton variant="secondary" href={routes.boards} className="w-full">
         Go to Home
-      </Link>
-    </div>
+      </BaseLinkButton>
+    </InviteCard>
   );
 }
 

@@ -201,12 +201,14 @@ describe("ShareModal invite and join requests (Requirements 24 and 55)", () => {
 });
 
 describe("Invite page (Requirement 24, criteria 23 and 24)", () => {
-  const lookup = (state: "staff" | "member" | "pending" | "can_request") => ({ board: { id: "b1", slug: "alpha", name: "Alpha", description: "The plan" }, state, request: null });
+  const lookup = (state: "staff" | "member" | "pending" | "can_request") => ({ board: { id: "b1", slug: "alpha", name: "Alpha", description: "<p>The <strong>plan</strong></p>" }, state, request: null });
 
   it("asks to join and then says the request was sent", async () => {
     mocks.api.invites.request.mockResolvedValue({ id: "r", board_id: "b1", status: "pending" });
     render(<InviteJoin token="tok" invite={lookup("can_request")} />);
     expect(screen.getByRole("heading", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByText("The plan")).toBeInTheDocument();
+    expect(screen.queryByText(/<p>/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Request to join" }));
     expect(await screen.findByText("Request sent. You will get a notification when a manager or an admin decides.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Request to join" })).not.toBeInTheDocument();
