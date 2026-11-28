@@ -86,3 +86,23 @@ describe("product preview (LAND-06, Property 68)", () => {
     for (const { card } of SAMPLE_CARDS) expect(card.progress).toBe(deriveProgress(card.subtask_done_count ?? 0, card.subtask_total_count ?? 0));
   });
 });
+
+describe("Workflow and Roles sections", () => {
+  it("shows the five columns as ordered steps with their column colour", () => {
+    render(<Workflow />);
+    const steps = screen.getAllByRole("listitem").filter((li) => li.closest("ol"));
+    expect(steps.map((li) => li.querySelector("h3")?.textContent)).toEqual(["Todo", "In Progress", "Review", "Revision", "Done"]);
+    expect(steps[0].querySelector(".bg-tone-orange")).not.toBeNull();
+    expect(steps[4].querySelector(".bg-tone-green")).not.toBeNull();
+    expect(screen.getByText("Revision loops back to Review until the work passes.")).toBeInTheDocument();
+  });
+
+  it("shows one card per role with its badge and three things it can do", () => {
+    render(<Roles />);
+    const cards = screen.getByRole("list", { name: "Roles" }).querySelectorAll(":scope > li");
+    expect(cards).toHaveLength(5);
+    expect([...cards].map((c) => c.querySelector("[data-tone]")?.textContent)).toEqual(["Member", "Supervisor", "Manager", "Admin", "Guest"]);
+    for (const c of cards) expect(c.querySelectorAll("ul > li")).toHaveLength(3);
+  });
+});
+
