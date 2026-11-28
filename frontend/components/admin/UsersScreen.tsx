@@ -18,7 +18,7 @@ import { ApiError } from "@/lib/http";
 import { boardPath, cardPath, routes } from "@/lib/routes";
 import type { Role, User } from "@/lib/types";
 
-export type AdminUser = User & { role: Role };
+export type AdminUser = User & { role: Role; email_verified: boolean };
 export interface UsersPage {
   items: AdminUser[];
   page: number;
@@ -230,7 +230,10 @@ export function UsersScreen({ initial }: { initial: UsersPage }) {
             <div className="truncate text-xs text-ink-muted">@{u.username}</div>
           </div>
         </div>
-        <div className="min-w-0 text-sm break-all text-ink-muted lg:col-span-3">{u.email}</div>
+        <div className="flex min-w-0 flex-col items-start gap-1 text-sm break-all text-ink-muted lg:col-span-3">
+          <span>{u.email}</span>
+          <BaseBadge tone={u.email_verified ? "accent" : "orange"}>{u.email_verified ? "Confirmed" : "Not confirmed"}</BaseBadge>
+        </div>
         <div className="lg:col-span-2">
           <BaseCombobox label={`Role of ${u.username}`} options={ROLES} value={role} searchable={false} onChange={(v) => stage(u, { role: v as Role })} />
         </div>

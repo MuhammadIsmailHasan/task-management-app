@@ -23,6 +23,16 @@ def test_the_user_list_carries_both_flags_and_no_pending_email(world):
     assert "pending_email" not in str(rows)
 
 
+def test_the_user_list_tells_whether_each_email_is_confirmed(world):
+    member = world.users["member"]
+    db.session.get(User, member.id).email_verified_at = None
+    db.session.commit()
+    rows = world.client.get("/api/users", headers=world.h["admin"]).get_json()["data"]["items"]
+    flags = {r["id"]: r["email_verified"] for r in rows}
+    assert flags.pop(str(member.id)) is False
+    assert flags and all(flags.values())
+
+
 def test_there_is_no_user_delete(world):
     r = world.client.delete(f"/api/users/{world.users['member'].id}", headers=world.h["admin"])
     assert r.status_code == 405

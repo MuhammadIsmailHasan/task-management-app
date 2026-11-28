@@ -74,6 +74,7 @@ class MemberWithEmailSchema(MemberSchema):
 
 class AdminUserSchema(UserSchema):
     role = fields.String(metadata={"description": "member, supervisor, manager or admin"})
+    email_verified = fields.Boolean(metadata={"description": "False until the account's email address is confirmed"})
 
 
 class AuthSchema(BaseSchema):

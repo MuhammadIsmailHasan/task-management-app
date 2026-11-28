@@ -19,7 +19,7 @@ def serialize_user(user):
 
 
 def serialize_user_admin(user):
-    data = {**serialize_user(user), "role": user.role}
+    data = {**serialize_user(user), "role": user.role, "email_verified": user.email_verified_at is not None}
     del data["pending_email"]
     return data
 

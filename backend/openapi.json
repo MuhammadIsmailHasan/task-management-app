@@ -8950,6 +8950,10 @@
           "role": {
             "type": "string",
             "description": "member, supervisor, manager or admin"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "description": "False until the account's email address is confirmed"
           }
         }
       },

@@ -209,10 +209,13 @@ def test_change_password(me, monkeypatch):
 def test_user_serializers_hide_what_each_reader_must_not_see(ctx):
     from app.blueprints.auth import dto
 
-    u = SimpleNamespace(id="u1", full_name="Ann", username="ann", email="a@x.co", avatar_path="a.png", is_active=True, is_available=True, pending_email="b@x.co", role="member")
+    u = SimpleNamespace(id="u1", full_name="Ann", username="ann", email="a@x.co", avatar_path="a.png", is_active=True, is_available=True, pending_email="b@x.co", role="member", email_verified_at=None)
     assert dto.serialize_user(u)["pending_email"] == "b@x.co" and dto.serialize_user(u)["avatar_url"].startswith("/api/users/u1/avatar")
     admin = dto.serialize_user_admin(u)
     assert admin["role"] == "member" and "pending_email" not in admin
+    assert admin["email_verified"] is False and "email_verified" not in dto.serialize_user(u)
+    u.email_verified_at = "2026-11-28T00:00:00+00:00"
+    assert dto.serialize_user_admin(u)["email_verified"] is True
     assert "email" not in dto.serialize_member(u) and dto.serialize_candidate(u)["email"] == "a@x.co"
     u.avatar_path = None
     assert dto.serialize_member(u)["avatar_url"] is None

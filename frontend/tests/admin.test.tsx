@@ -12,7 +12,7 @@ const create = vi.fn();
 const update = vi.fn();
 vi.mock("@/lib/api", () => ({ api: { users: { create: (...a: unknown[]) => create(...a), update: (...a: unknown[]) => update(...a) } } }));
 
-const user = (over: Partial<AdminUser>): AdminUser => ({ id: "u1", full_name: "Ann Lee", username: "ann", email: "ann@x.com", avatar_url: null, role: "member", ...over });
+const user = (over: Partial<AdminUser>): AdminUser => ({ id: "u1", full_name: "Ann Lee", username: "ann", email: "ann@x.com", avatar_url: null, role: "member", email_verified: true, ...over });
 const shell = shellValue({ session: { token: "t", userId: "a1", role: "admin" as const, exp: 9 } });
 
 function renderScreen(users: AdminUser[]) {
@@ -34,6 +34,14 @@ describe("UsersScreen", () => {
     expect(rows[0]).toHaveTextContent("@ann");
     expect(rows[0]).toHaveTextContent("ann@x.com");
     expect(screen.getByRole("button", { name: "Role of bob: Manager" })).toHaveTextContent("Manager");
+  });
+
+  it("shows whether each email address is confirmed", () => {
+    renderScreen([user({}), user({ id: "u2", username: "bob", email: "bob@x.com", email_verified: false })]);
+    const rows = within(screen.getByRole("list", { name: "Users" })).getAllByRole("listitem");
+    expect(within(rows[0]).getByText("Confirmed")).toBeInTheDocument();
+    expect(within(rows[1]).getByText("Not confirmed")).toBeInTheDocument();
+    expect(within(rows[1]).queryByText("Confirmed")).toBeNull();
   });
 
   it("creates a user with username, email, password and role, and shows it in the list", async () => {
