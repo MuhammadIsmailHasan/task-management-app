@@ -24,7 +24,7 @@ check("login", login.ok);
 const { token } = (await login.json()).data;
 const auth = { Authorization: `Bearer ${token}` };
 const list = (await (await fetch(`${O}/app/api/boards`, { headers: auth })).json()).data;
-const board = (list.items ?? list).find((b) => b.name === "Alpha Board");
+const board = (list.items ?? list).find((b) => b.name === "Website Redesign");
 const page = await fetch(`${O}/app/b/${board.slug}`, { headers: { Cookie: `kanban_token=${token}` } });
 check("server-rendered board", page.ok && (await page.text()).includes("Design new landing page"));
 const expired = await fetch(`${O}/app/session-expired`, { redirect: "manual" });

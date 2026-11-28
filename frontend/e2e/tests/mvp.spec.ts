@@ -85,7 +85,7 @@ test("edits the card in the one modal: title, priority, subtasks, and a comment"
 
 test("a Member gets no staff controls in the card modal (PERM-02)", async ({ page }) => {
   await signIn(page, "member@example.com");
-  await page.goto("/app/b/alpha-board");
+  await page.goto("/app/b/website-redesign");
   await expect(page.getByRole("button", { name: "Edit board" })).toHaveCount(0);
   await page.getByRole("button", { name: /^Open card / }).first().click();
   const modal = page.getByRole("dialog");

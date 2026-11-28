@@ -1,5 +1,8 @@
+from argon2 import PasswordHasher
+
 from app.extensions import db
 from app.models import User
+from app.seed_projects import PROJECTS
 
 
 def test_seed_refuses_outside_dev_and_testing(make_app):
@@ -39,8 +42,29 @@ def test_seed_data_fills_every_table_and_is_idempotent(make_app, monkeypatch):
         assert "already present" in runner.invoke(args=["seed-data"]).output
         assert counts == {m: m.query.count() for m in (User, Board, Card, Comment)}
         assert Comment.query.filter(Comment.parent_id.isnot(None)).count() == 2
-        assert Board.query.count() == 2
+        assert Board.query.count() == len(PROJECTS) + 1
+        done = {c.id for c in Column.query.filter_by(name="Done")}
+        assert all((card.completed_at is not None) == (card.column_id in done) for card in Card.query.all())
+        members = {(m.board_id, m.user_id) for m in BoardMember.query.all()}
+        owners = {(b.id, b.owner_id) for b in Board.query.all()}
+        assert all((c.board_id, c.assignee_id) in members | owners for c in Card.query.all() if c.assignee_id)
+        written = {(c.card_id, c.author_id) for c in Comment.query.all()}
+        board_of = {c.id: c.board_id for c in Card.query.all()}
+        outsiders = {u.id for u in User.query.filter(User.role.in_(("manager", "admin")))}
+        assert all((board_of[card], author) in members | owners or author in outsiders for card, author in written)
         assert BoardMember.query.join(User, User.id == BoardMember.user_id).filter(User.role.in_(("manager", "admin"))).count() == 0
+
+
+def test_seed_data_gives_admin_its_own_password_when_set(make_app, monkeypatch):
+    app = make_app("testing")
+    with app.app_context():
+        db.create_all()
+        monkeypatch.setenv("SEED_PASSWORD", "demo-password-1")
+        monkeypatch.setenv("SEED_ADMIN_PASSWORD", "private-admin-2")
+        assert app.test_cli_runner().invoke(args=["seed-data"]).exit_code == 0
+        for user in User.query.all():
+            expected = "private-admin-2" if user.role == "admin" else "demo-password-1"
+            assert PasswordHasher().verify(user.password_hash, expected), user.username
 
 
 def test_seed_data_refuses_in_production(make_app):
