@@ -84,10 +84,10 @@ export function CalendarView({ columns, cards, onOpen }: CalendarViewProps) {
               role="gridcell"
               aria-selected={iso === selected}
               aria-current={isToday ? "date" : undefined}
-              className={cn("flex min-h-touch flex-col gap-1 rounded-ui p-1 lg:min-h-calendar-cell", inMonth ? "bg-surface-raised" : "bg-surface text-ink-muted", iso === selected && "bg-accent-tint lg:bg-surface-raised")}
+              className={cn("flex min-h-touch flex-col gap-1 rounded-ui border p-1 lg:min-h-calendar-cell", inMonth ? "bg-surface-raised" : "bg-surface text-ink-muted", iso === selected && "bg-accent-tint lg:bg-surface-raised", isToday ? "border-accent" : "border-transparent")}
             >
-              <BaseButton variant="ghost" size="sm" onClick={() => setSelected(iso)} aria-label={`${shortDate(iso)}, ${day.length} ${day.length === 1 ? "card" : "cards"}`} className={cn("h-auto min-h-0 justify-between px-1 py-1 text-xs font-normal", isToday && "font-semibold text-accent")}>
-                <span>{Number(iso.slice(8))}</span>
+              <BaseButton variant="ghost" size="sm" onClick={() => setSelected(iso)} aria-label={`${shortDate(iso)}, ${day.length} ${day.length === 1 ? "card" : "cards"}`} className="h-auto min-h-0 justify-between px-1 py-1 text-xs font-normal">
+                <span className={cn("rounded-ui px-1", isToday && "bg-accent font-semibold text-on-accent")}>{Number(iso.slice(8))}</span>
                 {day.length > 0 && <span aria-hidden="true" className="size-dot rounded-full bg-accent lg:hidden" />}
               </BaseButton>
               <div className="hidden flex-col gap-1 lg:flex">
