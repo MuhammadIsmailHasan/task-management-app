@@ -3,6 +3,7 @@ import { BoardsClear } from "@/components/board/BoardsClear";
 import { BoardsToolbar } from "@/components/board/BoardsToolbar";
 import { BoardTile } from "@/components/board/BoardTile";
 import { NewBoardButton } from "@/components/board/NewBoardButton";
+import { RoleTag } from "@/components/shared/RoleTag";
 import { decodeToken } from "@/lib/session";
 import { serverGet, serverToken } from "@/lib/server";
 import type { Analytics, Board, Member } from "@/lib/types";
@@ -39,7 +40,10 @@ export default async function BoardsHome({ searchParams }: { searchParams: Promi
   return (
     <div className="flex flex-col gap-section px-page pt-surface pb-surface">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-heading text-xl">Boards</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="font-heading text-xl">Boards</h1>
+          {claims && <RoleTag role={claims.role} prefix="as" />}
+        </div>
         {staff && <NewBoardButton />}
       </div>
       {analytics && analytics.length > 0 && !q && <AnalyticsStrip rows={analytics} />}

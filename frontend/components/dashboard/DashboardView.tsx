@@ -9,7 +9,10 @@ import { BaseBadge } from "@/components/shared/BaseBadge";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox } from "@/components/shared/BaseCombobox";
 import { BaseDateField } from "@/components/shared/BaseDateField";
+import { LinkRow } from "@/components/shared/LinkRow";
+import { RoleTag } from "@/components/shared/RoleTag";
 import { useShell } from "@/components/shell/ShellContext";
+import { activityHref } from "@/lib/activity";
 import { api } from "@/lib/api";
 import { EMPTY_FILTERS, filtersFromParams, filtersToQuery, greeting, percentDone, type DashboardFilters } from "@/lib/dashboard";
 import { boardByIdPath, routes } from "@/lib/routes";
@@ -33,12 +36,12 @@ function FilterField({ label, htmlFor, children }: { label: string; htmlFor: str
 
 interface DashboardViewProps {
   role: Role;
-  boards: { id: string; name: string }[];
+  boards: { id: string; name: string; slug: string }[];
 }
 
 export function DashboardView({ role, boards }: DashboardViewProps) {
   const manager = role === "manager" || role === "admin";
-  const { user, toggleSidePanel } = useShell();
+  const { user } = useShell();
   const params = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -101,7 +104,10 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
             <i aria-hidden="true" className="size-dot rounded-full bg-accent" />
             Dashboard
           </span>
-          <h1 className="font-heading text-xl">{hello}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-heading text-xl">{hello}</h1>
+            <RoleTag role={role} prefix="as" />
+          </div>
         </div>
         <section aria-label="Filters" className="rounded-ui border border-line bg-surface-raised p-section shadow-card">
           <div className="grid grid-cols-1 items-end gap-field md:grid-cols-2 lg:grid-cols-4">
@@ -194,7 +200,7 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
 
           <DashboardWidgets data={data} dueOn={filters.dueOn} onDueOn={(v) => change({ dueOn: v })} />
 
-          {manager && allBoards ? <BoardsTable /> : !allBoards && <RecentActivity boardId={boardValue} onViewAll={() => toggleSidePanel("activity")} />}
+          {manager && allBoards ? <BoardsTable /> : !allBoards && <RecentActivity boardId={boardValue} boardSlug={boards.find((b) => b.id === boardValue)?.slug} />}
         </>
       )}
     </div>
@@ -245,7 +251,7 @@ function BoardsTable() {
   );
 }
 
-function RecentActivity({ boardId, onViewAll }: { boardId: string; onViewAll: () => void }) {
+function RecentActivity({ boardId, boardSlug }: { boardId: string; boardSlug: string | undefined }) {
   const [rows, setRows] = useState<ActivityEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -265,12 +271,7 @@ function RecentActivity({ boardId, onViewAll }: { boardId: string; onViewAll: ()
 
   return (
     <section aria-label="Recent activity" className="rounded-ui border border-line bg-surface-raised p-surface shadow-card">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-heading text-page-title">Recent activity</h2>
-        <BaseButton variant="secondary" size="sm" onClick={onViewAll}>
-          View all
-        </BaseButton>
-      </header>
+      <h2 className="mb-4 font-heading text-page-title">Recent activity</h2>
       {failed ? (
         <div className="flex items-center gap-3 text-sm text-danger">
           Could not load activity.
@@ -285,8 +286,10 @@ function RecentActivity({ boardId, onViewAll }: { boardId: string; onViewAll: ()
       ) : (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {rows.map((r) => (
-            <li key={r.id} className="rounded-ui bg-surface p-item">
-              <ActivityLine entry={r} showContext />
+            <li key={r.id}>
+              <LinkRow href={activityHref(r, boardSlug)}>
+                <ActivityLine entry={r} showContext />
+              </LinkRow>
             </li>
           ))}
         </ul>

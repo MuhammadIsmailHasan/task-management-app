@@ -30,7 +30,7 @@ const data = (over: Partial<DashboardData> = {}): DashboardData => ({
   ...over,
 });
 
-const boards = [{ id: "b1", name: "Alpha" }, { id: "b2", name: "Beta" }];
+const boards = [{ id: "b1", name: "Alpha", slug: "alpha" }, { id: "b2", name: "Beta", slug: "beta" }];
 const view = (role: "manager" | "supervisor", list = boards, user = { id: "u1", full_name: "Ann Lee", username: "ann", email: "a@x.com", avatar_url: null }) =>
   render(
     <ShellContext.Provider value={shellValue({ user })}>
@@ -109,7 +109,7 @@ describe("DashboardView (Requirements 43 and 51)", () => {
     expect(screen.getByRole("img", { name: /3 weeks: 8 in total/ })).toBeInTheDocument();
     expect(screen.getAllByText("Not limited by the date range").length).toBeGreaterThanOrEqual(2);
     const overdue = screen.getByRole("region", { name: "Overdue cards" });
-    expect(within(overdue).getByRole("link", { name: "Late one" })).toHaveAttribute("href", "/app/b/alpha?card=k1");
+    expect(within(overdue).getByRole("link", { name: /^Late one/ })).toHaveAttribute("href", "/app/b/alpha?card=k1");
     expect(within(overdue).getByText("and 11 more")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Due tomorrow" })).getByText("Soon one")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Top 5 priority cards" })).getByText("Ship it")).toBeInTheDocument();
@@ -137,6 +137,35 @@ describe("DashboardView (Requirements 43 and 51)", () => {
     expect(mocks.api.analytics.dashboard.mock.calls[0][0].board).toBe("b1");
     expect(await screen.findByRole("region", { name: "Recent activity" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Boards" })).not.toBeInTheDocument();
+  });
+
+  it.each([["manager", "as Manager"], ["supervisor", "as Supervisor"]] as const)("shows the role of a %s after the greeting", async (role, label) => {
+    view(role, role === "supervisor" ? [boards[0]] : boards);
+    await screen.findByText("57% Done");
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it("has no View all button on recent activity", async () => {
+    view("supervisor", [boards[0]]);
+    const feed = await screen.findByRole("region", { name: "Recent activity" });
+    expect(within(feed).queryByRole("button", { name: "View all" })).not.toBeInTheDocument();
+  });
+
+  it("makes the whole card row a link to the card", async () => {
+    view("manager");
+    const link = await screen.findByRole("link", { name: /Late one/ });
+    expect(link).toHaveAttribute("href", "/app/b/alpha?card=k1");
+    expect(link).toHaveTextContent("Alpha");
+    expect(link).toHaveTextContent("Ann Lee");
+  });
+
+  it("links a recent card activity to its card and leaves other activity as text", async () => {
+    const row = (id: string, action: string, target_type: string, title: string) => ({ id, actor_id: "u1", actor_name: "Ann Lee", action, target_type, target_id: `t-${id}`, metadata: { card_title: title, title }, created_at: "2026-11-26T10:00:00Z" });
+    mocks.api.boards.activity.mockResolvedValue([row("1", "card.created", "card", "Plan"), row("2", "card.deleted", "card", "Gone"), row("3", "board.updated", "board", "Alpha")]);
+    view("supervisor", [boards[0]]);
+    const feed = within(await screen.findByRole("region", { name: "Recent activity" }));
+    expect(await feed.findByRole("link", { name: /Plan/ })).toHaveAttribute("href", "/app/b/alpha?card=t-1");
+    expect(feed.getAllByRole("link")).toHaveLength(1);
   });
 
   it("changing a filter writes it to the query string instead of fetching by itself", async () => {

@@ -2,21 +2,26 @@ import Link from "next/link";
 import { ListTodo } from "lucide-react";
 import { DueBadge } from "@/components/board/DueBadge";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
+import { RoleTag } from "@/components/shared/RoleTag";
 import { shortDate } from "@/lib/format";
 import { routes, cardPath } from "@/lib/routes";
-import type { MyCards, MyTaskGroupKey, Priority } from "@/lib/types";
+import type { MyCards, MyTaskGroupKey, Priority, Role } from "@/lib/types";
 
 const GROUP_LABEL: Record<MyTaskGroupKey, string> = { overdue: "Overdue", today: "Today", tomorrow: "Tomorrow", this_week: "This week", later: "Later", no_due: "No due date" };
 const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "accent", low: "neutral" };
 
-export function MyTasksView({ data }: { data: MyCards }) {
+export function MyTasksView({ data, role }: { data: MyCards; role?: Role }) {
+  const roleTag = role && <RoleTag role={role} prefix="as" />;
   if (data.groups.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 px-page py-12 text-center">
         <span aria-hidden="true" className="inline-flex size-tile items-center justify-center rounded-ui bg-accent-tint text-on-accent-tint">
           <ListTodo className="size-icon-lg" />
         </span>
-        <h1 className="font-heading text-xl">Nothing assigned to you</h1>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <h1 className="font-heading text-xl">Nothing assigned to you</h1>
+          {roleTag}
+        </div>
         <p className="text-sm text-ink-muted">Cards assigned to you appear here, grouped by when they are due.</p>
         <Link href={routes.boards} className="text-sm font-semibold">
           Go to boards
@@ -26,7 +31,10 @@ export function MyTasksView({ data }: { data: MyCards }) {
   }
   return (
     <div className="flex flex-col gap-section px-page pt-surface pb-surface">
-      <h1 className="font-heading text-xl">My tasks</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="font-heading text-xl">My tasks</h1>
+        {roleTag}
+      </div>
       {data.groups.map((g) => (
         <section key={g.key} aria-label={GROUP_LABEL[g.key]} className="flex flex-col gap-2 rounded-ui bg-surface p-item">
           <h2 className="flex items-center gap-2 px-1 font-heading text-page-title">

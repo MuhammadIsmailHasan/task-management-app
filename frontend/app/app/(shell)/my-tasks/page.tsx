@@ -10,5 +10,5 @@ export const metadata = { title: "My tasks" };
 export default async function MyTasksPage() {
   const claims = decodeToken((await serverToken()) ?? "");
   if (claims?.role === "admin" || claims?.role === "manager") redirect(routes.dashboard);
-  return <MyTasksView data={await serverGet<MyCards>("/me/cards")} />;
+  return <MyTasksView role={claims?.role} data={await serverGet<MyCards>("/me/cards")} />;
 }

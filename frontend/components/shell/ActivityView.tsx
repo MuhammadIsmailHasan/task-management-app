@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { ActivityLine } from "@/components/card/ActivityLine";
 import { BaseButton } from "@/components/shared/BaseButton";
+import { LinkRow } from "@/components/shared/LinkRow";
 import { usePagedList } from "@/hooks/usePagedList";
+import { activityHref } from "@/lib/activity";
 import { api } from "@/lib/api";
 import { useShell } from "./ShellContext";
 
 export function ActivityView() {
-  const { boardId } = useShell();
+  const { boardId, board, closeSidePanel } = useShell();
   const [names, setNames] = useState<Record<string, string>>({});
   const [columns, setColumns] = useState<Record<string, string>>({});
   const list = usePagedList((page) => (boardId ? api.boards.activity(boardId, page) : Promise.resolve([])), [boardId]);
@@ -34,9 +36,11 @@ export function ActivityView() {
     <div className="flex flex-col gap-3">
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {list.rows.map((r) => (
-          <li key={r.id} className="flex items-start gap-3 rounded-ui bg-surface p-item">
-            <span aria-hidden="true" className="mt-2 size-dot shrink-0 rounded-full bg-accent" />
-            <ActivityLine entry={r} names={names} columns={columns} showContext />
+          <li key={r.id}>
+            <LinkRow href={activityHref(r, board?.slug)} onClick={closeSidePanel} className="flex items-start gap-3">
+              <span aria-hidden="true" className="mt-2 size-dot shrink-0 rounded-full bg-accent" />
+              <ActivityLine entry={r} names={names} columns={columns} showContext />
+            </LinkRow>
           </li>
         ))}
       </ul>

@@ -1,4 +1,5 @@
 import { shortDate } from "./format";
+import { cardPath } from "./routes";
 import type { ActivityEntry } from "./types";
 
 const VERBS: Record<string, string> = {
@@ -178,6 +179,11 @@ export function activityText(p: ActivityParts): string {
     else out += `; ${d.field}${d.from || d.to ? `: ${d.from ?? "none"} to ${d.to ?? "none"}` : " changed"}`;
   }
   return out;
+}
+
+export function activityHref(entry: ActivityEntry, boardSlug: string | null | undefined): string | null {
+  if (!boardSlug || entry.target_type !== "card" || entry.action === "card.deleted") return null;
+  return cardPath(boardSlug, entry.target_id);
 }
 
 export function formatWhen(iso: string | null): string {

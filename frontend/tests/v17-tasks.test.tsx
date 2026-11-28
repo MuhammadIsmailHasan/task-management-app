@@ -36,6 +36,14 @@ describe("My Tasks (Requirement 52)", () => {
     expect(screen.getByRole("link", { name: /Whenever/ })).not.toHaveTextContent(/Overdue|Due tomorrow/);
   });
 
+  it.each([
+    ["with tasks", data],
+    ["without tasks", { today: "2026-11-26", groups: [] }],
+  ])("shows the role after the title %s", (_name, value) => {
+    render(<MyTasksView data={value} role="member" />);
+    expect(screen.getByText("as Member")).toBeInTheDocument();
+  });
+
   it("says Nothing assigned to you when there is no group", () => {
     render(<MyTasksView data={{ today: "2026-11-26", groups: [] }} />);
     expect(screen.getByText("Nothing assigned to you")).toBeInTheDocument();

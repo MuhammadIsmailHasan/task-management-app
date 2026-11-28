@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { CalendarClock, CircleAlert, ListOrdered } from "lucide-react";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
 import { BaseDateField } from "@/components/shared/BaseDateField";
+import { LinkRow } from "@/components/shared/LinkRow";
 import { DueBadge } from "@/components/board/DueBadge";
 import { finishedShares } from "@/lib/dashboard";
 import { shortDate } from "@/lib/format";
@@ -12,19 +12,19 @@ const PRIORITY_TONE: Record<Priority, BadgeTone> = { high: "danger", medium: "ac
 
 function Row({ card }: { card: TaskCard }) {
   return (
-    <li className="flex flex-col gap-1 rounded-ui bg-surface p-item text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <Link href={cardPath(card.board_slug, card.id)} className="min-w-0 font-semibold break-words">
-          {card.title}
-        </Link>
-        <BaseBadge tone={PRIORITY_TONE[card.priority]}>{card.priority}</BaseBadge>
-        <DueBadge state={card.due_state} />
-      </div>
-      <div className="flex flex-wrap gap-x-3 text-xs text-ink-muted">
-        <span>{card.board_name}</span>
-        {card.assignee_name && <span>{card.assignee_name}</span>}
-        {card.end_date && <span>{shortDate(card.end_date)}</span>}
-      </div>
+    <li>
+      <LinkRow href={cardPath(card.board_slug, card.id)} className="flex flex-col gap-1 text-sm">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="min-w-0 font-semibold break-words">{card.title}</span>
+          <BaseBadge tone={PRIORITY_TONE[card.priority]}>{card.priority}</BaseBadge>
+          <DueBadge state={card.due_state} />
+        </span>
+        <span className="flex flex-wrap gap-x-3 text-xs text-ink-muted">
+          <span>{card.board_name}</span>
+          {card.assignee_name && <span>{card.assignee_name}</span>}
+          {card.end_date && <span>{shortDate(card.end_date)}</span>}
+        </span>
+      </LinkRow>
     </li>
   );
 }
