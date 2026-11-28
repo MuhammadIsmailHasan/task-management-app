@@ -4,10 +4,10 @@ import { signIn, submitLogin } from "../support";
 const unique = `e2e${Date.now()}`;
 
 test.describe("login", () => {
-  test("a seeded Manager signs in, lands on Boards, and signs out", async ({ page }) => {
+  test("a seeded Manager signs in, lands on Dashboard, and signs out", async ({ page }) => {
     await signIn(page, "manager@example.com");
-    await expect(page).toHaveURL(/\/app\/boards/);
-    await expect(page.getByRole("heading", { level: 1, name: "Boards" })).toBeVisible();
+    await expect(page).toHaveURL(/\/app\/dashboard/);
+    await expect(page.getByRole("region", { name: "Filters" })).toBeVisible();
     await page.getByRole("button", { name: "User menu" }).click();
     await page.getByRole("menuitem", { name: "Log out" }).click();
     await expect(page).toHaveURL(/\/app\/login|\/$/);
@@ -17,7 +17,7 @@ test.describe("login", () => {
 
   test("signs in with the username too, in any letter case", async ({ page }) => {
     await signIn(page, "MEMBER");
-    await expect(page).toHaveURL(/\/app\/(my-tasks|boards|dashboard)/);
+    await expect(page).toHaveURL(/\/app\/boards/);
   });
 
   test("checks every field before sending, then reports a wrong password without saying which part", async ({ page }) => {

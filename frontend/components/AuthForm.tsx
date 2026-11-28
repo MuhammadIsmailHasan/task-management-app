@@ -9,10 +9,10 @@ import { BaseAlert, BaseField, BaseInput } from "@/components/shared/BaseField";
 import { formatCountdown, useCountdown } from "@/hooks/useCountdown";
 import { api } from "@/lib/api";
 import { ACCOUNT_DISABLED, ACCOUNT_NOT_ACTIVATED, ApiError } from "@/lib/http";
-import { safeReturnPath } from "@/lib/return-path";
+import { loginDestination } from "@/lib/return-path";
 import { loginPath, registerPath, routes } from "@/lib/routes";
 import { rememberPending } from "@/components/auth/VerifyView";
-import { setSession } from "@/lib/session";
+import { decodeToken, setSession } from "@/lib/session";
 import { AUTH_FIELD_ORDER, isEmail, isUsername, validateAuth } from "@/lib/validation";
 
 type Mode = "login" | "register";
@@ -93,7 +93,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string | null }) {
         return;
       }
       setSession(result.token, result.user);
-      router.push(safeReturnPath(next));
+      router.push(loginDestination(next, decodeToken(result.token)?.role));
     } catch (err) {
       if (err instanceof ApiError && err.httpStatus === 429) {
         setWait(err.retryAfter ?? 60);

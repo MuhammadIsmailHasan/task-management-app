@@ -49,6 +49,24 @@ describe("AuthForm", () => {
     expect(document.cookie).toContain("kanban_token=");
   });
 
+  it.each(["supervisor", "manager", "admin"])("sends a %s to the dashboard after login", async (role) => {
+    login.mockResolvedValue({ user, token: `h.${btoa(JSON.stringify({ sub: "u1", role, exp: 9999999999 }))}.s` });
+    render(<AuthForm mode="login" />);
+    await userEvent.type(screen.getByLabelText("Username or email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "secret-pass");
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/app/dashboard"));
+  });
+
+  it("goes back to the page that asked for the login, whatever the role", async () => {
+    login.mockResolvedValue({ user, token: `h.${btoa(JSON.stringify({ sub: "u1", role: "manager", exp: 9999999999 }))}.s` });
+    render(<AuthForm mode="login" next="/app/b/alpha?card=c1" />);
+    await userEvent.type(screen.getByLabelText("Username or email"), "ann@x.com");
+    await userEvent.type(screen.getByLabelText("Password"), "secret-pass");
+    await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/app/b/alpha?card=c1"));
+  });
+
   it("shows and hides the password", async () => {
     render(<AuthForm mode="login" />);
     const field = screen.getByLabelText("Password");
