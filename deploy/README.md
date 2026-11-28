@@ -18,6 +18,8 @@ bash deploy/bare/seed.sh
 
 `setup.sh` installs Python venv support and Node 24 when Node is older than 22, creates the database role and `/srv/revoboard/.env`, installs the Nginx site on the first run only (see below), and registers the programs with supervisord.
 
+`seed.sh` asks for the demo password and a different, private Admin password. It adds the demo data only when the **Website Redesign** board does not exist, and it never changes the password of an existing user. To rebuild the demo data, run `bash deploy/bare/seed.sh --reset`: after you type `erase`, it writes a backup to `/var/backups/revoboard`, stops the app, **erases the whole database**, migrates, seeds, and starts the app. The script runs the code in `/srv/revoboard/current`, so deploy first. Due dates are counted from the day of seeding, so reset again when most cards look overdue.
+
 | Task | Command |
 |------|---------|
 | Status | `sudo supervisorctl status` |
