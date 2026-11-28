@@ -611,3 +611,14 @@ Contradictions and gaps found; none was resolved silently.
 - **Option rows (DS-31):** list rows are `--control-h` high with `px-3 py-2 gap-3`; the assignee list is wide with `md` avatars.
 - **Board right edge (DS-32):** the Column row is now an inset scroll area (`mx-page`), so Columns clip at the toolbar's right edge instead of the frame edge; the Column width formula follows.
 - **Checks:** frontend 370 tests and `tsc` pass; the four-width check passes except the known development-only 404 error.
+
+### Round 8 within V18 - 2026-11-28 (owner review; specs and build together)
+- **Requirement 73 (new, `specs/v18/47-ROUND-8-OWNER-REVIEW.md`):** R8-01 to R8-14.
+- **Mail (R8-01, R8-02):** one HTML layout for every email with the user's name escaped; `smtp` needs a `PUBLIC_BASE_URL` with a scheme (the live site sent `http:///app/verify` links while it was empty).
+- **Sign-in and Users (R8-03 to R8-05):** Supervisor, Manager, and Admin land on the Dashboard, a Member on Boards; `next` still wins (TOK-03 superseded). The Users table shows Confirmed or Not confirmed from `email_verified`. The password button no longer jumps 17 pixels when pressed.
+- **Dashboard, panels, and shell (R8-06 to R8-08):** "View all" removed (DASH-06 amended); card and activity rows are whole-row links; an "as <Role>" tag follows the Dashboard, My tasks, and Boards titles.
+- **Feedback (R8-09, R8-10):** failure Toasts are amber for 403, 409, 429 and red otherwise, one per message (TOAST-05 amended, tokens `--warning-soft` and `--on-warning-soft` added from the amber label pair). The Board's inline error alert and card notice are Toasts now; the Members move refusal shows once.
+- **Layout (R8-11, R8-12):** long attachment links wrap in activity rows; today is marked in the Calendar.
+- **Demo and repository (R8-13, R8-14):** 6 realistic demo Boards, a private Admin password, `seed.sh --reset`; `design/` and the Docker server scripts removed.
+- **Checks:** backend 498 tests, frontend 392 tests, and `tsc` pass; each screen change was checked in Chrome at 1280 and 360 pixels. Playwright was not run.
+- **Task:** 40.28 (done); 40.20 (visual review) stays open.

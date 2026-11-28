@@ -1292,6 +1292,9 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
   - [x] 40.27 Round 7 within V18: TinyMCE dialogs in the Card modal, one editor focus ring, option rows, board right edge
     - `components/ui/dialog.tsx` (`insideEditorUi`, outside-interaction guards, focusout shield), `RichTextEditor.tsx` (focus shield on the floating UI), `globals.css` (unlayered `:root .tox` overrides), `command.tsx`, `CardAttributes.tsx`, `Board.tsx`, `SharedBoard.tsx`, `tokens.css`; `tests/rich-text.test.tsx`.
     - _Requirements: 61.30, 61.31, 61.32_
+  - [x] 40.28 Round 8 within V18: mail layout, login destination, confirmed badge, clickable rows, role tags, toast tones, calendar today, demo seed
+    - Backend `common/mail.py`, `auth/dto.py`, `auth/schema.py`, `seed.py`, `seed_projects.py`; `deploy/bare/seed.sh`; Frontend `AuthForm.tsx`, `lib/return-path.ts`, `UsersScreen.tsx`, `LinkRow.tsx`, `DashboardView.tsx`, `DashboardWidgets.tsx`, `ActivityView.tsx`, `ActivityLine.tsx`, `RoleTag.tsx`, `MyTasksView.tsx`, `BoardView.tsx`, `CalendarView.tsx`, `BaseToaster.tsx`, `lib/toast.ts`, `tokens.css`, `globals.css`; tests `test_users.py`, `test_seed.py`, `test_common.py`, `auth.test.tsx`, `v17-dashboard.test.tsx`, `v18.test.tsx`, `calendar-today.test.tsx`.
+    - _Requirements: 73.1 to 73.14_
   - [x] 40.19 Tests, width check, documents
     - _Requirements: 72.1 to 72.3, 72.5_
   - [ ] 40.20 Checkpoint: owner's visual review (includes 39.52)
