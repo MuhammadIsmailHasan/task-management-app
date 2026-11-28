@@ -97,7 +97,6 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 ├── compose.yaml        Docker services: backend, scheduler, frontend
 ├── specs/              Versioned specifications (v1 to v18) and the changelog
 ├── .kiro/              Requirements, design, tasks, and steering documents
-├── design/             Visual references
 └── guidelines/         Coding standards for backend, frontend, and database
 ```
 

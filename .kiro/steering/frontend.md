@@ -4,12 +4,12 @@ inclusion: always
 
 # Frontend Steering — App Shell & Interaction Rules
 
-This reflects the approved HTML prototype (`design/kanban-prototype.html`) — its
+This reflects the approved HTML prototype (removed from the repository after it was built; see git history) — its
 layout and interaction patterns are the real source of truth for the frontend,
 overriding any looser prose description elsewhere.
 
-> **V16 (approved and implemented, 2026-11-23):** the look follows `design/kanban-prototype-v2.html`, measured
-> from its renders in `design/reference/v2/` (Requirements 38 to 44, `specs/v16/`). Where a rule below names the
+> **V16 (approved and implemented, 2026-11-23):** the look follows the second prototype, measured
+> from its renders (Requirements 38 to 44, `specs/v16/`; the `design/` folder is now only in git history). Where a rule below names the
 > Sidebar, the 8 pixel radius limit, or the 40 and 32 pixel control sizes, the V16 rule at the end of this file
 > wins. The prototype is the visual source of truth; behaviour, scope, and data still come from the specs.
 
