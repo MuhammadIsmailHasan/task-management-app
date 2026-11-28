@@ -93,8 +93,8 @@ Kanban task management for teams: boards, columns, cards with subtasks and attac
 .
 ├── backend/            Flask API: app/blueprints/<domain>/{routes,service,repository,schema}.py, models, migrations, tests
 ├── frontend/           Next.js app: app/ (routes), components/, lib/, styles/ (design tokens), tests/ (Vitest), e2e/ (Playwright)
-├── deploy/             nginx, Docker and bare-metal deploy scripts; see deploy/README.md
-├── compose.yaml        Docker services: backend, scheduler, frontend
+├── deploy/             nginx, server deploy scripts and the smoke test; see deploy/README.md
+├── compose.yaml        Docker services for the CI smoke test
 ├── specs/              Versioned specifications (v1 to v18) and the changelog
 ├── .kiro/              Requirements, design, tasks, and steering documents
 └── guidelines/         Coding standards for backend, frontend, and database
@@ -179,7 +179,7 @@ npm run e2e -- --ui      # the Playwright UI below
 
 ## Deploy
 
-Docker (`compose.yaml`) or bare metal with supervisord, behind nginx on one origin. Read [deploy/README.md](deploy/README.md) for the environment, TLS, SMTP, and the scheduler.
+The server runs the app with supervisord, behind nginx on one origin; Docker is used only by the CI smoke test. Read [deploy/README.md](deploy/README.md) for the environment, TLS, SMTP, and the scheduler.
 
 ## Documentation
 

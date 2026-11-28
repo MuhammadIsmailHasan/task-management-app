@@ -55,10 +55,9 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-          DEPLOY_SCRIPT: ${{ vars.DEPLOY_SCRIPT || 'deploy/bare/deploy.sh' }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/key && chmod 600 ~/.ssh/key
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           ssh -i ~/.ssh/key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 "$SSH_USER@$SSH_HOST" \
-            "set -e; cd /srv/revoboard/app; git fetch origin master; git checkout --detach $GITHUB_SHA; bash $DEPLOY_SCRIPT"
+            "set -e; cd /srv/revoboard/app; git fetch origin master; git checkout --detach $GITHUB_SHA; bash deploy/bare/deploy.sh"
