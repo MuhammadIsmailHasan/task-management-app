@@ -13,7 +13,7 @@ interface ActivityLineProps {
 export function ActivityLine({ entry, names, columns, showContext = false }: ActivityLineProps) {
   const p = describeActivity(entry, { names, columns });
   return (
-    <div className="flex flex-col gap-1 text-sm">
+    <div className="flex min-w-0 flex-col gap-1 text-sm wrap-anywhere">
       <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
         <strong className="font-semibold">{p.actor}</strong>
         <span>{p.verb}</span>

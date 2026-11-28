@@ -51,6 +51,13 @@ describe("describeActivity", () => {
 });
 
 describe("ActivityLine", () => {
+  it("lets a long attachment link wrap inside its box", () => {
+    const link = `https://example.com/${"a".repeat(200)}`;
+    const { container } = render(<ActivityLine entry={row("card.attachment_added", { name: link, card_title: "Plan" })} />);
+    expect(container.firstElementChild).toHaveClass("min-w-0", "wrap-anywhere");
+    expect(container).toHaveTextContent(link);
+  });
+
   it("renders the actor in bold, the object quoted, and the columns as badges", () => {
     render(<ActivityLine entry={row("card.moved", { card_title: "Plan", from_column_name: "Todo", to_column_name: "In Progress" })} />);
     expect(screen.getByText("Manager").tagName).toBe("STRONG");
