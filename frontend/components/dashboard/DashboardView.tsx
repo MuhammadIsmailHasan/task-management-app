@@ -18,6 +18,7 @@ import { EMPTY_FILTERS, filtersFromParams, filtersToQuery, greeting, percentDone
 import { boardByIdPath, routes } from "@/lib/routes";
 import type { ActivityEntry, Analytics, DashboardData, Role } from "@/lib/types";
 import { DashboardWidgets } from "./DashboardWidgets";
+import { TeamPerformance } from "./KpiPanels";
 import { ThroughputChart } from "./ThroughputChart";
 
 const ALL = "all";
@@ -199,6 +200,8 @@ export function DashboardView({ role, boards }: DashboardViewProps) {
           </div>
 
           <DashboardWidgets data={data} dueOn={filters.dueOn} onDueOn={(v) => change({ dueOn: v })} />
+
+          <TeamPerformance board={filters.board || (manager ? undefined : boards[0]?.id)} from={filters.from || undefined} to={filters.to || undefined} />
 
           {manager && allBoards ? <BoardsTable /> : !allBoards && <RecentActivity boardId={boardValue} boardSlug={boards.find((b) => b.id === boardValue)?.slug} />}
         </>

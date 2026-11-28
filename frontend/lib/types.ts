@@ -257,3 +257,28 @@ export interface DashboardData {
   finished: { on_time: number; overdue: number };
   members: { id: string; full_name: string; avatar_url: string | null }[];
 }
+
+export interface KpiFigures {
+  finished: number;
+  on_time_rate: number | null;
+  throughput: number;
+  overdue_now: number;
+  oldest_overdue_days: number | null;
+  cycle_days: number | null;
+  rework_rate: number | null;
+  open: number;
+}
+
+export interface KpiPerson extends KpiFigures {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+export interface KpiReport {
+  range: { from: string; to: string };
+  team: KpiFigures;
+  people: KpiPerson[];
+}
+
+export type MyKpi = KpiFigures & { range: { from: string; to: string } };

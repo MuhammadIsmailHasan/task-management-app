@@ -16,6 +16,8 @@ import type {
   InviteState,
   JoinRequest,
   DashboardData,
+  KpiReport,
+  MyKpi,
   MyCards,
   Notification,
   NotificationPreference,
@@ -234,9 +236,11 @@ export const api = {
     dashboard: (q: DashboardQuery = {}) =>
       get<DashboardData>("/analytics/dashboard", { board: q.board, member: q.member, from: q.from, to: q.to, due_on: q.dueOn }),
     allThroughput: (weeks = 8) => get<Throughput[]>("/analytics/throughput", { weeks: String(weeks) }),
+    kpi: (q: { board?: string; from?: string; to?: string } = {}) => get<KpiReport>("/analytics/kpi", { board: q.board, from: q.from, to: q.to }),
   },
   me: {
     cards: () => get<MyCards>("/me/cards"),
+    kpi: () => get<MyKpi>("/me/kpi"),
   },
   users: {
     list: (page = 1, perPage = 10) => get<{ items: (User & { role: string })[]; page: number; per_page: number; total: number }>("/users", { page: String(page), per_page: String(perPage) }),

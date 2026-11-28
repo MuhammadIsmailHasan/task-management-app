@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/http";
 import type { Analytics, DashboardData, TaskCard, Throughput } from "@/lib/types";
 import { shellValue } from "./support/shell";
 
-const mocks = vi.hoisted(() => ({ replace: vi.fn(), search: { value: "" }, api: { analytics: { dashboard: vi.fn(), all: vi.fn() }, boards: { activity: vi.fn() } } }));
+const mocks = vi.hoisted(() => ({ replace: vi.fn(), search: { value: "" }, api: { analytics: { dashboard: vi.fn(), all: vi.fn(), kpi: vi.fn() }, boards: { activity: vi.fn() } } }));
 vi.mock("@/lib/api", () => ({ api: mocks.api }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/app/dashboard", useRouter: () => ({ replace: mocks.replace, push: vi.fn() }), useSearchParams: () => new URLSearchParams(mocks.search.value) }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
@@ -44,6 +44,7 @@ beforeEach(() => {
   mocks.api.analytics.dashboard.mockResolvedValue(data());
   mocks.api.analytics.all.mockResolvedValue([a("1", "Alpha"), a("2", "Beta")]);
   mocks.api.boards.activity.mockResolvedValue([]);
+  mocks.api.analytics.kpi.mockResolvedValue({ range: { from: "2026-10-28", to: "2026-11-26" }, team: { finished: 0, on_time_rate: null, throughput: 0, overdue_now: 0, oldest_overdue_days: null, cycle_days: null, rework_rate: null, open: 0 }, people: [] });
 });
 
 describe("dashboard figures", () => {
@@ -143,6 +144,13 @@ describe("DashboardView (Requirements 43 and 51)", () => {
     view(role, role === "supervisor" ? [boards[0]] : boards);
     await screen.findByText("57% Done");
     expect(screen.getByText(label)).toBeInTheDocument();
+  });
+
+  it("asks the team KPIs for the same board and range as the dashboard", async () => {
+    mocks.search.value = "board=b2&from=2026-11-01&to=2026-11-20";
+    view("manager");
+    expect(await screen.findByRole("region", { name: "Team performance" })).toBeInTheDocument();
+    expect(mocks.api.analytics.kpi).toHaveBeenCalledWith({ board: "b2", from: "2026-11-01", to: "2026-11-20" });
   });
 
   it("has no View all button on recent activity", async () => {

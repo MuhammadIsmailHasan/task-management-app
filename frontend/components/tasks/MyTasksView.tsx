@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ListTodo } from "lucide-react";
+import { MyPerformance } from "@/components/dashboard/KpiPanels";
 import { DueBadge } from "@/components/board/DueBadge";
 import { BaseBadge, type BadgeTone } from "@/components/shared/BaseBadge";
 import { RoleTag } from "@/components/shared/RoleTag";
@@ -26,6 +27,9 @@ export function MyTasksView({ data, role }: { data: MyCards; role?: Role }) {
         <Link href={routes.boards} className="text-sm font-semibold">
           Go to boards
         </Link>
+        <div className="mt-section w-full text-left">
+          <MyPerformance />
+        </div>
       </div>
     );
   }
@@ -35,6 +39,7 @@ export function MyTasksView({ data, role }: { data: MyCards; role?: Role }) {
         <h1 className="font-heading text-xl">My tasks</h1>
         {roleTag}
       </div>
+      <MyPerformance />
       {data.groups.map((g) => (
         <section key={g.key} aria-label={GROUP_LABEL[g.key]} className="flex flex-col gap-2 rounded-ui bg-surface p-item">
           <h2 className="flex items-center gap-2 px-1 font-heading text-page-title">
