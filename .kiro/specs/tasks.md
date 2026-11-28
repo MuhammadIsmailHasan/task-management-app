@@ -1295,6 +1295,12 @@ V14 (draft) adds group 37, production deployment. 37.1 blocks the deployment tas
   - [x] 40.28 Round 8 within V18: mail layout, login destination, confirmed badge, clickable rows, role tags, toast tones, calendar today, demo seed
     - Backend `common/mail.py`, `auth/dto.py`, `auth/schema.py`, `seed.py`, `seed_projects.py`; `deploy/bare/seed.sh`; Frontend `AuthForm.tsx`, `lib/return-path.ts`, `UsersScreen.tsx`, `LinkRow.tsx`, `DashboardView.tsx`, `DashboardWidgets.tsx`, `ActivityView.tsx`, `ActivityLine.tsx`, `RoleTag.tsx`, `MyTasksView.tsx`, `BoardView.tsx`, `CalendarView.tsx`, `BaseToaster.tsx`, `lib/toast.ts`, `tokens.css`, `globals.css`; tests `test_users.py`, `test_seed.py`, `test_common.py`, `auth.test.tsx`, `v17-dashboard.test.tsx`, `v18.test.tsx`, `calendar-today.test.tsx`.
     - _Requirements: 73.1 to 73.14_
+  - [x] 40.29 Round 9 within V18: KPIs on the Dashboard and My tasks
+    - Backend `analytics/repository.py`, `service.py`, `schema.py`, `routes.py`, `seed.py`, `seed_projects.py`, `API.md`, `openapi.json`; Frontend `KpiPanels.tsx`, `lib/kpi.ts`, `lib/api.ts`, `lib/types.ts`, `DashboardView.tsx`, `MyTasksView.tsx`; tests `test_kpi.py`, `kpi.test.tsx`, `v17-dashboard.test.tsx`, `v17-tasks.test.tsx`.
+    - _Requirements: 74.1 to 74.9_
+  - [x] 40.30 Round 9 within V18: attachment tiles, invite card, landing Workflow and Roles
+    - `AttachmentLink.tsx`, `AttachmentList.tsx`, `SharedCardModal.tsx`, `InviteCard.tsx`, `InviteJoin.tsx`, `invite/[token]/page.tsx`, `landing/sections.tsx`; tests `attachment-link.test.tsx`, `v12.test.tsx`, `v16-landing.test.tsx`.
+    - _Requirements: 73.15 to 73.17_
   - [x] 40.19 Tests, width check, documents
     - _Requirements: 72.1 to 72.3, 72.5_
   - [ ] 40.20 Checkpoint: owner's visual review (includes 39.52)
