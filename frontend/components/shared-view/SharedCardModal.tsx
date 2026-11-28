@@ -9,7 +9,8 @@ import { BaseAlert } from "@/components/shared/BaseField";
 import { RichText } from "@/components/shared/RichText";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { api } from "@/lib/api";
-import { absoluteFileUrl, hrefFor, isExpired } from "@/lib/attachments";
+import { absoluteFileUrl, isExpired } from "@/lib/attachments";
+import { ATTACHMENT_TILE, AttachmentLink } from "@/components/card/AttachmentLink";
 import { shortDate } from "@/lib/format";
 import { categoryTone } from "@/lib/tones";
 import type { Attachment, Category, Priority, SharedCard } from "@/lib/types";
@@ -81,10 +82,8 @@ export function SharedCardModal({ token, card, category, onClose }: SharedCardMo
             {error && <BaseAlert>{error}</BaseAlert>}
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {card.attachments.map((a) => (
-                <li key={a.id} className="text-sm">
-                  <a href={hrefFor(a)} target="_blank" rel="noopener noreferrer" onClick={(e) => void open(e, a)}>
-                    {a.name}
-                  </a>
+                <li key={a.id} className={ATTACHMENT_TILE}>
+                  <AttachmentLink attachment={a} onOpen={(e) => void open(e, a)} />
                 </li>
               ))}
             </ul>

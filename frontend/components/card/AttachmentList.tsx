@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileArchive, FileText, Link as LinkIcon, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { BaseButton } from "@/components/shared/BaseButton";
 import { BaseCombobox } from "@/components/shared/BaseCombobox";
 import { BaseAlert, BaseInput } from "@/components/shared/BaseField";
@@ -10,7 +10,8 @@ import { BasePopover } from "@/components/shared/BasePopover";
 import { api } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import { FileDropZone } from "./FileDropZone";
-import { absoluteFileUrl, hrefFor, iconFor, isExpired } from "@/lib/attachments";
+import { absoluteFileUrl, isExpired } from "@/lib/attachments";
+import { ATTACHMENT_TILE, AttachmentLink } from "./AttachmentLink";
 import type { Attachment } from "@/lib/types";
 
 interface AttachmentListProps {
@@ -24,13 +25,6 @@ const KINDS = [
   { value: "link", label: "Link" },
   { value: "file", label: "File" },
 ];
-
-const tile = "flex min-h-control items-center justify-between gap-2 rounded-ui border border-line bg-surface-raised px-3 text-xs";
-
-function TypeIcon({ kind }: { kind: "document" | "archive" | "link" }) {
-  const Icon = kind === "link" ? LinkIcon : kind === "archive" ? FileArchive : FileText;
-  return <Icon className="size-icon shrink-0 text-ink-muted" aria-hidden="true" />;
-}
 
 export function AttachmentList({ cardId, attachments, canEdit, onChange }: AttachmentListProps) {
   const [url, setUrl] = useState("");
@@ -76,11 +70,8 @@ export function AttachmentList({ cardId, attachments, canEdit, onChange }: Attac
           {nothing && <p className="text-sm text-ink-muted">No attachments.</p>}
           <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {shown.map((a) => (
-              <li key={a.id} className={tile}>
-                <a className="flex min-w-0 items-center gap-2 font-medium no-underline" href={hrefFor(a)} target="_blank" rel="noopener noreferrer" onClick={(e) => open(e, a)}>
-                  <TypeIcon kind={iconFor(a)} />
-                  <span className="truncate">{a.name}</span>
-                </a>
+              <li key={a.id} className={ATTACHMENT_TILE}>
+                <AttachmentLink attachment={a} onOpen={(e) => void open(e, a)} />
                 {canEdit && a.can_edit !== false && (
                   <ConfirmDialog
                     title="Remove attachment?"
