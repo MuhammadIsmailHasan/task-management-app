@@ -1,7 +1,7 @@
 from flask_smorest import Blueprint
 
 from app.blueprints.analytics import service
-from app.blueprints.analytics.schema import AnalyticsSchema, DashboardQuerySchema, DashboardSchema, ThroughputQuerySchema, ThroughputSchema
+from app.blueprints.analytics.schema import AnalyticsSchema, DashboardQuerySchema, DashboardSchema, KpiQuerySchema, KpiSchema, MyKpiQuerySchema, MyKpiSchema, ThroughputQuerySchema, ThroughputSchema
 from app.common.auth import current_actor, require_role
 from app.common.docs import endpoint
 from app.common.envelope import envelope
@@ -51,3 +51,21 @@ def all_throughput(args):
 @bp.response(200, envelope(DashboardSchema))
 def dashboard(args):
     return ok(service.dashboard(current_actor(), args.get("board"), args.get("member"), args.get("date_from"), args.get("date_to"), args.get("due_on")))
+
+
+@bp.route("/analytics/kpi", methods=["GET"])
+@endpoint(bp, "Team KPIs", "Supervisor (the Boards it owns), Manager and Admin (any Board). Member 403. Team figures and one row per person of the scope for the date range.", errors=(400, 401, 403, 404))
+@require_role("supervisor", "manager", "member", "admin")
+@bp.arguments(KpiQuerySchema, location="query")
+@bp.response(200, envelope(KpiSchema))
+def team_kpi(args):
+    return ok(service.kpi(current_actor(), args.get("board"), args.get("date_from"), args.get("date_to")))
+
+
+@bp.route("/me/kpi", methods=["GET"])
+@endpoint(bp, "My KPIs", "Every role. The caller's own figures over the cards assigned to them.", errors=(400, 401))
+@require_role("supervisor", "manager", "member", "admin")
+@bp.arguments(MyKpiQuerySchema, location="query")
+@bp.response(200, envelope(MyKpiSchema))
+def my_kpi(args):
+    return ok(service.my_kpi(current_actor(), args.get("date_from"), args.get("date_to")))

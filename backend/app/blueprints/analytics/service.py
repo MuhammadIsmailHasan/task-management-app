@@ -124,16 +124,22 @@ def _scope(actor, board_id):
     return [bid for bid, _ in repo.boards_in_scope(owner_id=owner)]
 
 
-def dashboard(actor, board_id, member, date_from, date_to, due_on):
-    from app.common.identities import Identity, avatar_urls
+def _range(date_from, date_to, today):
     from app.common.errors import ValidationError
 
-    tz_name = current_app.config["APP_TIMEZONE"]
-    today = clock.today(tz_name)
     date_to = date_to or today
     date_from = date_from or (date_to - timedelta(days=DEFAULT_DAYS - 1))
     if date_from > date_to or (date_to - date_from).days + 1 > MAX_DAYS:
         raise ValidationError("The date range must be at most 26 weeks and start on or before its end", details={"from": ["invalid range"]})
+    return date_from, date_to
+
+
+def dashboard(actor, board_id, member, date_from, date_to, due_on):
+    from app.common.identities import Identity, avatar_urls
+
+    tz_name = current_app.config["APP_TIMEZONE"]
+    today = clock.today(tz_name)
+    date_from, date_to = _range(date_from, date_to, today)
     due_on = due_on or today + timedelta(days=1)
     ids = _scope(actor, to_uuid(board_id) if board_id else None)
     if not ids:
@@ -178,3 +184,87 @@ def dashboard(actor, board_id, member, date_from, date_to, due_on):
         "finished": {"on_time": on_time, "overdue": overdue},
         "members": [{"id": str(p.id), "full_name": p.full_name, "avatar_url": urls.get(p.id)} for p in people],
     }
+
+
+MIN_SAMPLE = 3
+DAYS_PER_WEEK = 7
+SECONDS_PER_DAY = 86400
+TODO = "Todo"
+REVISION = "Revision"
+
+
+def _aware(value):
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _rate(part, whole):
+    return round(part / whole, 3) if whole >= MIN_SAMPLE else None
+
+
+def _figures(finished, open_rows, moves_by_card, today, weeks):
+    rated = on_time = reworked = 0
+    cycles = []
+    for card_id, _assignee, completed_at, end_date in finished:
+        done_at = _aware(completed_at)
+        if end_date is not None:
+            rated += 1
+            on_time += done_at.astimezone(_tz()).date() <= end_date
+        moves = [(meta or {}, _aware(at)) for meta, at in moves_by_card.get(card_id, []) if _aware(at) <= done_at]
+        started = next((at for meta, at in moves if meta.get("from_column_name") == TODO), None)
+        if started is not None:
+            cycles.append((done_at - started).total_seconds() / SECONDS_PER_DAY)
+        reworked += any(meta.get("to_column_name") == REVISION for meta, _ in moves)
+    late = [end for _a, end in open_rows if end is not None and end < today]
+    return {
+        "finished": len(finished),
+        "on_time_rate": _rate(on_time, rated),
+        "throughput": round(len(finished) / weeks, 1),
+        "overdue_now": len(late),
+        "oldest_overdue_days": (today - min(late)).days if late else None,
+        "cycle_days": round(sum(cycles) / len(cycles), 1) if cycles else None,
+        "rework_rate": _rate(reworked, len(finished)),
+        "open": len(open_rows),
+    }
+
+
+def _kpi_inputs(ids, date_from, date_to, assignee_id=None):
+    lo, hi = _local_start(date_from), _local_start(date_to + timedelta(days=1))
+    finished = repo.kpi_finished(ids, lo, hi, assignee_id) if ids else []
+    open_rows = repo.kpi_open(ids, assignee_id) if ids else []
+    moves = {}
+    for card_id, meta, at in repo.kpi_moves([row[0] for row in finished]):
+        moves.setdefault(card_id, []).append((meta, at))
+    return finished, open_rows, moves
+
+
+def _weeks(date_from, date_to):
+    return ((date_to - date_from).days + 1) / DAYS_PER_WEEK
+
+
+def kpi(actor, board_id, date_from, date_to):
+    from app.common.identities import Identity, avatar_urls
+
+    today = clock.today(current_app.config["APP_TIMEZONE"])
+    date_from, date_to = _range(date_from, date_to, today)
+    ids = _scope(actor, to_uuid(board_id) if board_id else None)
+    finished, open_rows, moves = _kpi_inputs(ids, date_from, date_to)
+    weeks = _weeks(date_from, date_to)
+    people = repo.people(ids) if ids else []
+    urls = avatar_urls({p.id: Identity(p.full_name, p.avatar_path) for p in people}, clock.now())
+    rows = []
+    for p in people:
+        mine = [f for f in finished if f[1] == p.id]
+        rows.append({"id": str(p.id), "full_name": p.full_name, "avatar_url": urls.get(p.id), **_figures(mine, [o for o in open_rows if o[0] == p.id], moves, today, weeks)})
+    return {
+        "range": {"from": date_from.isoformat(), "to": date_to.isoformat()},
+        "team": _figures(finished, open_rows, moves, today, weeks),
+        "people": rows,
+    }
+
+
+def my_kpi(actor, date_from, date_to):
+    today = clock.today(current_app.config["APP_TIMEZONE"])
+    date_from, date_to = _range(date_from, date_to, today)
+    ids = [bid for bid, _ in repo.boards_in_scope()]
+    finished, open_rows, moves = _kpi_inputs(ids, date_from, date_to, to_uuid(actor.id))
+    return {"range": {"from": date_from.isoformat(), "to": date_to.isoformat()}, **_figures(finished, open_rows, moves, today, _weeks(date_from, date_to))}

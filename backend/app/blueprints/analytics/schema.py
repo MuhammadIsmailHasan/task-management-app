@@ -69,3 +69,41 @@ class DashboardSchema(BaseSchema):
     top_priority = fields.Dict(metadata={"description": "cards: up to 5 open cards, highest priority first then the nearest end date"})
     finished = fields.Dict(metadata={"description": "on_time and overdue counts of cards finished in the range that have an end date"})
     members = fields.List(fields.Dict(), metadata={"description": "People of the scope: id, full_name, avatar_url (no email)"})
+
+
+class KpiQuerySchema(BaseSchema):
+    board = fields.UUID(metadata={"description": "One Board; absent means every Board the viewer may read"})
+    date_from = fields.Date(data_key="from", metadata={"description": "YYYY-MM-DD, default 29 days before `to`"})
+    date_to = fields.Date(data_key="to", metadata={"description": "YYYY-MM-DD, default today in the application time zone"})
+
+
+class MyKpiQuerySchema(BaseSchema):
+    date_from = fields.Date(data_key="from", metadata={"description": "YYYY-MM-DD, default 29 days before `to`"})
+    date_to = fields.Date(data_key="to", metadata={"description": "YYYY-MM-DD, default today in the application time zone"})
+
+
+class KpiFiguresSchema(BaseSchema):
+    finished = fields.Integer(metadata={"description": "Cards finished in the range"})
+    on_time_rate = fields.Float(allow_none=True, metadata={"description": "0 to 1; null below 3 finished cards with an end date"})
+    throughput = fields.Float(metadata={"description": "Finished cards per week of the range"})
+    overdue_now = fields.Integer(metadata={"description": "Open cards past their end date today"})
+    oldest_overdue_days = fields.Integer(allow_none=True, metadata={"description": "Days since the oldest overdue end date"})
+    cycle_days = fields.Float(allow_none=True, metadata={"description": "Average days from leaving Todo to Done"})
+    rework_rate = fields.Float(allow_none=True, metadata={"description": "0 to 1; finished cards that went through Revision; null below 3 finished"})
+    open = fields.Integer(metadata={"description": "Open cards assigned now"})
+
+
+class KpiPersonSchema(KpiFiguresSchema):
+    id = fields.UUID()
+    full_name = fields.String()
+    avatar_url = fields.String(allow_none=True)
+
+
+class KpiSchema(BaseSchema):
+    range = fields.Dict(metadata={"description": "`from` and `to` as YYYY-MM-DD"})
+    team = fields.Nested(KpiFiguresSchema)
+    people = fields.List(fields.Nested(KpiPersonSchema))
+
+
+class MyKpiSchema(KpiFiguresSchema):
+    range = fields.Dict(metadata={"description": "`from` and `to` as YYYY-MM-DD"})

@@ -255,6 +255,8 @@ Board and cross-board summaries.
 | GET | `/api/boards/{board_id}/analytics` | Token | 200 | 400, 401, 403, 404 | Board analytics |
 | GET | `/api/analytics/boards` | Token | 200 | 401, 403 | Cross-board analytics |
 | GET | `/api/analytics/dashboard` | Token | 200 | 400, 401, 403, 404 | Dashboard (Manager and Admin: every Board; Supervisor: owned Boards): overview, throughput, overdue, due tomorrow, top priority, finished on time and overdue, people (filters `board`, `member`, `from`, `to`, `due_on`) |
+| GET | `/api/analytics/kpi` | Token | 200 | 400, 401, 403, 404 | Team KPIs for `board`, `from`, `to` (Manager and Admin: every Board; Supervisor: owned Boards; Member 403): `team` and `people`, each with `finished`, `on_time_rate`, `throughput`, `overdue_now`, `oldest_overdue_days`, `cycle_days`, `rework_rate`, `open`; a rate is null below 3 cards |
+| GET | `/api/me/kpi` | Token | 200 | 400, 401 | The caller's own KPIs for `from`, `to` (every role) |
 | GET | `/api/boards/{board_id}/analytics/throughput` | Token | 200 | 400, 401, 403, 404 | Board throughput |
 | GET | `/api/analytics/throughput` | Token | 200 | 400, 401, 403 | Cross-board throughput |
 

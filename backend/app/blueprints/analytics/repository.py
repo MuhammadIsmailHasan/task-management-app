@@ -159,3 +159,37 @@ def boards_in_scope(owner_id=None, board_id=None):
     if board_id is not None:
         q = q.where(Board.id == board_id)
     return db.session.execute(q.order_by(Board.name, Board.id)).all()
+
+
+def kpi_finished(board_ids, lo_dt, hi_dt, assignee_id=None):
+    q = db.select(Card.id, Card.assignee_id, Card.completed_at, Card.end_date).where(
+        Card.board_id.in_(board_ids),
+        Card.deleted_at.is_(None),
+        Card.completed_at.isnot(None),
+        Card.completed_at >= lo_dt,
+        Card.completed_at < hi_dt,
+    )
+    if assignee_id is not None:
+        q = q.where(Card.assignee_id == assignee_id)
+    return db.session.execute(q).all()
+
+
+def kpi_open(board_ids, assignee_id=None):
+    q = db.select(Card.assignee_id, Card.end_date).select_from(Card).join(Column, Card.column_id == Column.id).where(*_open(board_ids, assignee_id))
+    return db.session.execute(q).all()
+
+
+def kpi_moves(card_ids):
+    from app.models import ActivityLog
+
+    if not card_ids:
+        return []
+    return db.session.execute(
+        db.select(ActivityLog.target_id, ActivityLog.metadata_, ActivityLog.created_at)
+        .where(ActivityLog.action == "card.moved", ActivityLog.target_type == "card", ActivityLog.target_id.in_(card_ids))
+        .order_by(ActivityLog.created_at, ActivityLog.id)
+    ).all()
+
+
+def person(user_id):
+    return db.session.execute(db.select(User.id, User.full_name, User.avatar_path).where(User.id == user_id)).one_or_none()

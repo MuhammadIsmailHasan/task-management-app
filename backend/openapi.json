@@ -5208,6 +5208,184 @@
         ]
       }
     },
+    "/api/analytics/kpi": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "board",
+            "description": "One Board; absent means every Board the viewer may read",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "description": "YYYY-MM-DD, default 29 days before `to`",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "description": "YYYY-MM-DD, default today in the application time zone",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpiEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or board access insufficient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Team KPIs",
+        "description": "Supervisor (the Boards it owns), Manager and Admin (any Board). Member 403. Team figures and one row per person of the scope for the date range.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/me/kpi": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "description": "YYYY-MM-DD, default 29 days before `to`",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "description": "YYYY-MM-DD, default today in the application time zone",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "422": {
+            "$ref": "#/components/responses/UNPROCESSABLE_CONTENT"
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyKpiEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid or expired Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/DEFAULT_ERROR"
+          }
+        },
+        "tags": [
+          "analytics"
+        ],
+        "summary": "My KPIs",
+        "description": "Every role. The caller's own figures over the cards assigned to them.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/users": {
       "get": {
         "parameters": [
@@ -8910,6 +9088,214 @@
               },
               {
                 "$ref": "#/components/schemas/Dashboard"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "KpiFigures": {
+        "type": "object",
+        "properties": {
+          "finished": {
+            "type": "integer",
+            "description": "Cards finished in the range"
+          },
+          "on_time_rate": {
+            "type": "number",
+            "description": "0 to 1; null below 3 finished cards with an end date",
+            "nullable": true
+          },
+          "throughput": {
+            "type": "number",
+            "description": "Finished cards per week of the range"
+          },
+          "overdue_now": {
+            "type": "integer",
+            "description": "Open cards past their end date today"
+          },
+          "oldest_overdue_days": {
+            "type": "integer",
+            "description": "Days since the oldest overdue end date",
+            "nullable": true
+          },
+          "cycle_days": {
+            "type": "number",
+            "description": "Average days from leaving Todo to Done",
+            "nullable": true
+          },
+          "rework_rate": {
+            "type": "number",
+            "description": "0 to 1; finished cards that went through Revision; null below 3 finished",
+            "nullable": true
+          },
+          "open": {
+            "type": "integer",
+            "description": "Open cards assigned now"
+          }
+        }
+      },
+      "KpiPerson": {
+        "type": "object",
+        "properties": {
+          "finished": {
+            "type": "integer",
+            "description": "Cards finished in the range"
+          },
+          "on_time_rate": {
+            "type": "number",
+            "description": "0 to 1; null below 3 finished cards with an end date",
+            "nullable": true
+          },
+          "throughput": {
+            "type": "number",
+            "description": "Finished cards per week of the range"
+          },
+          "overdue_now": {
+            "type": "integer",
+            "description": "Open cards past their end date today"
+          },
+          "oldest_overdue_days": {
+            "type": "integer",
+            "description": "Days since the oldest overdue end date",
+            "nullable": true
+          },
+          "cycle_days": {
+            "type": "number",
+            "description": "Average days from leaving Todo to Done",
+            "nullable": true
+          },
+          "rework_rate": {
+            "type": "number",
+            "description": "0 to 1; finished cards that went through Revision; null below 3 finished",
+            "nullable": true
+          },
+          "open": {
+            "type": "integer",
+            "description": "Open cards assigned now"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Kpi": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "object",
+            "description": "`from` and `to` as YYYY-MM-DD",
+            "additionalProperties": {}
+          },
+          "team": {
+            "$ref": "#/components/schemas/KpiFigures"
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KpiPerson"
+            }
+          }
+        }
+      },
+      "KpiEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/Kpi"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyKpi": {
+        "type": "object",
+        "properties": {
+          "finished": {
+            "type": "integer",
+            "description": "Cards finished in the range"
+          },
+          "on_time_rate": {
+            "type": "number",
+            "description": "0 to 1; null below 3 finished cards with an end date",
+            "nullable": true
+          },
+          "throughput": {
+            "type": "number",
+            "description": "Finished cards per week of the range"
+          },
+          "overdue_now": {
+            "type": "integer",
+            "description": "Open cards past their end date today"
+          },
+          "oldest_overdue_days": {
+            "type": "integer",
+            "description": "Days since the oldest overdue end date",
+            "nullable": true
+          },
+          "cycle_days": {
+            "type": "number",
+            "description": "Average days from leaving Todo to Done",
+            "nullable": true
+          },
+          "rework_rate": {
+            "type": "number",
+            "description": "0 to 1; finished cards that went through Revision; null below 3 finished",
+            "nullable": true
+          },
+          "open": {
+            "type": "integer",
+            "description": "Open cards assigned now"
+          },
+          "range": {
+            "type": "object",
+            "description": "`from` and `to` as YYYY-MM-DD",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "MyKpiEnvelope": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "True when the HTTP status is 2xx"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object",
+                "nullable": true
+              },
+              {
+                "$ref": "#/components/schemas/MyKpi"
               }
             ]
           }
